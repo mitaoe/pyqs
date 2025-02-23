@@ -12,32 +12,6 @@ export default function Header() {
             PYQs
           </Link>
           
-          <nav className="flex items-center gap-6">
-            <Link 
-              href="/years" 
-              className="text-sm font-medium text-content hover:text-white"
-            >
-              By Year
-            </Link>
-            <Link 
-              href="/subjects" 
-              className="text-sm font-medium text-content hover:text-white"
-            >
-              By Subject
-            </Link>
-            <Link 
-              href="/recent" 
-              className="text-sm font-medium text-content hover:text-white"
-            >
-              Recent
-            </Link>
-            <Link 
-              href="/browse" 
-              className="text-sm font-medium text-content/60 hover:text-white"
-            >
-              Directory →
-            </Link>
-          </nav>
         </div>
       </div>
     </header>
