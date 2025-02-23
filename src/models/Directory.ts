@@ -4,7 +4,8 @@ const DirectorySchema = new mongoose.Schema({
   path: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    index: true
   },
   name: String,
   parent: String,  // parent path
@@ -21,8 +22,7 @@ const DirectorySchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create indexes
-DirectorySchema.index({ path: 1 });
+// Create indexes for other fields
 DirectorySchema.index({ parent: 1 });
 DirectorySchema.index({ type: 1 });
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 
@@ -13,7 +13,7 @@ interface Paper {
   examType: string;
 }
 
-export default function BrowsePage() {
+function BrowseContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentPath = searchParams.get('path') || '';
@@ -59,90 +59,102 @@ export default function BrowsePage() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-content">Browse Papers</h1>
-          {currentPath && (
-            <button
-              onClick={handleBack}
-              className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-content transition-colors hover:text-white"
-            >
-              Back
-            </button>
-          )}
-        </div>
-
-        <div className="text-sm text-content/60">
-          Current path: {currentPath || '/'}
-        </div>
-
-        {error ? (
-          <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-red-500">
-            {error}
-          </div>
-        ) : isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-content/60">Loading...</div>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {directories.length > 0 && (
-              <div className="space-y-2">
-                <h2 className="font-medium text-content">Directories</h2>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {directories.map((dir) => (
-                    <button
-                      key={dir}
-                      onClick={() => handleNavigate(dir)}
-                      className="flex items-center gap-2 rounded-lg border border-accent bg-secondary p-3 text-left transition-colors hover:bg-accent"
-                    >
-                      <FolderIcon className="h-5 w-5 text-content/60" />
-                      <span className="text-sm text-content">{dir}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {papers.length > 0 && (
-              <div className="space-y-2">
-                <h2 className="font-medium text-content">Papers</h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {papers.map((paper) => (
-                    <div
-                      key={paper.downloadUrl}
-                      className="rounded-lg border border-accent bg-secondary p-4"
-                    >
-                      <div className="mb-3 space-y-1">
-                        <h3 className="font-medium text-content">{paper.name}</h3>
-                        <div className="text-xs text-content/60">
-                          {paper.branch} • {paper.semester} • {paper.examType}
-                        </div>
-                      </div>
-                      <a
-                        href={paper.downloadUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-content transition-colors hover:text-white"
-                      >
-                        <DownloadIcon className="h-4 w-4" />
-                        Download
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {directories.length === 0 && papers.length === 0 && (
-              <div className="rounded-lg border border-accent bg-secondary p-8 text-center text-content/60">
-                No items found in this directory
-              </div>
-            )}
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-content">Browse Papers</h1>
+        {currentPath && (
+          <button
+            onClick={handleBack}
+            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-content transition-colors hover:text-white"
+          >
+            Back
+          </button>
         )}
       </div>
+
+      <div className="text-sm text-content/60">
+        Current path: {currentPath || '/'}
+      </div>
+
+      {error ? (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-red-500">
+          {error}
+        </div>
+      ) : isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-content/60">Loading...</div>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {directories.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="font-medium text-content">Directories</h2>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {directories.map((dir) => (
+                  <button
+                    key={dir}
+                    onClick={() => handleNavigate(dir)}
+                    className="flex items-center gap-2 rounded-lg border border-accent bg-secondary p-3 text-left transition-colors hover:bg-accent"
+                  >
+                    <FolderIcon className="h-5 w-5 text-content/60" />
+                    <span className="text-sm text-content">{dir}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {papers.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="font-medium text-content">Papers</h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {papers.map((paper) => (
+                  <div
+                    key={paper.downloadUrl}
+                    className="rounded-lg border border-accent bg-secondary p-4"
+                  >
+                    <div className="mb-3 space-y-1">
+                      <h3 className="font-medium text-content">{paper.name}</h3>
+                      <div className="text-xs text-content/60">
+                        {paper.branch} • {paper.semester} • {paper.examType}
+                      </div>
+                    </div>
+                    <a
+                      href={paper.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-content transition-colors hover:text-white"
+                    >
+                      <DownloadIcon className="h-4 w-4" />
+                      Download
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {directories.length === 0 && papers.length === 0 && (
+            <div className="rounded-lg border border-accent bg-secondary p-8 text-center text-content/60">
+              No items found in this directory
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function BrowsePage() {
+  return (
+    <Layout>
+      <Suspense fallback={
+        <div className="flex items-center justify-center py-12">
+          <div className="text-content/60">Loading...</div>
+        </div>
+      }>
+        <BrowseContent />
+      </Suspense>
     </Layout>
   );
 }
