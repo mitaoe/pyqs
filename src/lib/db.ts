@@ -10,13 +10,13 @@ type MongooseCache = {
 
 // Declare the global type
 declare global {
-  let mongoose: MongooseCache | undefined;
+  var mongoose: MongooseCache | undefined;
 }
 
-const cached: MongooseCache = (globalThis as any).mongoose || { conn: null, promise: null };
+const cached: MongooseCache = global.mongoose || { conn: null, promise: null };
 
-if (!(globalThis as any).mongoose) {
-  (globalThis as any).mongoose = cached;
+if (!global.mongoose) {
+  global.mongoose = cached;
 }
 
 async function dbConnect() {
