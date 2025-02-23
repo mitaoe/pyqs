@@ -259,9 +259,6 @@ async function crawlDirectory(path: string, parentPath: string = '', depth: numb
         else examType = type;
       }
 
-      // Find exam period (e.g., "DEC 2018", "MAY 2019")
-      const examPeriod = pathParts.find(p => /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+20\d{2}$/i.test(p)) || 'Unknown';
-
       try {
         // Create/update paper
         const paper = await Paper.findOneAndUpdate(

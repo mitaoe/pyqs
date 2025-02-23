@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Paper from '@/models/Paper';
 
+interface QueryParams {
+  year?: string;
+  branch?: string;
+  semester?: string;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const year = searchParams.get('year');
@@ -11,7 +17,7 @@ export async function GET(request: Request) {
   try {
     await dbConnect();
 
-    let query: any = {};
+    const query: QueryParams = {};
     if (year) query.year = year;
     if (branch) query.branch = branch;
     if (semester) query.semester = semester;

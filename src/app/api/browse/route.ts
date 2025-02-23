@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
-import Paper from '@/models/Paper';
 import Directory from '@/models/Directory';
 import type { BrowseResponse, Paper as PaperType } from '@/types/paper';
 

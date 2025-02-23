@@ -1,15 +1,7 @@
 import PaperCard from './PaperCard';
+import type { Paper as PaperType } from '@/types/paper';
 
-interface Paper {
-  id: string;
-  year: string;
-  branch?: string;
-  semester?: string;
-  subject?: string;
-  examType?: string;
-  fileName: string;
-  originalUrl: string;
-}
+type Paper = Pick<PaperType, '_id' | 'fileName' | 'originalUrl' | 'year' | 'branch' | 'semester' | 'examType'>;
 
 interface PaperGridProps {
   papers: Paper[];
@@ -41,7 +33,7 @@ export default function PaperGrid({ papers, isLoading = false }: PaperGridProps)
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {papers.map((paper) => (
-        <PaperCard key={paper.id} {...paper} />
+        <PaperCard key={paper._id} {...paper} />
       ))}
     </div>
   );

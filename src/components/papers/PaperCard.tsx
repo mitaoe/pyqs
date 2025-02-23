@@ -1,12 +1,6 @@
-interface PaperCardProps {
-  year: string;
-  branch?: string;
-  semester?: string;
-  subject?: string;
-  examType?: string;
-  fileName: string;
-  originalUrl: string;
-}
+import type { Paper } from '@/types/paper';
+
+type PaperCardProps = Pick<Paper, 'year' | 'branch' | 'semester' | 'examType' | 'fileName' | 'originalUrl'>;
 
 export default function PaperCard({
   year,

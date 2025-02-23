@@ -28,7 +28,6 @@ const mockSemesters: FilterOption[] = [
 ];
 
 export default function PapersPage() {
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('');
   const [selectedSemester, setSelectedSemester] = useState('');
@@ -36,13 +35,18 @@ export default function PapersPage() {
   const [papers, setPapers] = useState<Paper[]>([]);
 
   const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    // TODO: Implement actual search
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await fetch(`/api/papers/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) throw new Error('Search failed');
+      const data = await response.json();
+      setPapers(data.papers);
+    } catch (error) {
+      console.error('Search failed:', error);
+      setPapers([]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
