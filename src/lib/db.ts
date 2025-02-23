@@ -1,38 +1,59 @@
-import mongoose, { Mongoose } from 'mongoose';
-
-// Declare the global type for mongoose connection caching
-declare global {
-  // eslint-disable-next-line no-var
-  var mongoose: {
-    conn: Mongoose | null;
-    promise: Promise<Mongoose> | null;
-  } | undefined;
-}
+import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env');
+// Define the type for our cached mongoose connection
+type MongooseCache = {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+};
+
+// Declare the global type
+declare global {
+  var mongoose: MongooseCache | undefined;
 }
 
-const cached = global.mongoose ?? (global.mongoose = { conn: null, promise: null });
+let cached: MongooseCache = global.mongoose || { conn: null, promise: null };
 
-async function dbConnect(): Promise<Mongoose> {
+if (!global.mongoose) {
+  global.mongoose = cached;
+}
+
+async function dbConnect() {
   if (cached.conn) {
     return cached.conn;
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI as string);
+    const opts = {
+      bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      family: 4
+    };
+
+    if (!MONGODB_URI) {
+      throw new Error('MONGODB_URI environment variable is not defined');
+    }
+
+    console.log('Connecting to MongoDB...', MONGODB_URI.split('@')[1]); // Log only the host part for security
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log('Connected to MongoDB successfully');
+      return mongoose;
+    });
   }
 
   try {
     cached.conn = await cached.promise;
-    return cached.conn;
   } catch (e) {
     cached.promise = null;
+    console.error('MongoDB connection error:', e);
     throw e;
   }
+
+  return cached.conn;
 }
 
 export default dbConnect; 
