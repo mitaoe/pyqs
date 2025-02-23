@@ -5,27 +5,37 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-accent bg-secondary">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/" 
-              className="text-xl font-bold tracking-tight text-content hover:text-white"
-            >
-              MITAOE PYQs
-            </Link>
-          </div>
+          <Link 
+            href="/" 
+            className="text-xl font-bold tracking-tight text-content hover:text-white"
+          >
+            PYQs
+          </Link>
           
           <nav className="flex items-center gap-6">
             <Link 
-              href="/browse" 
+              href="/years" 
               className="text-sm font-medium text-content hover:text-white"
             >
-              Browse Directory
+              By Year
             </Link>
             <Link 
-              href="/papers" 
+              href="/subjects" 
               className="text-sm font-medium text-content hover:text-white"
             >
-              Search Papers
+              By Subject
+            </Link>
+            <Link 
+              href="/recent" 
+              className="text-sm font-medium text-content hover:text-white"
+            >
+              Recent
+            </Link>
+            <Link 
+              href="/browse" 
+              className="text-sm font-medium text-content/60 hover:text-white"
+            >
+              Directory →
             </Link>
           </nav>
         </div>

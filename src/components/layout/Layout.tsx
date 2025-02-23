@@ -13,12 +13,7 @@ export default function Layout({ children }: LayoutProps) {
       <main className="flex-1 container mx-auto px-4 py-8">
         {children}
       </main>
-      <div className="mt-auto">
-        <p className="text-center text-xs text-content/60 pb-4">
-          All papers are served directly from MITAOE servers
-        </p>
-        <Footer />
-      </div>
+      <Footer />
     </div>
   );
 } 
