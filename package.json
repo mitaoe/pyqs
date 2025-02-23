@@ -9,9 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@prisma/client": "^6.4.1",
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
+    "mongodb": "^6.13.1",
+    "mongoose": "^8.10.1",
     "next": "15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
