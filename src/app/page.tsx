@@ -4,26 +4,27 @@ import Layout from '@/components/layout/Layout';
 export default function HomePage() {
   return (
     <Layout>
-      <div className="flex min-h-[calc(100vh-16rem)] flex-col items-center justify-center text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-          MITAOE Question Papers
+      <div className="flex flex-col items-center justify-center pt-32">
+        <h1 className="text-6xl font-bold tracking-tighter text-white">
+          PYQs
         </h1>
-        <p className="mt-6 text-lg leading-8 text-gray-600">
-          Access previous year question papers from MITAOE. 
-          Search by year, branch, or subject to find exactly what you need.
+        <p className="mt-2 text-lg text-content/80">
+          MITAOE Question Papers
         </p>
-        <div className="mt-10 flex items-center justify-center gap-x-6">
+        <div className="mt-16 flex items-center gap-6">
           <Link
-            href="/papers"
-            className="rounded-md bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
+            href="/browse"
+            className="group rounded-lg border border-accent bg-secondary px-6 py-2.5 text-sm font-medium"
           >
-            Browse Papers
+            <span className="bg-gradient-to-r from-content to-white bg-clip-text text-transparent transition-all group-hover:text-white">
+              Browse Directory
+            </span>
           </Link>
           <Link
-            href="/about"
-            className="text-sm font-semibold leading-6 text-gray-900"
+            href="/papers"
+            className="rounded-lg bg-white px-6 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-content"
           >
-            Learn more <span aria-hidden="true">→</span>
+            Search Papers
           </Link>
         </div>
       </div>

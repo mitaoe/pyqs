@@ -8,12 +8,17 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col bg-primary text-content">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         {children}
       </main>
-      <Footer />
+      <div className="mt-auto">
+        <p className="text-center text-xs text-content/60 pb-4">
+          All papers are served directly from MITAOE servers
+        </p>
+        <Footer />
+      </div>
     </div>
   );
 } 
