@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import * as cheerio from 'cheerio';
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://pravaahi:ZZHBnKcyCzmvkmxz@cluster0.oit0r.mongodb.net/pyqs";
+const MONGODB_URI = process.env.MONGODB_URI;
 const BASE_URL = 'http://43.227.20.36:82/DigitalLibrary/Old%20Question%20Papers/B%20Tech%20(Autonomy)/';
 
 // Paper Schema
@@ -301,6 +301,9 @@ async function crawlDirectory(path: string, parentPath: string = '', depth: numb
 async function main() {
   console.log('Connecting to MongoDB...');
   try {
+    if (!MONGODB_URI) {
+        throw new Error('MONGODB_URI environment variable is not defined');
+    }
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB');
 
