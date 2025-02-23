@@ -6,7 +6,6 @@ export default function PaperCard({
   year,
   branch,
   semester,
-  subject,
   examType,
   fileName,
   originalUrl,
@@ -14,15 +13,11 @@ export default function PaperCard({
   return (
     <div className="rounded-lg border bg-white p-4 shadow-sm transition-all hover:shadow-md">
       <div className="mb-4">
-        <h3 className="font-medium text-gray-900">{subject || 'Unknown Subject'}</h3>
-        <p className="text-sm text-gray-500">{fileName}</p>
+        <h3 className="font-medium text-gray-900">{fileName}</h3>
+        <p className="text-sm text-gray-500">{year}</p>
       </div>
       
       <div className="mb-4 grid grid-cols-2 gap-2 text-sm">
-        <div>
-          <span className="text-gray-500">Year:</span>
-          <span className="ml-1 font-medium">{year}</span>
-        </div>
         {branch && (
           <div>
             <span className="text-gray-500">Branch:</span>
