@@ -57,27 +57,29 @@ export default function DirectoryBrowser({
   const files = items.filter(item => !item.isDirectory);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-content">Browse Papers</h1>
-        {currentPath && (
-          <button
-            onClick={() => onNavigate('../')}
-            className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-content transition-colors hover:text-white"
-          >
-            <ArrowLeftIcon className="h-4 w-4" />
-            Back
-          </button>
-        )}
+    <div className="flex h-full flex-col space-y-6">
+      <div className="flex-none">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-content">Browse Papers</h1>
+          {currentPath && (
+            <button
+              onClick={() => onNavigate('../')}
+              className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-content transition-colors hover:text-white"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              Back
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="rounded-lg border border-accent bg-secondary">
-        <div className="border-b border-accent p-4">
+      <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-accent bg-secondary">
+        <div className="flex-none border-b border-accent p-4">
           <Breadcrumb path={currentPath} onNavigate={onNavigate} />
         </div>
 
         {meta && (
-          <div className="border-b border-accent p-4">
+          <div className="flex-none border-b border-accent p-4">
             <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
               {meta.years.length > 0 && (
                 <div>
@@ -107,57 +109,59 @@ export default function DirectoryBrowser({
           </div>
         )}
         
-        <div className="divide-y divide-accent">
-          {directories.map((item) => (
-            <div
-              key={item.path}
-              className="flex items-center justify-between p-3 transition-colors hover:bg-accent"
-            >
-              <button
-                onClick={() => onNavigate(item.path)}
-                className="flex items-center gap-3 text-content transition-colors hover:text-white"
+        <div className="flex-1 overflow-y-auto">
+          <div className="divide-y divide-accent">
+            {directories.map((item) => (
+              <div
+                key={item.path}
+                className="flex items-center justify-between p-3 transition-colors hover:bg-accent"
               >
-                <FolderIcon className="h-4 w-4" />
-                <span className="text-sm">{item.name}</span>
-              </button>
-            </div>
-          ))}
-
-          {files.map((item) => (
-            <div
-              key={item.path}
-              className="flex items-center justify-between p-3 transition-colors hover:bg-accent"
-            >
-              <div className="flex items-center gap-3 text-content">
-                <FileIcon className="h-4 w-4" />
-                <div>
-                  <div className="text-sm">{item.name}</div>
-                  {item.metadata && (
-                    <div className="mt-0.5 text-xs text-content/60">
-                      {item.metadata.branch} • {item.metadata.semester} • {item.metadata.examType}
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {item.metadata && (
-                <a
-                  href={item.metadata.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-content transition-colors hover:text-white"
+                <button
+                  onClick={() => onNavigate(item.path)}
+                  className="flex items-center gap-3 text-content transition-colors hover:text-white"
                 >
-                  Download
-                </a>
-              )}
-            </div>
-          ))}
+                  <FolderIcon className="h-4 w-4" />
+                  <span className="text-sm">{item.name}</span>
+                </button>
+              </div>
+            ))}
 
-          {items.length === 0 && (
-            <div className="p-8 text-center text-content/60">
-              No items in this directory
-            </div>
-          )}
+            {files.map((item) => (
+              <div
+                key={item.path}
+                className="flex items-center justify-between p-3 transition-colors hover:bg-accent"
+              >
+                <div className="flex items-center gap-3 text-content">
+                  <FileIcon className="h-4 w-4" />
+                  <div>
+                    <div className="text-sm">{item.name}</div>
+                    {item.metadata && (
+                      <div className="mt-0.5 text-xs text-content/60">
+                        {item.metadata.branch} • {item.metadata.semester} • {item.metadata.examType}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {item.metadata && (
+                  <a
+                    href={item.metadata.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-content transition-colors hover:text-white"
+                  >
+                    Download
+                  </a>
+                )}
+              </div>
+            ))}
+
+            {items.length === 0 && (
+              <div className="p-8 text-center text-content/60">
+                No items in this directory
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
