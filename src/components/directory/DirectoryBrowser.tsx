@@ -57,8 +57,8 @@ export default function DirectoryBrowser({
   const files = items.filter(item => !item.isDirectory);
 
   return (
-    <div className="flex h-full flex-col space-y-6">
-      <div className="flex-none">
+    <div className="flex flex-col space-y-6">
+      <div className="sticky top-0 z-10 bg-primary">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-content">Browse Papers</h1>
           {currentPath && (
@@ -73,13 +73,13 @@ export default function DirectoryBrowser({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-accent bg-secondary">
-        <div className="flex-none border-b border-accent p-4">
+      <div className="flex flex-col rounded-lg border border-accent bg-secondary">
+        <div className="sticky top-0 z-10 border-b border-accent p-4 bg-secondary">
           <Breadcrumb path={currentPath} onNavigate={onNavigate} />
         </div>
 
         {meta && (
-          <div className="flex-none border-b border-accent p-4">
+          <div className="sticky top-[72px] z-10 border-b border-accent p-4 bg-secondary">
             <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
               {meta.years.length > 0 && (
                 <div>
@@ -109,7 +109,7 @@ export default function DirectoryBrowser({
           </div>
         )}
         
-        <div className="flex-1 overflow-y-auto">
+        <div className="max-h-[calc(100vh-24rem)] overflow-y-auto">
           <div className="divide-y divide-accent">
             {directories.map((item) => (
               <div
