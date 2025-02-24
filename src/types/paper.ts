@@ -1,42 +1,53 @@
 export interface Paper {
-  _id?: string;
-  fileName: string;
-  url: string;
   year: string;
+  examType: string;
   branch: string;
   semester: string;
-  examType: string;
-  metadata?: Record<string, any>;
-  createdAt?: Date;
-  updatedAt?: Date;
+  fileName: string;
+  url: string;
+  isDirectory?: boolean;
+}
+
+export interface DirectoryStats {
+  totalFiles: number;
+  totalDirectories: number;
+}
+
+export interface DirectoryMeta {
+  years: string[];
+  branches: string[];
+  examTypes: string[];
+  semesters: string[];
 }
 
 export interface DirectoryNode {
   name: string;
   path: string;
-  type: 'directory' | 'file';
-  children?: Record<string, DirectoryNode>;
+  type: 'file' | 'directory';
+  stats: DirectoryStats;
+  children: Record<string, DirectoryNode>;
   metadata?: Paper;
-  stats: {
-    totalFiles: number;
-    totalDirectories: number;
-  };
+  meta: DirectoryMeta;
 }
 
-export interface DirectoryStructure {
-  lastUpdated: Date;
-  stats: {
-    totalFiles: number;
-    totalDirectories: number;
-  };
-  structure: DirectoryNode;
+export interface DirectoryStructure extends DirectoryNode {}
+
+export interface SavedDocument {
+  _id: string;
+  structure: DirectoryStructure;
+  stats: DirectoryStats;
   meta: {
     years: string[];
     branches: string[];
     examTypes: string[];
     semesters: string[];
   };
+  lastUpdated: Date;
 }
+
+export type CleanNode = Omit<DirectoryNode, 'parent'> & {
+  children?: Record<string, CleanNode>;
+};
 
 export interface FilterOption {
   label: string;

@@ -64,10 +64,10 @@ interface DirectoryStats {
 }
 
 interface DirectoryMeta {
-  years: Set<string>;
-  branches: Set<string>;
-  examTypes: Set<string>;
-  semesters: Set<string>;
+  years: string[];
+  branches: string[];
+  examTypes: string[];
+  semesters: string[];
 }
 
 interface DirectoryNode {
@@ -172,10 +172,10 @@ let pyqDocument = {
   },
   structure: {} as DirectoryNode,
   meta: {
-    years: new Set<string>(),
-    branches: new Set<string>(),
-    examTypes: new Set<string>(),
-    semesters: new Set<string>()
+    years: [],
+    branches: [],
+    examTypes: [],
+    semesters: []
   }
 };
 
@@ -190,8 +190,10 @@ function cleanName(name: string): string {
 }
 
 function getPathParts(path: string): string[] {
-  const parts = path.split('/Old Question Papers/B Tech (Autonomy)/')[1]?.split('/') || [];
-  return parts.filter(part => part.length > 0).map(cleanName);
+    const decodedPath = decodeURIComponent(path);
+    const basePath = '/Old Question Papers/B Tech (Autonomy)/';
+    const parts = decodedPath.split(basePath)[1]?.split('/') || [];
+    return parts.filter(part => part.length > 0).map(cleanName);
 }
 
 async function fetchDirectory(path: string): Promise<DirectoryItem[]> {
@@ -339,59 +341,55 @@ function extractBranch(path: string, fileName: string): string {
 }
 
 async function addToStructure(structure: DirectoryStructure, paper: Paper) {
-  const sanitizedFileName = sanitizeKey(paper.fileName);
-  const parts = getPathParts(paper.url);
-  let current = structure;
-
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    const sanitizedPart = sanitizeKey(part);
-    const isLast = i === parts.length - 1;
-    const fullPath = parts.slice(0, i + 1).join('/');
-
-    if (!current.children[sanitizedPart]) {
-      current.children[sanitizedPart] = {
-        name: part,
-        path: fullPath,
-        type: isLast && !paper.isDirectory ? 'file' : 'directory',
-        parent: current,
-        children: {},
-        stats: { totalFiles: 0, totalDirectories: 0 },
-        meta: {
-          years: new Set<string>(),
-          branches: new Set<string>(),
-          examTypes: new Set<string>(),
-          semesters: new Set<string>()
+    const parts = getPathParts(paper.url);
+    let current = structure;
+  
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const sanitizedPart = sanitizeKey(part);
+      const isLast = i === parts.length - 1;
+  
+      if (!current.children[sanitizedPart]) {
+        current.children[sanitizedPart] = {
+          name: part,
+          path: parts.slice(0, i + 1).join('/'),
+          type: isLast && !paper.isDirectory ? 'file' : 'directory',
+          stats: { totalFiles: 0, totalDirectories: 0 },
+          children: {},
+          meta: { years: [], branches: [], examTypes: [], semesters: [] }
+        };
+  
+        if (current.children[sanitizedPart].type === 'directory') {
+          current.stats.totalDirectories++;
+          pyqDocument.stats.totalDirectories++;
         }
-      };
-
-      // Update directory stats
-      if (!isLast || paper.isDirectory) {
-        current.stats.totalDirectories++;
       }
+  
+      if (isLast && !paper.isDirectory) {
+        // Update file stats
+        current.children[sanitizedPart].stats.totalFiles++;
+        current.stats.totalFiles++;
+        pyqDocument.stats.totalFiles++;
+  
+        // Update metadata
+        const updateMeta = (arr: string[], value: string) => {
+          if (value !== 'Unknown' && !arr.includes(value)) arr.push(value);
+        };
+  
+        updateMeta(current.meta.years, paper.year);
+        updateMeta(current.meta.branches, paper.branch);
+        updateMeta(current.meta.examTypes, paper.examType);
+        updateMeta(current.meta.semesters, paper.semester);
+  
+        // Propagate metadata to root
+        updateMeta(pyqDocument.meta.years, paper.year);
+        updateMeta(pyqDocument.meta.branches, paper.branch);
+        updateMeta(pyqDocument.meta.examTypes, paper.examType);
+        updateMeta(pyqDocument.meta.semesters, paper.semester);
+      }
+  
+      current = current.children[sanitizedPart];
     }
-
-    if (isLast && !paper.isDirectory) {
-      current.children[sanitizedPart].metadata = paper;
-      current.stats.totalFiles++;
-
-      // Update metadata sets
-      if (paper.year !== 'Unknown') {
-        structure.meta.years.add(paper.year);
-      }
-      if (paper.branch !== 'Unknown') {
-        structure.meta.branches.add(paper.branch);
-      }
-      if (paper.examType !== 'Unknown') {
-        structure.meta.examTypes.add(paper.examType);
-      }
-      if (paper.semester !== 'Unknown') {
-        structure.meta.semesters.add(paper.semester);
-      }
-    }
-
-    current = current.children[sanitizedPart];
-  }
 }
 
 function sanitizeKey(key: string): string {
@@ -500,20 +498,6 @@ async function crawlDirectory(structure: DirectoryStructure, url: string) {
   }
 }
 
-function removeParentRefs(node: DirectoryNode): CleanNode {
-  const { parent, children, ...rest } = node;
-  const cleanNode = { ...rest } as CleanNode;
-  
-  if (children) {
-    cleanNode.children = {};
-    for (const [key, child] of Object.entries(children)) {
-      cleanNode.children[key] = removeParentRefs(child);
-    }
-  }
-  
-  return cleanNode;
-}
-
 async function connectToMongoDB() {
   if (!MONGODB_URI) {
     throw new Error('MONGODB_URI environment variable is not defined');
@@ -523,12 +507,19 @@ async function connectToMongoDB() {
   log('METADATA', 'Connected to MongoDB');
 }
 
-function cleanStructure(node: DirectoryNode): DirectoryNode {
-  const cleanNode = {
-    ...node,
-    parent: undefined,
-    children: {} as Record<string, DirectoryNode>
+function cleanStructure(node: DirectoryNode): CleanNode {
+  const cleanNode: CleanNode = {
+    name: node.name,
+    path: node.path,
+    type: node.type,
+    stats: node.stats,
+    children: {},
+    meta: node.meta
   };
+
+  if (node.metadata) {
+    cleanNode.metadata = node.metadata;
+  }
 
   for (const [key, child] of Object.entries(node.children)) {
     cleanNode.children[key] = cleanStructure(child);
@@ -546,14 +537,13 @@ async function crawl() {
       name: 'root',
       path: BASE_URL,
       type: 'directory',
-      parent: undefined,
       children: {},
-      stats: { totalFiles: 0, totalDirectories: 1 }, // Count root as first directory
+      stats: { totalFiles: 0, totalDirectories: 1 },
       meta: {
-        years: new Set<string>(),
-        branches: new Set<string>(),
-        examTypes: new Set<string>(),
-        semesters: new Set<string>()
+        years: [],
+        branches: [],
+        examTypes: [],
+        semesters: []
       }
     };
 
@@ -564,46 +554,44 @@ async function crawl() {
     log('METADATA', 'Deleted existing documents');
     await PYQModel.deleteMany({});
 
-    // Convert sets to arrays for storage
-    const metaArrays = {
-      years: Array.from(structure.meta.years),
-      branches: Array.from(structure.meta.branches),
-      examTypes: Array.from(structure.meta.examTypes),
-      semesters: Array.from(structure.meta.semesters)
-    };
-
     // Save new document
     const result = await PYQModel.create({
       structure: cleanStructure(structure),
-      meta: metaArrays,
-      stats: structure.stats,
+      meta: {
+        years: [...new Set(pyqDocument.meta.years)],
+        branches: [...new Set(pyqDocument.meta.branches)],
+        examTypes: [...new Set(pyqDocument.meta.examTypes)],
+        semesters: [...new Set(pyqDocument.meta.semesters)]
+      },
+      stats: pyqDocument.stats,
       lastUpdated: new Date()
     });
 
     log('METADATA', 'Document created with ID:', result._id);
 
-    // Verify the saved document
-    const savedDoc = await PYQModel.findById(result._id).lean() as unknown as SavedDocument;
-    
-    if (!savedDoc) {
+    const savedDoc = await PYQModel.findById(result._id).lean();
+
+    if (!savedDoc || Array.isArray(savedDoc)) {
       throw new Error('Failed to verify saved document');
     }
+    
+    const typedDoc = savedDoc as unknown as PYQDocument & { __v?: number };
 
     log('METADATA', 'Document saved successfully:', {
-      id: savedDoc._id,
-      stats: savedDoc.stats,
+      id: typedDoc._id,
+      stats: typedDoc.stats,
       metaCounts: {
-        years: metaArrays.years.length,
-        branches: metaArrays.branches.length,
-        examTypes: metaArrays.examTypes.length,
-        semesters: metaArrays.semesters.length
+        years: typedDoc.meta.years.length,
+        branches: typedDoc.meta.branches.length,
+        examTypes: typedDoc.meta.examTypes.length,
+        semesters: typedDoc.meta.semesters.length
       },
       structureStats: {
-        hasRoot: savedDoc.structure?.name != null,
-        rootStats: savedDoc.structure?.stats || { totalFiles: 0, totalDirectories: 0 },
-        childrenCount: Object.keys(savedDoc.structure?.children || {}).length
+        hasRoot: typedDoc.structure?.name != null,
+        rootStats: typedDoc.structure?.stats || { totalFiles: 0, totalDirectories: 0 },
+        childrenCount: Object.keys(typedDoc.structure?.children || {}).length
       },
-      lastUpdated: savedDoc.lastUpdated
+      lastUpdated: typedDoc.lastUpdated
     });
 
   } catch (error) {
