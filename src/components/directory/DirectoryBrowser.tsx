@@ -21,6 +21,32 @@ interface DirectoryBrowserProps {
   meta: DirectoryMeta;
 }
 
+function Breadcrumb({ path, onNavigate }: { path: string; onNavigate: (path: string) => void }) {
+  const parts = path.split('/').filter(Boolean);
+  
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <button 
+        onClick={() => onNavigate('')}
+        className="text-content/60 hover:text-white"
+      >
+        root
+      </button>
+      {parts.map((part, index) => (
+        <div key={index} className="flex items-center gap-2">
+          <span className="text-content/40">/</span>
+          <button
+            onClick={() => onNavigate(parts.slice(0, index + 1).join('/'))}
+            className="text-content/60 hover:text-white"
+          >
+            {part}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DirectoryBrowser({ 
   items, 
   currentPath, 
@@ -47,9 +73,7 @@ export default function DirectoryBrowser({
 
       <div className="rounded-lg border border-accent bg-secondary">
         <div className="border-b border-accent p-4">
-          <div className="flex items-center gap-3">
-            <code className="text-sm text-content">{currentPath || '/'}</code>
-          </div>
+          <Breadcrumb path={currentPath} onNavigate={onNavigate} />
         </div>
 
         {meta && (
