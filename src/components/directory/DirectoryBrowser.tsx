@@ -32,15 +32,22 @@ export default function DirectoryBrowser({
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-content">Browse Papers</h1>
+        {currentPath && (
+          <button
+            onClick={() => onNavigate('../')}
+            className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-content transition-colors hover:text-white"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+            Back
+          </button>
+        )}
+      </div>
+
       <div className="rounded-lg border border-accent bg-secondary">
         <div className="border-b border-accent p-4">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => onNavigate('../')}
-              className="rounded-md bg-accent px-2 py-1.5 text-xs font-medium text-content transition-colors hover:text-white"
-            >
-              ../
-            </button>
             <code className="text-sm text-content">{currentPath || '/'}</code>
           </div>
         </div>
@@ -154,6 +161,19 @@ function FileIcon({ className }: { className?: string }) {
         strokeLinejoin="round" 
         strokeWidth={1.5} 
         d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" 
+      />
+    </svg>
+  );
+}
+
+function ArrowLeftIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={1.5} 
+        d="M10 19l-7-7m0 0l7-7m-7 7h18" 
       />
     </svg>
   );
