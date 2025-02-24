@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import type { DirectoryNode, DirectoryStructure } from '@/types/paper';
+import type { DirectoryStructure } from '@/types/paper';
 
 const DirectoryNodeSchema = new mongoose.Schema({
   name: { type: String, required: true },
