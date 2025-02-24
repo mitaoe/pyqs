@@ -340,56 +340,76 @@ function extractBranch(path: string, fileName: string): string {
   return branch;
 }
 
+function propagateStats(node: DirectoryNode | undefined, deltaFiles: number, deltaDirectories: number) {
+  let currentNode = node;
+  while (currentNode) {
+    currentNode.stats.totalFiles += deltaFiles;
+    currentNode.stats.totalDirectories += deltaDirectories;
+    currentNode = currentNode.parent;
+  }
+}
+
 async function addToStructure(structure: DirectoryStructure, paper: Paper) {
-    const parts = getPathParts(paper.url);
-    let current = structure;
-  
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-      const sanitizedPart = sanitizeKey(part);
-      const isLast = i === parts.length - 1;
-  
-      if (!current.children[sanitizedPart]) {
-        current.children[sanitizedPart] = {
-          name: part,
-          path: parts.slice(0, i + 1).join('/'),
-          type: isLast && !paper.isDirectory ? 'file' : 'directory',
-          stats: { totalFiles: 0, totalDirectories: 0 },
-          children: {},
-          meta: { years: [], branches: [], examTypes: [], semesters: [] }
-        };
-  
-        if (current.children[sanitizedPart].type === 'directory') {
-          current.stats.totalDirectories++;
-          pyqDocument.stats.totalDirectories++;
+  const parts = getPathParts(paper.url);
+  let current = structure;
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const sanitizedPart = sanitizeKey(part);
+    const isLast = i === parts.length - 1;
+    const fullPath = parts.slice(0, i + 1).join('/');
+
+    if (!current.children[sanitizedPart]) {
+      const nodeType = isLast && !paper.isDirectory ? 'file' : 'directory';
+      current.children[sanitizedPart] = {
+        name: part,
+        path: fullPath,
+        type: nodeType,
+        parent: current,
+        stats: { totalFiles: 0, totalDirectories: 0 },
+        children: {},
+        meta: {
+          years: [],
+          branches: [],
+          examTypes: [],
+          semesters: []
         }
-      }
-  
-      if (isLast && !paper.isDirectory) {
-        // Update file stats
-        current.children[sanitizedPart].stats.totalFiles++;
-        current.stats.totalFiles++;
-        pyqDocument.stats.totalFiles++;
-  
-        // Update metadata
-        const updateMeta = (arr: string[], value: string) => {
-          if (value !== 'Unknown' && !arr.includes(value)) arr.push(value);
-        };
-  
-        updateMeta(current.meta.years, paper.year);
-        updateMeta(current.meta.branches, paper.branch);
-        updateMeta(current.meta.examTypes, paper.examType);
-        updateMeta(current.meta.semesters, paper.semester);
-  
-        // Propagate metadata to root
-        updateMeta(pyqDocument.meta.years, paper.year);
-        updateMeta(pyqDocument.meta.branches, paper.branch);
-        updateMeta(pyqDocument.meta.examTypes, paper.examType);
-        updateMeta(pyqDocument.meta.semesters, paper.semester);
-      }
-  
-      current = current.children[sanitizedPart];
+      };
+
+      const deltaFiles = nodeType === 'file' ? 1 : 0;
+      const deltaDirectories = nodeType === 'directory' ? 1 : 0;
+      propagateStats(current, deltaFiles, deltaDirectories);
     }
+
+    if (isLast && !paper.isDirectory) {
+      current.children[sanitizedPart].metadata = paper;
+
+      // Update metadata arrays
+      const updateMeta = (arr: string[], value: string) => {
+        if (value !== 'Unknown' && !arr.includes(value)) arr.push(value);
+      };
+
+      const currentNode = current.children[sanitizedPart];
+      
+      // Update current node's metadata
+      updateMeta(currentNode.meta.years, paper.year);
+      updateMeta(currentNode.meta.branches, paper.branch);
+      updateMeta(currentNode.meta.examTypes, paper.examType);
+      updateMeta(currentNode.meta.semesters, paper.semester);
+
+      // Propagate metadata up the hierarchy
+      let node: DirectoryNode | undefined = current;
+      while (node) {
+        updateMeta(node.meta.years, paper.year);
+        updateMeta(node.meta.branches, paper.branch);
+        updateMeta(node.meta.examTypes, paper.examType);
+        updateMeta(node.meta.semesters, paper.semester);
+        node = node.parent;
+      }
+    }
+
+    current = current.children[sanitizedPart];
+  }
 }
 
 function sanitizeKey(key: string): string {
@@ -508,24 +528,13 @@ async function connectToMongoDB() {
 }
 
 function cleanStructure(node: DirectoryNode): CleanNode {
-  const cleanNode: CleanNode = {
-    name: node.name,
-    path: node.path,
-    type: node.type,
-    stats: node.stats,
-    children: {},
-    meta: node.meta
+  const { parent, children, ...rest } = node;
+  return {
+    ...rest,
+    children: Object.fromEntries(
+      Object.entries(children).map(([key, child]) => [key, cleanStructure(child)])
+    )
   };
-
-  if (node.metadata) {
-    cleanNode.metadata = node.metadata;
-  }
-
-  for (const [key, child] of Object.entries(node.children)) {
-    cleanNode.children[key] = cleanStructure(child);
-  }
-
-  return cleanNode;
 }
 
 async function crawl() {
@@ -538,7 +547,7 @@ async function crawl() {
       path: BASE_URL,
       type: 'directory',
       children: {},
-      stats: { totalFiles: 0, totalDirectories: 1 },
+      stats: { totalFiles: 0, totalDirectories: 0 },
       meta: {
         years: [],
         branches: [],
@@ -551,47 +560,48 @@ async function crawl() {
     await crawlDirectory(structure, BASE_URL);
 
     // Delete existing documents
-    log('METADATA', 'Deleted existing documents');
     await PYQModel.deleteMany({});
+    log('METADATA', 'Deleted existing documents');
 
-    // Save new document
+    // Clean and save the structure
+    const cleanedStructure = cleanStructure(structure);
     const result = await PYQModel.create({
-      structure: cleanStructure(structure),
-      meta: {
-        years: [...new Set(pyqDocument.meta.years)],
-        branches: [...new Set(pyqDocument.meta.branches)],
-        examTypes: [...new Set(pyqDocument.meta.examTypes)],
-        semesters: [...new Set(pyqDocument.meta.semesters)]
-      },
-      stats: pyqDocument.stats,
+      structure: cleanedStructure,
+      meta: structure.meta,
+      stats: structure.stats,
       lastUpdated: new Date()
     });
 
     log('METADATA', 'Document created with ID:', result._id);
 
-    const savedDoc = await PYQModel.findById(result._id).lean();
-
-    if (!savedDoc || Array.isArray(savedDoc)) {
+    // Verify the saved document
+    const savedDoc = await PYQModel.findById(result._id).lean() as unknown as {
+      _id: string;
+      structure: DirectoryStructure;
+      stats: DirectoryStats;
+      meta: DirectoryMeta;
+      lastUpdated: Date;
+    };
+    
+    if (!savedDoc) {
       throw new Error('Failed to verify saved document');
     }
-    
-    const typedDoc = savedDoc as unknown as PYQDocument & { __v?: number };
 
     log('METADATA', 'Document saved successfully:', {
-      id: typedDoc._id,
-      stats: typedDoc.stats,
+      id: savedDoc._id,
+      stats: savedDoc.stats,
       metaCounts: {
-        years: typedDoc.meta.years.length,
-        branches: typedDoc.meta.branches.length,
-        examTypes: typedDoc.meta.examTypes.length,
-        semesters: typedDoc.meta.semesters.length
+        years: savedDoc.meta.years.length,
+        branches: savedDoc.meta.branches.length,
+        examTypes: savedDoc.meta.examTypes.length,
+        semesters: savedDoc.meta.semesters.length
       },
       structureStats: {
-        hasRoot: typedDoc.structure?.name != null,
-        rootStats: typedDoc.structure?.stats || { totalFiles: 0, totalDirectories: 0 },
-        childrenCount: Object.keys(typedDoc.structure?.children || {}).length
+        hasRoot: savedDoc.structure?.name != null,
+        rootStats: savedDoc.structure?.stats,
+        childrenCount: Object.keys(savedDoc.structure?.children || {}).length
       },
-      lastUpdated: typedDoc.lastUpdated
+      lastUpdated: savedDoc.lastUpdated
     });
 
   } catch (error) {

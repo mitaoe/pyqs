@@ -24,8 +24,9 @@ export interface DirectoryNode {
   name: string;
   path: string;
   type: 'file' | 'directory';
-  stats: DirectoryStats;
+  parent?: DirectoryNode;
   children: Record<string, DirectoryNode>;
+  stats: DirectoryStats;
   metadata?: Paper;
   meta: DirectoryMeta;
 }
@@ -46,7 +47,7 @@ export interface SavedDocument {
 }
 
 export type CleanNode = Omit<DirectoryNode, 'parent'> & {
-  children?: Record<string, CleanNode>;
+  children: Record<string, CleanNode>;
 };
 
 export interface FilterOption {
