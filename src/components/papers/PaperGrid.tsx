@@ -20,11 +20,11 @@ export default function PaperGrid({ papers, isLoading = false }: PaperGridProps)
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {[...Array(6)].map((_, index) => (
           <div
             key={`loading-skeleton-${index}`}
-            className="h-48 animate-pulse rounded-lg border bg-gray-100"
+            className="h-[200px] animate-pulse rounded-lg border border-accent/20 bg-accent/5"
           />
         ))}
       </div>
@@ -33,14 +33,14 @@ export default function PaperGrid({ papers, isLoading = false }: PaperGridProps)
 
   if (uniquePapers.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">No papers found.</p>
+      <div className="rounded-lg border border-accent bg-secondary p-8 text-center">
+        <p className="text-content/60">No papers found.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {uniquePapers.map((paper) => (
         <PaperCard 
           key={paper._id || `${paper.url}-${paper.fileName}`}
