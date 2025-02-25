@@ -12,9 +12,9 @@ export default function PaperGrid({ papers, isLoading = false }: PaperGridProps)
   if (isLoading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {[...new Array(6)].map((_, index) => (
           <div
-            key={`skeleton-${i}`}
+            key={`loading-skeleton-${index}`}
             className="h-48 animate-pulse rounded-lg border bg-gray-100"
           />
         ))}
@@ -33,7 +33,10 @@ export default function PaperGrid({ papers, isLoading = false }: PaperGridProps)
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {papers.map((paper) => (
-        <PaperCard key={paper._id} {...paper} />
+        <PaperCard 
+          key={`${paper._id}-${paper.fileName}`} 
+          {...paper} 
+        />
       ))}
     </div>
   );

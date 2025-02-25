@@ -40,28 +40,40 @@ export function PaperProvider({ children }: PaperProviderProps) {
 
   const fetchData = async (force = false) => {
     try {
-      // Check cache first
+      // Check cache first if not forcing refresh
       if (!force && typeof window !== 'undefined') {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const { data, timestamp } = JSON.parse(cached);
-          const age = Date.now() - timestamp;
-          
-          if (age < CACHE_DURATION) {
-            setStructure(data.structure);
-            setMeta(data.meta);
-            setLastUpdated(new Date(data.lastUpdated));
-            setIsLoading(false);
-            return;
+        try {
+          const cached = localStorage.getItem(CACHE_KEY);
+          if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            const age = Date.now() - timestamp;
+            
+            if (age < CACHE_DURATION) {
+              setStructure(data.structure);
+              setMeta(data.meta);
+              setLastUpdated(new Date(data.lastUpdated));
+              setIsLoading(false);
+              return;
+            }
           }
+        } catch (e) {
+          console.warn('Failed to read from cache:', e);
         }
       }
 
       const response = await fetch('/api/papers');
-      if (!response.ok) throw new Error('Failed to fetch papers');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch papers');
+      }
       
       const data = await response.json();
       
+      if (!data.structure || !data.meta) {
+        throw new Error('Invalid data format received from server');
+      }
+
       // Update state
       setStructure(data.structure);
       setMeta(data.meta);
@@ -70,14 +82,23 @@ export function PaperProvider({ children }: PaperProviderProps) {
 
       // Cache the response
       if (typeof window !== 'undefined') {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-          data,
-          timestamp: Date.now()
-        }));
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            data,
+            timestamp: Date.now()
+          }));
+        } catch (e) {
+          console.warn('Failed to write to cache:', e);
+        }
       }
 
     } catch (err) {
+      console.error('Error fetching papers:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
+      // Clear invalid data
+      setStructure(null);
+      setMeta(null);
+      setLastUpdated(null);
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +110,7 @@ export function PaperProvider({ children }: PaperProviderProps) {
 
   const refreshData = async () => {
     setIsLoading(true);
-    await fetchData(true); // Force refresh
+    await fetchData(true);
   };
 
   const value = {
