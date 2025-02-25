@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import type { Paper } from '@/types/paper';
 import { DownloadIcon } from '@/components/ui/icons';
+import { downloadFile } from '@/utils/download';
 
 type PaperCardProps = Pick<Paper, 'year' | 'branch' | 'semester' | 'examType' | 'fileName' | 'url'>;
 
@@ -11,6 +13,20 @@ export default function PaperCard({
   fileName,
   url,
 }: PaperCardProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      await downloadFile(url, fileName);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="group relative rounded-lg border border-accent bg-secondary p-4 transition-all hover:border-accent/80">
       <div className="mb-4">
@@ -39,15 +55,14 @@ export default function PaperCard({
         )}
       </div>
 
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40"
+      <button
+        onClick={handleDownload}
+        disabled={isDownloading}
+        className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <DownloadIcon className="h-4 w-4" />
-        <span>Download</span>
-      </a>
+        <DownloadIcon className={`h-4 w-4 ${isDownloading ? 'animate-spin' : ''}`} />
+        <span>{isDownloading ? 'Downloading...' : 'Download'}</span>
+      </button>
     </div>
   );
 } 

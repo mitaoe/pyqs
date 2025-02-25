@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Toaster } from 'sonner';
 import Header from './Header';
 import Footer from './Footer';
 
@@ -18,6 +19,12 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </main>
       <Footer />
+      <Toaster 
+        position="bottom-right"
+        theme="dark"
+        closeButton
+        richColors
+      />
     </div>
   );
 } 
