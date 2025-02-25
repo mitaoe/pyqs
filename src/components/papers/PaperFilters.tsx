@@ -29,17 +29,22 @@ export default function PaperFilters({
   onSemesterChange,
   onExamTypeChange,
 }: PaperFiltersProps) {
+  const selectClasses = "w-full rounded-lg border border-accent bg-secondary px-3 py-2 text-sm text-content transition-colors hover:border-accent/80 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent";
+  const labelClasses = "block text-sm font-medium text-content/80 mb-1.5";
+
   return (
-    <div className="space-y-4 rounded-lg border bg-white p-4">
-      <h3 className="font-medium text-gray-900">Filters</h3>
+    <div className="rounded-lg border border-accent bg-secondary">
+      <div className="border-b border-accent px-4 py-3">
+        <h3 className="font-medium text-content">Filter Papers</h3>
+      </div>
       
-      <div className="space-y-3">
+      <div className="space-y-4 p-4">
         <div>
-          <label className="text-sm font-medium text-gray-700">Year</label>
+          <label className={labelClasses}>Academic Year</label>
           <select
             value={selectedYear}
             onChange={(e) => onYearChange(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
+            className={selectClasses}
           >
             <option value="">All Years</option>
             {years.map((year) => (
@@ -51,11 +56,11 @@ export default function PaperFilters({
         </div>
 
         <div>
-          <label className="text-sm font-medium text-gray-700">Branch</label>
+          <label className={labelClasses}>Branch</label>
           <select
             value={selectedBranch}
             onChange={(e) => onBranchChange(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
+            className={selectClasses}
           >
             <option value="">All Branches</option>
             {branches.map((branch) => (
@@ -67,11 +72,11 @@ export default function PaperFilters({
         </div>
 
         <div>
-          <label className="text-sm font-medium text-gray-700">Semester</label>
+          <label className={labelClasses}>Semester</label>
           <select
             value={selectedSemester}
             onChange={(e) => onSemesterChange(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
+            className={selectClasses}
           >
             <option value="">All Semesters</option>
             {semesters.map((semester) => (
@@ -83,11 +88,11 @@ export default function PaperFilters({
         </div>
 
         <div>
-          <label className="text-sm font-medium text-gray-700">Exam Type</label>
+          <label className={labelClasses}>Exam Type</label>
           <select
             value={selectedExamType}
             onChange={(e) => onExamTypeChange(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
+            className={selectClasses}
           >
             <option value="">All Exam Types</option>
             {examTypes.map((type) => (
