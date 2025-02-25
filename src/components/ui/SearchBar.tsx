@@ -1,23 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface SearchBarProps {
+  value: string;
   onSearch: (query: string) => void;
   placeholder?: string;
 }
 
 export default function SearchBar({ 
+  value,
   onSearch, 
   placeholder = "Search papers..." 
 }: SearchBarProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(value);
+
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      onSearch(query);
+      if (query !== value) {
+        onSearch(query);
+      }
     }, 300); // Debounce for 300ms
 
     return () => clearTimeout(timer);
-  }, [query, onSearch]);
+  }, [query, value, onSearch]);
 
   return (
     <div className="relative w-full max-w-2xl">

@@ -1,30 +1,33 @@
-interface FilterOption {
-  label: string;
-  value: string;
-}
+import type { FilterOption } from '@/utils/search';
 
 interface PaperFiltersProps {
   years: FilterOption[];
   branches: FilterOption[];
   semesters: FilterOption[];
+  examTypes: FilterOption[];
   selectedYear: string;
   selectedBranch: string;
   selectedSemester: string;
+  selectedExamType: string;
   onYearChange: (year: string) => void;
   onBranchChange: (branch: string) => void;
   onSemesterChange: (semester: string) => void;
+  onExamTypeChange: (examType: string) => void;
 }
 
 export default function PaperFilters({
   years,
   branches,
   semesters,
+  examTypes,
   selectedYear,
   selectedBranch,
   selectedSemester,
+  selectedExamType,
   onYearChange,
   onBranchChange,
   onSemesterChange,
+  onExamTypeChange,
 }: PaperFiltersProps) {
   return (
     <div className="space-y-4 rounded-lg border bg-white p-4">
@@ -74,6 +77,22 @@ export default function PaperFilters({
             {semesters.map((semester) => (
               <option key={semester.value} value={semester.value}>
                 {semester.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-gray-700">Exam Type</label>
+          <select
+            value={selectedExamType}
+            onChange={(e) => onExamTypeChange(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
+          >
+            <option value="">All Exam Types</option>
+            {examTypes.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
               </option>
             ))}
           </select>
