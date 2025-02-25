@@ -138,22 +138,31 @@ export function searchPapers(node: DirectoryNode, filters: SearchFilters): Searc
 }
 
 export function getFilterOptions(meta: DirectoryMeta) {
+  // Filter standard values based on what's available in meta
   return {
-    years: Object.values(STANDARD_VALUES.YEARS).map(year => ({
-      label: year,
-      value: year
-    })),
-    branches: Object.values(STANDARD_VALUES.BRANCHES).map(branch => ({
-      label: branch,
-      value: branch
-    })),
-    semesters: Object.values(STANDARD_VALUES.SEMESTERS).map(sem => ({
-      label: sem,
-      value: sem
-    })),
-    examTypes: Object.values(STANDARD_VALUES.EXAM_TYPES).map(type => ({
-      label: type,
-      value: type
-    }))
+    years: Object.values(STANDARD_VALUES.YEARS)
+      .filter(year => meta.years.includes(year))
+      .map(year => ({
+        label: year,
+        value: year
+      })),
+    branches: Object.values(STANDARD_VALUES.BRANCHES)
+      .filter(branch => meta.branches.includes(branch))
+      .map(branch => ({
+        label: branch,
+        value: branch
+      })),
+    semesters: Object.values(STANDARD_VALUES.SEMESTERS)
+      .filter(sem => meta.semesters.includes(sem))
+      .map(sem => ({
+        label: sem,
+        value: sem
+      })),
+    examTypes: Object.values(STANDARD_VALUES.EXAM_TYPES)
+      .filter(type => meta.examTypes.includes(type))
+      .map(type => ({
+        label: type,
+        value: type
+      }))
   };
 } 

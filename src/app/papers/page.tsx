@@ -10,6 +10,7 @@ import Pagination from '@/components/ui/Pagination';
 import { usePapers } from '@/contexts/PaperContext';
 import { searchPapers, getFilterOptions, type SearchFilters } from '@/utils/search';
 import type { DBPaper } from '@/types/paper';
+import { Suspense } from 'react';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -189,7 +190,9 @@ function SearchLoadingFallback() {
 export default function SearchPage() {
   return (
     <Layout>
-      <SearchContent />
+      <Suspense fallback={<SearchLoadingFallback />}>
+        <SearchContent />
+      </Suspense>
     </Layout>
   );
 } 

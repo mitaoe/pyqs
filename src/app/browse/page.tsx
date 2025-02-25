@@ -38,8 +38,6 @@ function BrowseContent() {
       
       if (!node && currentPath) {
         toast.error('Directory not found');
-      } else if (node && currentPath) {
-        const parts = currentPath.split('/').filter(Boolean);
       }
     }
   }, [structure, currentPath]);
