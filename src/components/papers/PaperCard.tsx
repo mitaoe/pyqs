@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import type { Paper } from '@/types/paper';
+import { DownloadIcon } from '@/components/ui/icons';
+import { downloadFile } from '@/utils/download';
 
 type PaperCardProps = Pick<Paper, 'year' | 'branch' | 'semester' | 'examType' | 'fileName' | 'url'>;
 
@@ -10,42 +13,56 @@ export default function PaperCard({
   fileName,
   url,
 }: PaperCardProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      await downloadFile(url, fileName);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm transition-all hover:shadow-md">
+    <div className="group relative rounded-lg border border-accent bg-secondary p-4 transition-all hover:border-accent/80">
       <div className="mb-4">
-        <h3 className="font-medium text-gray-900">{fileName}</h3>
-        <p className="text-sm text-gray-500">{year}</p>
+        <h3 className="font-medium text-content">{fileName}</h3>
+        <p className="mt-1 text-sm text-content/60">{year}</p>
       </div>
       
       <div className="mb-4 grid grid-cols-2 gap-2 text-sm">
         {branch && (
           <div>
-            <span className="text-gray-500">Branch:</span>
-            <span className="ml-1 font-medium">{branch}</span>
+            <span className="text-content/60">Branch:</span>
+            <span className="ml-1 text-content">{branch}</span>
           </div>
         )}
         {semester && (
           <div>
-            <span className="text-gray-500">Semester:</span>
-            <span className="ml-1 font-medium">{semester}</span>
+            <span className="text-content/60">Semester:</span>
+            <span className="ml-1 text-content">{semester}</span>
           </div>
         )}
         {examType && (
           <div>
-            <span className="text-gray-500">Exam:</span>
-            <span className="ml-1 font-medium">{examType}</span>
+            <span className="text-content/60">Exam:</span>
+            <span className="ml-1 text-content">{examType}</span>
           </div>
         )}
       </div>
 
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+      <button
+        onClick={handleDownload}
+        disabled={isDownloading}
+        className="inline-flex items-center gap-2 rounded-md bg-accent/90 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent hover:shadow-accent/25 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        View Paper
-      </a>
+        <DownloadIcon className={`h-4 w-4 ${isDownloading ? 'animate-spin' : ''}`} />
+        <span>{isDownloading ? 'Downloading...' : 'Download'}</span>
+      </button>
     </div>
   );
 } 

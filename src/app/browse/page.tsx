@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import Layout from '@/components/layout/Layout';
 import DirectoryBrowser from '@/components/directory/DirectoryBrowser';
 import { usePapers } from '@/contexts/PaperContext';
@@ -32,16 +33,23 @@ function BrowseContent() {
 
   useEffect(() => {
     if (structure) {
-      setCurrentNode(getCurrentNode(structure, currentPath));
+      const node = getCurrentNode(structure, currentPath);
+      setCurrentNode(node);
+      
+      if (!node && currentPath) {
+        toast.error('Directory not found');
+      }
     }
   }, [structure, currentPath]);
 
   const handleNavigate = (path: string) => {
     if (path === '../') {
       const parts = currentPath.split('/').filter(Boolean);
+      const parentName = parts[parts.length - 2] || 'root';
       parts.pop();
       const newPath = parts.join('/');
       router.push(`/browse${newPath ? `?path=${newPath}` : ''}`);
+      toast.info(`Navigated back to ${parentName}`);
     } else {
       router.push(`/browse?path=${path}`);
     }
@@ -56,6 +64,7 @@ function BrowseContent() {
   }
 
   if (error) {
+    toast.error(error.message);
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-red-500">
         {error.message}

@@ -18,7 +18,6 @@ let cached: MongooseCache = {
 
 async function dbConnect() {
   if (cached.conn) {
-    console.log('Using cached database connection');
     return cached.conn;
   }
 
@@ -26,31 +25,23 @@ async function dbConnect() {
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-      family: 4,
-      retryWrites: true,
-      retryReads: true
+      family: 4
     };
 
-    const [host] = MONGODB_URI.split('@').slice(-1);
-    console.log('Connecting to MongoDB...', host);
-
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      console.log('Connected to MongoDB successfully');
       return mongoose;
     });
   }
 
   try {
     cached.conn = await cached.promise;
+    return cached.conn;
   } catch (e) {
     cached.promise = null;
-    console.error('MongoDB connection error:', e);
     throw e;
   }
-
-  return cached.conn;
 }
 
 // Add disconnect function for cleanup
@@ -65,4 +56,5 @@ async function dbDisconnect() {
   }
 }
 
-export { dbConnect as default, dbDisconnect }; 
+export default dbConnect;
+export { dbDisconnect }; 
