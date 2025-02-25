@@ -13,6 +13,8 @@ export interface SearchFilters {
   branch?: string;
   semester?: string;
   examType?: string;
+  page?: number;
+  perPage?: number;
 }
 
 export interface FilterOption {
@@ -20,8 +22,17 @@ export interface FilterOption {
   value: string;
 }
 
-export function searchPapers(node: DirectoryNode, filters: SearchFilters): Paper[] {
+export interface SearchResults {
+  papers: Paper[];
+  totalPages: number;
+  currentPage: number;
+  totalItems: number;
+}
+
+export function searchPapers(node: DirectoryNode, filters: SearchFilters): SearchResults {
   const results: Paper[] = [];
+  const page = filters.page || 1;
+  const perPage = filters.perPage || 12;
   
   function traverse(node: DirectoryNode) {
     if (node.type === 'file' && node.metadata) {
@@ -68,7 +79,25 @@ export function searchPapers(node: DirectoryNode, filters: SearchFilters): Paper
   }
 
   traverse(node);
-  return results;
+
+  // Sort results by year (descending) and filename
+  results.sort((a, b) => {
+    const yearDiff = b.year.localeCompare(a.year);
+    return yearDiff !== 0 ? yearDiff : a.fileName.localeCompare(b.fileName);
+  });
+
+  // Calculate pagination
+  const totalItems = results.length;
+  const totalPages = Math.ceil(totalItems / perPage);
+  const startIndex = (page - 1) * perPage;
+  const paginatedResults = results.slice(startIndex, startIndex + perPage);
+
+  return {
+    papers: paginatedResults,
+    totalPages,
+    currentPage: page,
+    totalItems
+  };
 }
 
 export function getFilterOptions(meta: DirectoryMeta) {
