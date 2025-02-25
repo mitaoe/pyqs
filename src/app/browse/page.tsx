@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import DirectoryBrowser from '@/components/directory/DirectoryBrowser';
@@ -80,7 +80,6 @@ function BrowseContent() {
 
   return (
     <div className="space-y-6">
-
       <DirectoryBrowser
         items={items}
         currentPath={currentPath}
@@ -91,10 +90,20 @@ function BrowseContent() {
   );
 }
 
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-content/60">Loading directory...</div>
+    </div>
+  );
+}
+
 export default function BrowsePage() {
   return (
     <Layout>
-      <BrowseContent />
+      <Suspense fallback={<LoadingFallback />}>
+        <BrowseContent />
+      </Suspense>
     </Layout>
   );
 } 
