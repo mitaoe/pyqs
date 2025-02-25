@@ -1,4 +1,5 @@
 import type { DirectoryNode, Paper, DirectoryMeta } from '@/types/paper';
+import { toast } from 'sonner';
 import { 
   STANDARD_VALUES,
   branchMappings, 
@@ -98,11 +99,35 @@ export function searchPapers(node: DirectoryNode, filters: SearchFilters): Searc
     return yearDiff !== 0 ? yearDiff : a.fileName.localeCompare(b.fileName);
   });
 
-  // Calculate pagination
   const totalItems = results.length;
   const totalPages = Math.ceil(totalItems / perPage);
   const startIndex = (page - 1) * perPage;
   const paginatedResults = results.slice(startIndex, startIndex + perPage);
+
+  // Show toast for search results
+  if (filters.query) {
+    if (totalItems === 0) {
+      toast.error(`No papers found for "${filters.query}"`);
+    } else {
+      toast.success(`Found ${totalItems} paper${totalItems === 1 ? '' : 's'}`);
+    }
+  }
+
+  // Show toast for filter changes
+  const activeFilters = [
+    filters.branch && `Branch: ${filters.branch}`,
+    filters.year && `Year: ${filters.year}`,
+    filters.semester && `Semester: ${filters.semester}`,
+    filters.examType && `Exam: ${filters.examType}`
+  ].filter(Boolean);
+
+  if (activeFilters.length > 0 && !filters.query) {
+    if (totalItems === 0) {
+      toast.error('No papers match the selected filters');
+    } else {
+      toast.success(`Found ${totalItems} paper${totalItems === 1 ? '' : 's'} matching your filters`);
+    }
+  }
 
   return {
     papers: paginatedResults,

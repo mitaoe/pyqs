@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import type { DirectoryStructure, DirectoryMeta } from '@/types/paper';
 import { STANDARD_VALUES } from '@/config/mappings';
 
@@ -59,7 +60,12 @@ export function PaperProvider({ children }: PaperProviderProps) {
           }
         } catch (e) {
           console.warn('Failed to read from cache:', e);
+          toast.error('Failed to load cached data');
         }
+      }
+
+      if (force) {
+        toast.loading('Refreshing papers...');
       }
 
       const response = await fetch('/api/papers');
@@ -90,7 +96,12 @@ export function PaperProvider({ children }: PaperProviderProps) {
           }));
         } catch (e) {
           console.warn('Failed to write to cache:', e);
+          toast.error('Failed to cache data locally');
         }
+      }
+
+      if (force) {
+        toast.success('Papers refreshed successfully!');
       }
 
     } catch (err) {
@@ -100,9 +111,22 @@ export function PaperProvider({ children }: PaperProviderProps) {
       setStructure(null);
       setMeta(null);
       setLastUpdated(null);
+
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to fetch papers'
+      );
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const refreshData = async () => {
+    const promise = fetchData(true);
+    toast.promise(promise, {
+      loading: 'Refreshing papers...',
+      success: 'Papers refreshed successfully!',
+      error: 'Failed to refresh papers'
+    });
   };
 
   useEffect(() => {
@@ -112,11 +136,6 @@ export function PaperProvider({ children }: PaperProviderProps) {
       isMounted.current = false;
     };
   }, []);
-
-  const refreshData = async () => {
-    setIsLoading(true);
-    await fetchData(true);
-  };
 
   const value = {
     structure,
