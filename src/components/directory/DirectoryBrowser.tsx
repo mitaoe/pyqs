@@ -159,7 +159,7 @@ export default function DirectoryBrowser({
                   <button
                     onClick={() => handleDownload(item.metadata!.url, item.metadata!.fileName)}
                     disabled={downloadingFile === item.metadata.fileName}
-                    className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-md bg-accent/90 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent hover:shadow-accent/25 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <DownloadIcon className={`h-4 w-4 ${downloadingFile === item.metadata.fileName ? 'animate-spin' : ''}`} />
                     <span>{downloadingFile === item.metadata.fileName ? 'Downloading...' : 'Download'}</span>

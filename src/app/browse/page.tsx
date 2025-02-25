@@ -40,7 +40,6 @@ function BrowseContent() {
         toast.error('Directory not found');
       } else if (node && currentPath) {
         const parts = currentPath.split('/').filter(Boolean);
-        toast.success(`Navigated to ${parts[parts.length - 1]}`);
       }
     }
   }, [structure, currentPath]);
