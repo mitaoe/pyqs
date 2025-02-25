@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import PYQ from '@/models/Paper';
+import type { SavedDocument } from '@/types/paper';
 
 export async function GET() {
   try {
     await dbConnect();
 
-    const doc = await PYQ.findOne().sort({ lastUpdated: -1 }).lean();
+    const doc = await PYQ.findOne().sort({ lastUpdated: -1 }).lean() as SavedDocument | null;
     if (!doc) {
       return NextResponse.json(
         { error: 'No paper data found' },
