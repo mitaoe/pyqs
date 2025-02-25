@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import type { DirectoryStructure } from '@/types/paper';
+import type { DirectoryStructure, DirectoryMeta, DirectoryStats } from '@/types/paper';
 
 const DirectoryNodeSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -64,17 +64,9 @@ PYQSchema.index({
 
 export interface PYQDocument extends mongoose.Document {
   lastUpdated: Date;
-  stats: {
-    totalFiles: number;
-    totalDirectories: number;
-  };
+  stats: DirectoryStats;
   structure: DirectoryStructure;
-  meta: {
-    years: string[];
-    branches: string[];
-    examTypes: string[];
-    semesters: string[];
-  };
+  meta: DirectoryMeta;
 }
 
 const PYQ = mongoose.models.PYQ || mongoose.model<PYQDocument>('PYQ', PYQSchema);

@@ -35,22 +35,19 @@ export interface DirectoryNode {
   meta: DirectoryMeta;
 }
 
-export interface SavedDocument {
-  _id: string;
-  structure: DirectoryNode;
-  stats: DirectoryStats;
-  meta: {
-    years: string[];
-    branches: string[];
-    examTypes: string[];
-    semesters: string[];
-  };
-  lastUpdated: Date;
-}
-
 export type CleanNode = Omit<DirectoryNode, 'parent'> & {
   children: Record<string, CleanNode>;
 };
+
+export type DirectoryStructure = DirectoryNode;
+
+export interface SavedDocument {
+  _id: string;
+  structure: DirectoryStructure;
+  stats: DirectoryStats;
+  meta: DirectoryMeta;
+  lastUpdated: Date;
+}
 
 export interface FilterOption {
   label: string;
