@@ -29,20 +29,31 @@ export interface SearchResults {
   totalItems: number;
 }
 
+function standardizeValue(value: string, mappings: Record<string, string>): string {
+  return mappings[value.toUpperCase()] || value;
+}
+
 export function searchPapers(node: DirectoryNode, filters: SearchFilters): SearchResults {
   const results: Paper[] = [];
   const page = filters.page || 1;
   const perPage = filters.perPage || 12;
+  const seenPaths = new Set<string>(); // Track unique papers
   
   function traverse(node: DirectoryNode) {
     if (node.type === 'file' && node.metadata) {
       const metadata = node.metadata;
       
+      // Skip if we've already seen this paper (avoid duplicates)
+      if (seenPaths.has(node.path)) {
+        return;
+      }
+      seenPaths.add(node.path);
+      
       // Standardize values for comparison
-      const standardBranch = branchMappings[metadata.branch.toUpperCase()] || metadata.branch;
-      const standardYear = yearMappings[metadata.year.toUpperCase()] || metadata.year;
-      const standardExam = examMappings[metadata.examType.toUpperCase()] || metadata.examType;
-      const standardSem = semesterMappings[metadata.semester.toUpperCase()] || metadata.semester;
+      const standardBranch = standardizeValue(metadata.branch, branchMappings);
+      const standardYear = standardizeValue(metadata.year, yearMappings);
+      const standardExam = standardizeValue(metadata.examType, examMappings);
+      const standardSem = standardizeValue(metadata.semester, semesterMappings);
 
       // Apply filters
       const matchesBranch = !filters.branch || standardBranch === filters.branch;
@@ -51,14 +62,15 @@ export function searchPapers(node: DirectoryNode, filters: SearchFilters): Searc
       const matchesSem = !filters.semester || standardSem === filters.semester;
       
       // Full text search
-      const matchesQuery = !filters.query || [
+      const searchQuery = filters.query?.toLowerCase() || '';
+      const matchesQuery = !searchQuery || [
         metadata.fileName,
-        metadata.branch,
-        metadata.year,
-        metadata.semester,
-        metadata.examType
+        standardBranch,
+        standardYear,
+        standardSem,
+        standardExam
       ].some(field => 
-        field.toLowerCase().includes(filters.query!.toLowerCase())
+        field.toLowerCase().includes(searchQuery)
       );
 
       if (matchesBranch && matchesYear && matchesExam && matchesSem && matchesQuery) {

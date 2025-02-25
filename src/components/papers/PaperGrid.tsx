@@ -9,10 +9,19 @@ interface PaperGridProps {
 }
 
 export default function PaperGrid({ papers, isLoading = false }: PaperGridProps) {
+  // Remove duplicates based on fileName and url
+  const uniquePapers = papers.reduce((acc: Paper[], paper) => {
+    const exists = acc.some(p => p.fileName === paper.fileName && p.url === paper.url);
+    if (!exists) {
+      acc.push(paper);
+    }
+    return acc;
+  }, []);
+
   if (isLoading) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[...new Array(6)].map((_, index) => (
+        {[...Array(6)].map((_, index) => (
           <div
             key={`loading-skeleton-${index}`}
             className="h-48 animate-pulse rounded-lg border bg-gray-100"
@@ -22,7 +31,7 @@ export default function PaperGrid({ papers, isLoading = false }: PaperGridProps)
     );
   }
 
-  if (papers.length === 0) {
+  if (uniquePapers.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">No papers found.</p>
@@ -32,9 +41,9 @@ export default function PaperGrid({ papers, isLoading = false }: PaperGridProps)
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {papers.map((paper) => (
+      {uniquePapers.map((paper) => (
         <PaperCard 
-          key={`${paper._id}-${paper.fileName}`} 
+          key={paper._id || `${paper.url}-${paper.fileName}`}
           {...paper} 
         />
       ))}

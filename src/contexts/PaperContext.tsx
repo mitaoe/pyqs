@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
 import type { DirectoryStructure, DirectoryMeta } from '@/types/paper';
 import { STANDARD_VALUES } from '@/config/mappings';
 
@@ -37,11 +37,12 @@ export function PaperProvider({ children }: PaperProviderProps) {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const isMounted = useRef(false);
 
   const fetchData = async (force = false) => {
     try {
-      // Check cache first if not forcing refresh
-      if (!force && typeof window !== 'undefined') {
+      // Only check cache if mounted (client-side) and not forcing refresh
+      if (!force && isMounted.current) {
         try {
           const cached = localStorage.getItem(CACHE_KEY);
           if (cached) {
@@ -80,8 +81,8 @@ export function PaperProvider({ children }: PaperProviderProps) {
       setLastUpdated(new Date(data.lastUpdated));
       setError(null);
 
-      // Cache the response
-      if (typeof window !== 'undefined') {
+      // Only cache if mounted (client-side)
+      if (isMounted.current) {
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify({
             data,
@@ -105,7 +106,11 @@ export function PaperProvider({ children }: PaperProviderProps) {
   };
 
   useEffect(() => {
+    isMounted.current = true;
     fetchData();
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   const refreshData = async () => {
