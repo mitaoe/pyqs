@@ -31,11 +31,9 @@ export interface DirectoryNode {
   meta: DirectoryMeta;
 }
 
-export interface DirectoryStructure extends DirectoryNode {}
-
 export interface SavedDocument {
   _id: string;
-  structure: DirectoryStructure;
+  structure: DirectoryNode;
   stats: DirectoryStats;
   meta: {
     years: string[];

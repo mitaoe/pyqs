@@ -23,7 +23,7 @@ if (DEBUG_MODE) {
 }
 
 // Logger function
-function log(level: 'INFO' | 'ERROR' | 'METADATA', message: string, data?: any) {
+function log(level: 'INFO' | 'ERROR' | 'METADATA', message: string, data?: unknown) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] ${level}: ${message}${data ? '\n' + JSON.stringify(data, null, 2) : ''}\n`;
 
@@ -80,8 +80,6 @@ interface DirectoryNode {
   metadata?: Paper;
   meta: DirectoryMeta;
 }
-
-interface DirectoryStructure extends DirectoryNode {}
 
 type CleanNode = Omit<DirectoryNode, 'parent'> & {
   children?: Record<string, CleanNode>;
@@ -257,7 +255,7 @@ function propagateStats(node: DirectoryNode | undefined, deltaFiles: number, del
   }
 }
 
-async function addToStructure(structure: DirectoryStructure, paper: Paper) {
+async function addToStructure(structure: DirectoryNode, paper: Paper) {
   const parts = getPathParts(paper.url);
   let current = structure;
 
@@ -411,7 +409,7 @@ function extractMetadata(path: string, fileName: string): Paper {
   }
 }
 
-async function crawlDirectory(structure: DirectoryStructure, url: string) {
+async function crawlDirectory(structure: DirectoryNode, url: string) {
   const items = await fetchDirectory(url);
   
   for (const item of items) {
@@ -436,7 +434,7 @@ async function connectToMongoDB() {
 }
 
 function cleanStructure(node: DirectoryNode): CleanNode {
-  const { parent, children, ...rest } = node;
+  const { children, ...rest } = node;
   return {
     ...rest,
     children: Object.fromEntries(
@@ -450,7 +448,7 @@ async function crawl() {
     await connectToMongoDB();
     
     // Initialize root structure
-    const structure: DirectoryStructure = {
+    const structure: DirectoryNode = {
       name: 'root',
       path: BASE_URL,
       type: 'directory',
@@ -485,7 +483,7 @@ async function crawl() {
     // Verify the saved document
     const savedDoc = await PYQModel.findById(result._id).lean() as unknown as {
       _id: string;
-      structure: DirectoryStructure;
+      structure: DirectoryNode;
       stats: DirectoryStats;
       meta: DirectoryMeta;
       lastUpdated: Date;
