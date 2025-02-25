@@ -1,21 +1,24 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI as string;
 
-// Define the type for our cached mongoose connection
-type MongooseCache = {
+if (!MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable inside .env');
+}
+
+interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
-};
+}
 
-// Create a module-level cache object
-const cached: MongooseCache = {
+let cached: MongooseCache = {
   conn: null,
   promise: null
 };
 
 async function dbConnect() {
   if (cached.conn) {
+    console.log('Using cached database connection');
     return cached.conn;
   }
 
@@ -25,14 +28,13 @@ async function dbConnect() {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
-      family: 4
+      family: 4,
+      retryWrites: true,
+      retryReads: true
     };
 
-    if (!MONGODB_URI) {
-      throw new Error('MONGODB_URI environment variable is not defined');
-    }
-
-    console.log('Connecting to MongoDB...', MONGODB_URI.split('@')[1]); // Log only the host part for security
+    const [host] = MONGODB_URI.split('@').slice(-1);
+    console.log('Connecting to MongoDB...', host);
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       console.log('Connected to MongoDB successfully');
@@ -51,4 +53,16 @@ async function dbConnect() {
   return cached.conn;
 }
 
-export default dbConnect; 
+// Add disconnect function for cleanup
+async function dbDisconnect() {
+  if (cached.conn) {
+    await cached.conn.disconnect();
+    cached = {
+      conn: null,
+      promise: null
+    };
+    console.log('Disconnected from MongoDB');
+  }
+}
+
+export { dbConnect as default, dbDisconnect }; 

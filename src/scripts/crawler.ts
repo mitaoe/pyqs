@@ -1,48 +1,89 @@
 import mongoose from 'mongoose';
 import * as cheerio from 'cheerio';
+import { branchMappings, yearMappings, examMappings, semesterMappings, subjectBranchMappings } from '@/config/mappings';
+import path from 'path';
+import fs from 'fs';
+import PYQModel from '@/models/Paper';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const BASE_URL = 'http://43.227.20.36:82/DigitalLibrary/Old%20Question%20Papers/B%20Tech%20(Autonomy)/';
 
-// Paper Schema
-const PaperSchema = new mongoose.Schema({
-  fileName: String,
-  downloadUrl: String,
-  originalUrl: { type: String, unique: true },
-  year: String,
-  branch: String,
-  semester: String,
-  examType: String,
-  path: String  // Full path from root
-}, {
-  timestamps: true
-});
+// Parse command line arguments
+const args = process.argv.slice(2);
+const DEBUG_MODE = args.includes('--debug') || args.includes('-d');
 
-// Directory Schema
-const DirectorySchema = new mongoose.Schema({
-  path: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  name: String,
-  parent: String,
-  type: {
-    type: String,
-    enum: ['year', 'academicYear', 'branch', 'exam'],
-    required: true
-  },
-  papers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Paper'
-  }]
-}, {
-  timestamps: true
-});
+// Logger setup
+const LOG_DIR = path.join(process.cwd(), 'logs');
+const ERROR_LOG_FILE = path.join(LOG_DIR, `crawler-errors-${new Date().toISOString().split('T')[0]}.log`);
+const METADATA_LOG_FILE = path.join(LOG_DIR, `crawler-metadata-${new Date().toISOString().split('T')[0]}.log`);
 
-// Create models
-const Paper = mongoose.models.Paper || mongoose.model('Paper', PaperSchema);
-const Directory = mongoose.models.Directory || mongoose.model('Directory', DirectorySchema);
+// Create logs directory if it doesn't exist
+if (DEBUG_MODE) {
+  fs.mkdirSync(LOG_DIR, { recursive: true });
+}
+
+// Logger function
+function log(level: 'INFO' | 'ERROR' | 'METADATA', message: string, data?: unknown) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${level}: ${message}${data ? '\n' + JSON.stringify(data, null, 2) : ''}\n`;
+
+  // Only log errors and metadata to console
+  if (level === 'ERROR') {
+    console.error(logMessage);
+  } else if (level === 'METADATA') {
+    console.log(logMessage);
+  }
+
+  // In debug mode, write to appropriate files
+  if (DEBUG_MODE) {
+    try {
+      if (level === 'ERROR') {
+        fs.appendFileSync(ERROR_LOG_FILE, logMessage);
+      } else if (level === 'METADATA') {
+        fs.appendFileSync(METADATA_LOG_FILE, logMessage);
+      }
+    } catch (err) {
+      console.error('Failed to write to log file:', err);
+    }
+  }
+}
+
+interface Paper {
+  year: string;
+  examType: string;
+  branch: string;
+  semester: string;
+  fileName: string;
+  url: string;
+  isDirectory?: boolean;
+}
+
+interface DirectoryStats {
+  totalFiles: number;
+  totalDirectories: number;
+}
+
+interface DirectoryMeta {
+  years: string[];
+  branches: string[];
+  examTypes: string[];
+  semesters: string[];
+}
+
+interface DirectoryNode {
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  parent?: DirectoryNode;
+  children: Record<string, DirectoryNode>;
+  stats: DirectoryStats;
+  metadata?: Paper;
+  meta: DirectoryMeta;
+}
+
+type CleanNode = Omit<DirectoryNode, 'parent'> & {
+  children?: Record<string, CleanNode>;
+};
 
 interface DirectoryItem {
   name: string;
@@ -50,17 +91,19 @@ interface DirectoryItem {
   path: string;
 }
 
-// Helper function to determine directory type
-function getDirectoryType(path: string, name: string): 'year' | 'academicYear' | 'branch' | 'exam' {
-  if (/^20\d{2}$/.test(name.replace(/\s+/g, ''))) return 'year';
-  if (/^(FY|SY|TY|F Y|S Y|T Y|FIRST YEAR|SECOND YEAR|THIRD YEAR)$/i.test(name)) return 'academicYear';
-  if (/(Chemical|Computer|Civil|ENTC|ETX|IT|Mechanical)/i.test(name)) return 'branch';
-  if (/(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+20\d{2}/i.test(name)) return 'exam';
-  return 'branch'; // default to branch if unsure
+function cleanName(name: string): string {
+  return name.replace(/\s+/g, ' ').trim();
+}
+
+function getPathParts(path: string): string[] {
+    const decodedPath = decodeURIComponent(path);
+    const basePath = '/Old Question Papers/B Tech (Autonomy)/';
+    const parts = decodedPath.split(basePath)[1]?.split('/') || [];
+    return parts.filter(part => part.length > 0).map(cleanName);
 }
 
 async function fetchDirectory(path: string): Promise<DirectoryItem[]> {
-  console.log('\nFetching directory:', path);
+  log('INFO', 'Fetching directory:', path);
   try {
     const response = await fetch(path, {
       headers: {
@@ -73,13 +116,11 @@ async function fetchDirectory(path: string): Promise<DirectoryItem[]> {
     }
 
     const html = await response.text();
-    console.log('Received HTML length:', html.length);
-    
     const items = parseDirectoryListing(html, path);
-    console.log(`Found ${items.length} items:`, items.map(i => i.name).join(', '));
+    log('INFO', `Found ${items.length} items in ${path}`);
     return items;
   } catch (error) {
-    console.error(`Failed to fetch directory ${path}:`, error);
+    log('ERROR', `Failed to fetch directory ${path}:`, error);
     return [];
   }
 }
@@ -88,36 +129,22 @@ function parseDirectoryListing(html: string, currentPath: string): DirectoryItem
   const items: DirectoryItem[] = [];
   const $ = cheerio.load(html);
 
-  console.log('\nParsing directory listing...');
-
-  // Find all links in the directory listing
   $('a').each((_, link) => {
     const $link = $(link);
     const href = $link.attr('href');
     const name = $link.text().trim();
 
-    // Skip parent directory link
     if (name === '[To Parent Directory]' || !href) {
       return;
     }
 
-    console.log('\nProcessing link:', { name, href });
-
-    // Check if it's a directory (ends with /)
     if (href.endsWith('/')) {
-      // Clean up directory name (remove spaces between digits)
-      const cleanName = name.replace(/\s+/g, '');
-      console.log('Found directory:', cleanName);
-      
       items.push({
-        name: cleanName,
+        name: name,
         isDirectory: true,
         path: new URL(href, currentPath).href
       });
-    }
-    // Check if it's a PDF file
-    else if (href.endsWith('.pdf')) {
-      console.log('Found file:', name);
+    } else if (href.endsWith('.pdf')) {
       items.push({
         name,
         isDirectory: false,
@@ -126,205 +153,370 @@ function parseDirectoryListing(html: string, currentPath: string): DirectoryItem
     }
   });
 
-  console.log(`\nFound ${items.length} valid items`);
-  items.forEach(item => console.log(`- ${item.isDirectory ? 'DIR' : 'FILE'}: ${item.name}`));
-
   return items;
 }
 
-async function crawlDirectory(path: string, parentPath: string = '', depth: number = 0): Promise<void> {
-  const indent = '  '.repeat(depth);
-  console.log(`${indent}Crawling directory:`, path);
+function extractYear(path: string, fileName: string): string {
+  // First try to extract year from the path
+  const pathYearMatch = path.match(/\/2\s*0\s*(\d\s*\d)/);
+  if (pathYearMatch) {
+    const year = pathYearMatch[0].replace(/\s+/g, '').slice(1); // Remove leading slash and spaces
+    if (year >= '2000' && year <= '2025') {
+      return year;
+    }
+  }
+
+  // Then try to extract year from the filename
+  const fileYearMatch = fileName.match(/20\d{2}/);
+  if (fileYearMatch) {
+    const year = fileYearMatch[0];
+    if (year >= '2000' && year <= '2025') {
+      return year;
+    }
+  }
+
+  // Check for academic year patterns
+  const academicYearMatch = fileName.match(/^[SF]\.?Y\.?|FIRST[\s_-]YEAR|SECOND[\s_-]YEAR/i);
+  if (academicYearMatch) {
+    const match = academicYearMatch[0].toUpperCase();
+    const mappedYear = yearMappings[match];
+    if (mappedYear) {
+      return mappedYear;
+    }
+  }
+
+  return 'Unknown';
+}
+
+function extractBranch(path: string, fileName: string): string {
+  const pathParts = path.split('/').map(p => p.trim());
+  const branchPattern = Object.keys(branchMappings).join('|');
+  const branchRegexes = [
+    new RegExp(`(?:^|[_\\s-])(${branchPattern})(?:[_\\s-]|$)`, 'i'),
+    new RegExp(`(?:^|[_\\s-])([A-Z]+)(?:[_\\s-]|$)`, 'i')
+  ];
   
-  const items = await fetchDirectory(path);
-  console.log(`${indent}Found ${items.length} items`);
+  let branch = 'Unknown';
+
+  // First try exact matches from mappings
+  for (const regex of branchRegexes) {
+    // Check in filename
+    const fileMatch = fileName.match(regex);
+    if (fileMatch && branchMappings[fileMatch[1].toUpperCase()]) {
+      branch = branchMappings[fileMatch[1].toUpperCase()];
+      break;
+    }
+
+    // Check in path parts
+    for (const part of pathParts) {
+      const pathMatch = part.match(regex);
+      if (pathMatch && branchMappings[pathMatch[1].toUpperCase()]) {
+        branch = branchMappings[pathMatch[1].toUpperCase()];
+        break;
+      }
+    }
+
+    if (branch !== 'Unknown') break;
+  }
+
+  // If no branch found, try to extract from subject name
+  if (branch === 'Unknown') {
+    const upperFileName = fileName.toUpperCase();
+    for (const [subject, mappedBranch] of Object.entries(subjectBranchMappings)) {
+      if (upperFileName.includes(subject)) {
+        branch = mappedBranch;
+        break;
+      }
+    }
+  }
+
+  // Handle multiple branches (e.g., MECH-CIVIL-CHEM)
+  if (branch === 'Unknown') {
+    const multiplePattern = /(MECH|CIVIL|CHEM|COMP|IT|ENTC|ETX)[-_\s]+(MECH|CIVIL|CHEM|COMP|IT|ENTC|ETX)/i;
+    const multiMatch = fileName.match(multiplePattern) || 
+                      pathParts.find(p => multiplePattern.test(p))?.match(multiplePattern);
+    if (multiMatch) {
+      const firstBranch = multiMatch[1].toUpperCase();
+      if (branchMappings[firstBranch]) {
+        branch = branchMappings[firstBranch];
+      }
+    }
+  }
+
+  return branch;
+}
+
+function propagateStats(node: DirectoryNode | undefined, deltaFiles: number, deltaDirectories: number) {
+  let currentNode = node;
+  while (currentNode) {
+    currentNode.stats.totalFiles += deltaFiles;
+    currentNode.stats.totalDirectories += deltaDirectories;
+    currentNode = currentNode.parent;
+  }
+}
+
+async function addToStructure(structure: DirectoryNode, paper: Paper) {
+  const parts = getPathParts(paper.url);
+  let current = structure;
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const sanitizedPart = sanitizeKey(part);
+    const isLast = i === parts.length - 1;
+    const fullPath = parts.slice(0, i + 1).join('/');
+
+    if (!current.children[sanitizedPart]) {
+      const nodeType = isLast && !paper.isDirectory ? 'file' : 'directory';
+      current.children[sanitizedPart] = {
+        name: part,
+        path: fullPath,
+        type: nodeType,
+        parent: current,
+        stats: { totalFiles: 0, totalDirectories: 0 },
+        children: {},
+        meta: {
+          years: [],
+          branches: [],
+          examTypes: [],
+          semesters: []
+        }
+      };
+
+      const deltaFiles = nodeType === 'file' ? 1 : 0;
+      const deltaDirectories = nodeType === 'directory' ? 1 : 0;
+      propagateStats(current, deltaFiles, deltaDirectories);
+    }
+
+    if (isLast && !paper.isDirectory) {
+      current.children[sanitizedPart].metadata = paper;
+
+      // Update metadata arrays
+      const updateMeta = (arr: string[], value: string) => {
+        if (value !== 'Unknown' && !arr.includes(value)) arr.push(value);
+      };
+
+      const currentNode = current.children[sanitizedPart];
+      
+      // Update current node's metadata
+      updateMeta(currentNode.meta.years, paper.year);
+      updateMeta(currentNode.meta.branches, paper.branch);
+      updateMeta(currentNode.meta.examTypes, paper.examType);
+      updateMeta(currentNode.meta.semesters, paper.semester);
+
+      // Propagate metadata up the hierarchy
+      let node: DirectoryNode | undefined = current;
+      while (node) {
+        updateMeta(node.meta.years, paper.year);
+        updateMeta(node.meta.branches, paper.branch);
+        updateMeta(node.meta.examTypes, paper.examType);
+        updateMeta(node.meta.semesters, paper.semester);
+        node = node.parent;
+      }
+    }
+
+    current = current.children[sanitizedPart];
+  }
+}
+
+function sanitizeKey(key: string): string {
+  return key.replace(/\./g, '_');
+}
+
+function extractSemester(path: string, fileName: string): string {
+  const pathParts = path.split('/').map(p => p.trim());
+  const semMatch = fileName.match(/SEM[ester]*[\s-]*([IVX\d]+)/i) ||
+                  fileName.match(/Semester[\s-]*([IVX\d]+)/i) ||
+                  pathParts.find(p => /SEM[ester]*[\s-]*([IVX\d]+)/i.test(p))?.match(/SEM[ester]*[\s-]*([IVX\d]+)/i);
+  const rawSemester = semMatch?.[1]?.toUpperCase() || 'Unknown';
+  return semesterMappings[rawSemester] || 'Unknown';
+}
+
+function extractExamType(path: string, fileName: string): string {
+  const pathParts = path.split('/').map(p => p.trim());
+  const examPattern = Object.keys(examMappings).join('|');
+  const examRegex = new RegExp(`(?:^|[_\\s-])(${examPattern}|END COURSE|UNIT TEST|CYCLE)(?:[_\\s-]|$)`, 'i');
+  const examMatch = fileName.match(examRegex) ||
+                   pathParts.find(p => examRegex.test(p))?.match(examRegex);
+  
+  // If no direct exam type match, try to extract from month
+  const monthRegex = /(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)/i;
+  const monthMatch = fileName.match(monthRegex) ||
+                    pathParts.find(p => monthRegex.test(p))?.match(monthRegex);
+  
+  if (examMatch) {
+    const matchedExam = examMatch[1].toUpperCase();
+    if (matchedExam === 'END COURSE') return 'ESE';
+    if (matchedExam === 'UNIT TEST') return 'UT';
+    if (matchedExam === 'CYCLE') return 'CAT';
+    return examMappings[matchedExam] || 'Unknown';
+  } 
+  
+  if (monthMatch) {
+    return examMappings[monthMatch[1].toUpperCase()] || 'Unknown';
+  }
+
+  return 'Unknown';
+}
+
+function extractMetadata(path: string, fileName: string): Paper {
+  try {
+    if (!path || !fileName) {
+      log('ERROR', 'Missing path or filename:', { path, fileName });
+      return {
+        fileName: fileName || 'Unknown',
+        url: path || 'Unknown',
+        year: 'Unknown',
+        semester: 'Unknown',
+        branch: 'Unknown',
+        examType: 'Unknown'
+      };
+    }
+    
+    const metadata: Paper = {
+      fileName,
+      url: path,
+      year: extractYear(path, fileName),
+      semester: extractSemester(path, fileName),
+      branch: extractBranch(path, fileName),
+      examType: extractExamType(path, fileName)
+    };
+
+    // Only log metadata if something was successfully extracted
+    if (Object.values(metadata).some(value => value !== 'Unknown')) {
+      log('METADATA', 'Extracted metadata:', metadata);
+    } else {
+      log('ERROR', 'Failed to extract any metadata:', {
+        file: fileName,
+        path
+      });
+    }
+
+    return metadata;
+  } catch (error) {
+    log('ERROR', 'Failed to extract metadata:', {
+      fileName,
+      path,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return {
+      fileName,
+      url: path,
+      year: 'Unknown',
+      semester: 'Unknown',
+      branch: 'Unknown',
+      examType: 'Unknown'
+    };
+  }
+}
+
+async function crawlDirectory(structure: DirectoryNode, url: string) {
+  const items = await fetchDirectory(url);
   
   for (const item of items) {
-    if (item.isDirectory) {
-      // Create directory entry
-      const dirPath = decodeURIComponent(item.path.split('/DigitalLibrary/')[1]);
-      const dirType = getDirectoryType(dirPath, item.name);
-      
-      try {
-        await Directory.findOneAndUpdate(
-          { path: dirPath },
-          {
-            path: dirPath,
-            name: item.name,
-            parent: parentPath || null,
-            type: dirType,
-            papers: []
-          },
-          { upsert: true, new: true }
-        );
-        console.log(`${indent}Created directory:`, { path: dirPath, type: dirType });
-      } catch (error) {
-        console.error(`${indent}Failed to create directory ${dirPath}:`, error);
-      }
-
-      // Recursively crawl subdirectory
-      await crawlDirectory(item.path, dirPath, depth + 1);
-    } else if (item.path.endsWith('.pdf')) {
-      const filePath = decodeURIComponent(item.path.split('/DigitalLibrary/')[1]);
-      const downloadUrl = `http://43.227.20.36:82/DigitalLibrary/${item.path.split('/DigitalLibrary')[1]}`;
-      
-      // Extract metadata
-      const pathParts = decodeURIComponent(item.path).split('/');
-      const year = pathParts.find(p => /^2\s*0\s*\d\s*\d$/.test(p))?.replace(/\s+/g, '') || 
-                  pathParts.find(p => /^20\d{2}$/.test(p)) || 
-                  'Unknown';
-
-      // Extract academic year from both path and filename
-      const academicYearMap: { [key: string]: string } = {
-        'FY': 'FY',
-        'FE': 'FY',
-        'SY': 'SY',
-        'TY': 'TY',
-        'F Y': 'FY',
-        'S Y': 'SY',
-        'T Y': 'TY',
-        'FIRST YEAR': 'FY',
-        'SECOND YEAR': 'SY',
-        'THIRD YEAR': 'TY',
-        'BTECH': 'BTech',
-        'B TECH': 'BTech',
-        'B.TECH': 'BTech'
-      };
-
-      // Try to find academic year in path first
-      let academicYear = 'Unknown';
-      for (const part of pathParts) {
-        const cleanPart = part.trim().toUpperCase();
-        if (academicYearMap[cleanPart]) {
-          academicYear = academicYearMap[cleanPart];
-          break;
-        }
-      }
-
-      // If not found in path, try filename
-      if (academicYear === 'Unknown') {
-        const fileNameMatch = item.name.match(/^(FY|SY|TY|F Y|S Y|T Y|FIRST YEAR|SECOND YEAR|THIRD YEAR|BTECH|B TECH|B\.TECH)[-_\s]/i);
-        if (fileNameMatch) {
-          academicYear = academicYearMap[fileNameMatch[1].toUpperCase()];
-        }
-      }
-
-      // Extract branch from path and filename
-      const branchMap: { [key: string]: string } = {
-        'CH': 'CHEMICAL',
-        'CHEM': 'CHEMICAL',
-        'CS': 'COMPUTER',
-        'COMP': 'COMPUTER',
-        'CV': 'CIVIL',
-        'ET': 'ENTC',
-        'EX': 'ETX',
-        'IT': 'IT',
-        'ME': 'MECHANICAL',
-        'MECH': 'MECHANICAL'
-      };
-
-      const branchMatch = item.name.match(/[_\s](CH|CS|CV|ET|EX|IT|ME|CHEM|COMP|CIVIL|ENTC|ETX|Chemical|Computer|Civil|Mechanical)[_\s]/i) ||
-                         pathParts.find(p => /(Chemical|Computer|Civil|ENTC|ETX|IT|Mechanical)/i.test(p))?.match(/(Chemical|Computer|Civil|ENTC|ETX|IT|Mechanical)/i);
-      
-      const branch = branchMatch ? 
-        branchMap[branchMatch[1].toUpperCase()] || branchMatch[1].toUpperCase() : 
-        'Unknown';
-
-      // Extract semester from filename
-      const semMatch = item.name.match(/SEM[ester]*[\s-]*([IVX]+)/i) ||
-                      item.name.match(/Semester[\s-]*([IVX]+)/i);
-      const semester = semMatch ? `Semester ${semMatch[1]}` : 'Unknown';
-
-      // Extract exam type from filename and path
-      const monthToExamType: { [key: string]: string } = {
-        'JAN': 'ESE', 'FEB': 'ESE', 'MAR': 'ESE',
-        'APR': 'ESE', 'MAY': 'ESE', 'JUN': 'ESE',
-        'JUL': 'MSE', 'AUG': 'MSE', 'SEP': 'MSE',
-        'OCT': 'MSE', 'NOV': 'ESE', 'DEC': 'ESE'
-      };
-
-      const examTypeMatch = item.name.match(/(?:^|\s)(MSE|ESE|UT|CAT|END COURSE|CYCLE \d+)(?:\s|$)/i) ||
-                           item.name.match(/(?:^|\s)(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(?:\s|$)/i) ||
-                           pathParts.find(p => /(END\s*COURSE|MID\s*TERM|UNIT\s*TEST)/i.test(p))?.match(/(END\s*COURSE|MID\s*TERM|UNIT\s*TEST)/i);
-      
-      let examType = 'Unknown';
-      
-      if (examTypeMatch?.[1]) {
-        const type = examTypeMatch[1].toUpperCase();
-        if (/END\s*COURSE/i.test(type)) examType = 'ESE';
-        else if (/MID\s*TERM/i.test(type)) examType = 'MSE';
-        else if (/UNIT\s*TEST/i.test(type)) examType = 'UT';
-        else if (/CYCLE/i.test(type)) examType = 'CAT';
-        else if (monthToExamType[type]) examType = monthToExamType[type];
-        else examType = type;
-      }
-
-      try {
-        // Create/update paper
-        const paper = await Paper.findOneAndUpdate(
-          { originalUrl: item.path },
-          {
-            fileName: item.name,
-            downloadUrl,
-            originalUrl: item.path,
-            path: filePath,
-            year,
-            branch,
-            semester,
-            examType
-          },
-          { upsert: true, new: true }
-        );
-
-        // Add paper to parent directory
-        if (paper && parentPath) {
-          await Directory.findOneAndUpdate(
-            { path: parentPath },
-            { $addToSet: { papers: paper._id } }
-          );
-        }
-
-        console.log(`${indent}Stored paper:`, {
-          name: item.name,
-          path: filePath
-        });
-      } catch (error) {
-        console.error(`${indent}Failed to store paper ${item.path}:`, error);
-      }
+    if (item.path.endsWith('.pdf')) {
+      const metadata = extractMetadata(item.path, item.name);
+      await addToStructure(structure, { ...metadata, isDirectory: false });
+    } else if (item.isDirectory) {
+      const metadata = { fileName: item.name, url: item.path, isDirectory: true } as Paper;
+      await addToStructure(structure, metadata);
+      await crawlDirectory(structure, item.path);
     }
   }
 }
 
-async function main() {
-  console.log('Connecting to MongoDB...');
+async function connectToMongoDB() {
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is not defined');
+  }
+
+  await mongoose.connect(MONGODB_URI);
+  log('METADATA', 'Connected to MongoDB');
+}
+
+function cleanStructure(node: DirectoryNode): CleanNode {
+  const { children, ...rest } = node;
+  return {
+    ...rest,
+    children: Object.fromEntries(
+      Object.entries(children).map(([key, child]) => [key, cleanStructure(child)])
+    )
+  };
+}
+
+async function crawl() {
   try {
-    if (!MONGODB_URI) {
-        throw new Error('MONGODB_URI environment variable is not defined');
-    }
-    await mongoose.connect(MONGODB_URI);
-    console.log('Connected to MongoDB');
-
-    // Clear existing data
-    await Paper.deleteMany({});
-    await Directory.deleteMany({});
-    console.log('Cleared existing data');
-
-    console.log('Starting crawler...');
-    await crawlDirectory(BASE_URL);
+    await connectToMongoDB();
     
-    // Print final stats
-    const paperCount = await Paper.countDocuments();
-    const dirCount = await Directory.countDocuments();
-    console.log('\nCrawler finished successfully');
-    console.log(`Total papers stored: ${paperCount}`);
-    console.log(`Total directories stored: ${dirCount}`);
+    // Initialize root structure
+    const structure: DirectoryNode = {
+      name: 'root',
+      path: BASE_URL,
+      type: 'directory',
+      children: {},
+      stats: { totalFiles: 0, totalDirectories: 0 },
+      meta: {
+        years: [],
+        branches: [],
+        examTypes: [],
+        semesters: []
+      }
+    };
+
+    // Process files recursively
+    await crawlDirectory(structure, BASE_URL);
+
+    // Delete existing documents
+    await PYQModel.deleteMany({});
+    log('METADATA', 'Deleted existing documents');
+
+    // Clean and save the structure
+    const cleanedStructure = cleanStructure(structure);
+    const result = await PYQModel.create({
+      structure: cleanedStructure,
+      meta: structure.meta,
+      stats: structure.stats,
+      lastUpdated: new Date()
+    });
+
+    log('METADATA', 'Document created with ID:', result._id);
+
+    // Verify the saved document
+    const savedDoc = await PYQModel.findById(result._id).lean() as unknown as {
+      _id: string;
+      structure: DirectoryNode;
+      stats: DirectoryStats;
+      meta: DirectoryMeta;
+      lastUpdated: Date;
+    };
+    
+    if (!savedDoc) {
+      throw new Error('Failed to verify saved document');
+    }
+
+    log('METADATA', 'Document saved successfully:', {
+      id: savedDoc._id,
+      stats: savedDoc.stats,
+      metaCounts: {
+        years: savedDoc.meta.years.length,
+        branches: savedDoc.meta.branches.length,
+        examTypes: savedDoc.meta.examTypes.length,
+        semesters: savedDoc.meta.semesters.length
+      },
+      structureStats: {
+        hasRoot: savedDoc.structure?.name != null,
+        rootStats: savedDoc.structure?.stats,
+        childrenCount: Object.keys(savedDoc.structure?.children || {}).length
+      },
+      lastUpdated: savedDoc.lastUpdated
+    });
+
   } catch (error) {
-    console.error('Crawler failed:', error);
+    console.error('Error:', error);
   } finally {
     await mongoose.disconnect();
-    console.log('Disconnected from MongoDB');
+    log('METADATA', 'Disconnected from MongoDB');
   }
 }
 
 // Run the crawler
-main(); 
+crawl();
