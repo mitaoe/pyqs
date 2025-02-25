@@ -8,6 +8,10 @@ export interface Paper {
   isDirectory?: boolean;
 }
 
+export interface DBPaper extends Paper {
+  _id: string;
+}
+
 export interface DirectoryStats {
   totalFiles: number;
   totalDirectories: number;

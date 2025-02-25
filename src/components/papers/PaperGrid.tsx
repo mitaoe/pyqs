@@ -1,7 +1,7 @@
 import PaperCard from './PaperCard';
-import type { Paper as PaperType } from '@/types/paper';
+import type { DBPaper } from '@/types/paper';
 
-type Paper = Pick<PaperType, '_id' | 'fileName' | 'originalUrl' | 'year' | 'branch' | 'semester' | 'examType'>;
+type Paper = Pick<DBPaper, '_id' | 'fileName' | 'url' | 'year' | 'branch' | 'semester' | 'examType'>;
 
 interface PaperGridProps {
   papers: Paper[];
