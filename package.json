@@ -10,6 +10,7 @@
     "crawl": "tsx src/scripts/crawler.ts"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.5.0",
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
     "mongodb": "^6.13.1",

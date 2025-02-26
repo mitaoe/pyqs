@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import { PaperProvider } from "@/contexts/PaperContext";
 import "./globals.css";
 
@@ -21,6 +22,7 @@ export default function RootLayout({
         <PaperProvider>
           {children}
         </PaperProvider>
+        <Analytics />
       </body>
     </html>
   );
