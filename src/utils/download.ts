@@ -2,11 +2,9 @@ import { toast } from 'sonner';
 
 export async function downloadFile(url: string, fileName: string): Promise<boolean> {
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/pdf'
-      }
-    });
+
+    const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl);
     
     if (!response.ok) {
       throw new Error('Download failed');
