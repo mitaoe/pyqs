@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://mitaoe-pyqs.vercel.app/sitemap.xml 
