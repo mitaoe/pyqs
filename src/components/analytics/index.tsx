@@ -4,9 +4,11 @@ import { Analytics } from '@vercel/analytics/react';
 import { useEffect, useState } from 'react';
 
 export default function AnalyticsWrapper() {
+  const [mounted, setMounted] = useState(false);
   const [shouldTrack, setShouldTrack] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // Check if this is the first visit
     const hasVisited = localStorage.getItem('hasVisitedBefore');
     
@@ -17,13 +19,13 @@ export default function AnalyticsWrapper() {
     }
   }, []);
 
+  if (!mounted) {
+    return null;
+  }
+
   if (!shouldTrack) {
     return null;
   }
 
-  return (
-    <>
-      <Analytics />
-    </>
-  );
+  return <Analytics />;
 } 
