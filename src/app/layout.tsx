@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { PaperProvider } from "@/contexts/PaperContext";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import AnalyticsWrapper from "@/components/analytics";
 import "./globals.css";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
         <PaperProvider>
           {children}
         </PaperProvider>
+        <SpeedInsights />
         <AnalyticsWrapper />
       </body>
     </html>
