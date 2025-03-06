@@ -14,6 +14,7 @@ interface DirectoryItem {
     branch: string;
     semester: string;
     examType: string;
+    subject?: string;
   };
 }
 
@@ -149,21 +150,39 @@ export default function DirectoryBrowser({
             {files.map((item) => (
               <div
                 key={item.path}
-                className="flex items-center justify-between p-3 transition-colors hover:bg-accent/10"
+                className="flex flex-col p-3 transition-colors hover:bg-accent/10"
                 onContextMenu={preventRightClick}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-content">{item.name}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-content">{item.name}</span>
+                  </div>
+                  {item.metadata && (
+                    <button
+                      onClick={() => handleDownload(item.metadata!.url, item.metadata!.fileName)}
+                      disabled={downloadingFile === item.metadata.fileName}
+                      className="flex items-center gap-2 rounded-md bg-accent/90 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent hover:shadow-accent/25 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <DownloadIcon className={`h-4 w-4 ${downloadingFile === item.metadata.fileName ? 'animate-spin' : ''}`} />
+                      <span>{downloadingFile === item.metadata.fileName ? 'Downloading...' : 'Download'}</span>
+                    </button>
+                  )}
                 </div>
                 {item.metadata && (
-                  <button
-                    onClick={() => handleDownload(item.metadata!.url, item.metadata!.fileName)}
-                    disabled={downloadingFile === item.metadata.fileName}
-                    className="flex items-center gap-2 rounded-md bg-accent/90 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent hover:shadow-accent/25 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <DownloadIcon className={`h-4 w-4 ${downloadingFile === item.metadata.fileName ? 'animate-spin' : ''}`} />
-                    <span>{downloadingFile === item.metadata.fileName ? 'Downloading...' : 'Download'}</span>
-                  </button>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {Object.entries(item.metadata).map(([key, value]) => {
+                      if (key === 'url' || key === 'fileName') return null;
+                      if (!value) return null;
+                      return (
+                        <span
+                          key={key}
+                          className="rounded-full bg-primary/50 px-2 py-0.5 text-xs text-content/80"
+                        >
+                          {key}: {value}
+                        </span>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             ))}
