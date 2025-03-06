@@ -1,11 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 export default function Header() {
-  const pathname = usePathname();
-
   return (
     <header className="sticky top-0 z-50 border-b border-accent bg-primary">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -15,29 +12,6 @@ export default function Header() {
         >
           <span className="ml-1 text-content">MITAOE PYQs</span>
         </Link>
-
-        <nav className="absolute left-1/2 flex -translate-x-1/2 items-center gap-8">
-          <Link
-            href="/browse"
-            className={`text-sm font-medium transition-colors ${
-              pathname === '/browse' 
-                ? 'text-white' 
-                : 'text-content/60 hover:text-white'
-            }`}
-          >
-            Browse
-          </Link>
-          <Link
-            href="/papers"
-            className={`text-sm font-medium transition-colors ${
-              pathname === '/papers' 
-                ? 'text-white' 
-                : 'text-content/60 hover:text-white'
-            }`}
-          >
-            Search
-          </Link>
-        </nav>
 
         <a
           href="https://github.com/AdityaKotkar47/mitaoe-pyqs"

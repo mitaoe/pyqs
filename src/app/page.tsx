@@ -11,15 +11,7 @@ export default function HomePage() {
         <p className="mt-2 text-lg text-content/80">
           MITAOE Question Papers
         </p>
-        <div className="mt-16 flex items-center gap-6">
-          <Link
-            href="/browse"
-            className="group rounded-lg border border-accent bg-secondary px-6 py-2.5 text-sm font-medium"
-          >
-            <span className="bg-gradient-to-r from-content to-white bg-clip-text text-transparent transition-all group-hover:text-white">
-              Browse Directory
-            </span>
-          </Link>
+        <div className="mt-16 flex items-center justify-center">
           <Link
             href="/papers"
             className="rounded-lg bg-white px-6 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-content"
