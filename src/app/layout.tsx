@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { PaperProvider } from "@/contexts/PaperContext";
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import AnalyticsWrapper from "@/components/analytics";
+import { Analytics } from '@vercel/analytics/react';
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -39,7 +39,7 @@ export default function RootLayout({
           {children}
         </PaperProvider>
         <SpeedInsights />
-        <AnalyticsWrapper />
+        <Analytics />
       </body>
     </html>
   );
