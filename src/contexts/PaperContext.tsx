@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useRef, type ReactNode, useCallback } from 'react';
 import { toast } from 'sonner';
-import type { DirectoryMeta, Paper } from '@/types/paper';
+import type { DirectoryMeta, DirectoryNode, Paper } from '@/types/paper';
 import { STANDARD_VALUES } from '@/config/mappings';
 
 interface PaperContextType {
