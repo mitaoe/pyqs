@@ -9,9 +9,8 @@ import { usePapers } from '@/contexts/PaperContext';
 import type { DirectoryNode, Paper } from '@/types/paper';
 
 // Extending Paper type for development purposes
-// This will be properly added to Paper interface in Phase 1
 interface PaperWithSubject extends Paper {
-  subject?: string;
+  subject: string;
 }
 
 function getCurrentNode(structure: DirectoryNode, path: string): DirectoryNode | null {
