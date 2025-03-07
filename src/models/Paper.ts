@@ -1,74 +1,52 @@
 import mongoose from 'mongoose';
-import type { DirectoryStructure, DirectoryMeta, DirectoryStats } from '@/types/paper';
 
-const DirectoryNodeSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  path: { type: String, required: true },
-  type: { type: String, enum: ['directory', 'file'], required: true },
-  stats: {
-    totalFiles: { type: Number, default: 0 },
-    totalDirectories: { type: Number, default: 0 }
-  },
-  children: { type: Map, of: this },
-  metadata: {
-    year: String,
-    branch: String,
-    examType: String,
-    semester: String,
-    fileName: String,
-    url: String
-  },
-  meta: {
-    years: [{ type: String }],
-    branches: [{ type: String }],
-    examTypes: [{ type: String }],
-    semesters: [{ type: String }]
-  }
+// Define individual paper schema
+const PaperSchema = new mongoose.Schema({
+  fileName: { type: String, required: true },
+  url: { type: String, required: true },
+  year: { type: String, required: true },
+  branch: { type: String, required: true },
+  semester: { type: String, required: true },
+  examType: { type: String, required: true },
+  subject: { type: String, default: 'Unknown' },
+  standardSubject: { type: String, default: 'Unknown' },
+  isDirectory: { type: Boolean, default: false }
 }, { _id: false });
 
+// Main PYQ schema for collection of papers
 const PYQSchema = new mongoose.Schema({
-  lastUpdated: { type: Date, required: true },
-  stats: {
-    totalFiles: { type: Number, required: true },
-    totalDirectories: { type: Number, required: true }
-  },
-  structure: {
-    type: DirectoryNodeSchema,
-    required: true
-  },
+  papers: [PaperSchema],
   meta: {
     years: [{ type: String }],
     branches: [{ type: String }],
     examTypes: [{ type: String }],
-    semesters: [{ type: String }]
+    semesters: [{ type: String }],
+    subjects: [{ type: String }],
+    standardSubjects: [{ type: String }]
+  },
+  stats: {
+    totalFiles: { type: Number, required: true },
+    totalDirectories: { type: Number, required: true },
+    lastUpdated: { type: Date, required: true }
   }
-}, {
-  strict: false // Allow mixed type for nested children
 });
 
-// Create indexes for common queries
-PYQSchema.index({ 'structure.path': 1 });
-PYQSchema.index({ 'meta.years': 1 });
-PYQSchema.index({ 'meta.branches': 1 });
-PYQSchema.index({ 'meta.examTypes': 1 });
-PYQSchema.index({ 'meta.semesters': 1 });
+// Create indexes for improved query performance
+PYQSchema.index({ 'papers.year': 1 });
+PYQSchema.index({ 'papers.branch': 1 });
+PYQSchema.index({ 'papers.semester': 1 });
+PYQSchema.index({ 'papers.examType': 1 });
+PYQSchema.index({ 'papers.subject': 1 });
+PYQSchema.index({ 'papers.standardSubject': 1 });
 
-// Create text index for search
+// Create text index for search functionality
 PYQSchema.index({
-  'structure.metadata.fileName': 'text',
-  'structure.metadata.year': 'text',
-  'structure.metadata.branch': 'text',
-  'structure.metadata.semester': 'text',
-  'structure.metadata.examType': 'text'
+  'papers.fileName': 'text',
+  'papers.subject': 'text',
+  'papers.standardSubject': 'text'
 });
 
-export interface PYQDocument extends mongoose.Document {
-  lastUpdated: Date;
-  stats: DirectoryStats;
-  structure: DirectoryStructure;
-  meta: DirectoryMeta;
-}
-
-const PYQ = mongoose.models.PYQ || mongoose.model<PYQDocument>('PYQ', PYQSchema);
+// Use existing model or create a new one
+const PYQ = mongoose.models.PYQ || mongoose.model('PYQ', PYQSchema);
 
 export default PYQ; 
