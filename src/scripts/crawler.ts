@@ -1,19 +1,20 @@
 import mongoose from 'mongoose';
+import path from 'path';
+import fs from 'fs';
 import * as cheerio from 'cheerio';
+import fetch from 'node-fetch';
 import { 
-  STANDARD_VALUES, 
-  SUBJECTS, 
   branchMappings, 
   yearMappings, 
   examMappings, 
   semesterMappings,
-  firstYearPatterns
-} from '@/config/mappings';
-import path from 'path';
-import fs from 'fs';
-import PYQModel from '@/models/Paper';
-import DirectoryModel from '@/models/Directory';
-import { DirectoryNode, Paper, CleanNode } from '@/types/paper';
+  STANDARD_VALUES,
+  firstYearPatterns,
+  SUBJECTS
+} from '../config/mappings';
+import PaperModel from '../models/Paper';
+import DirectoryModel from '../models/Directory';
+import { DirectoryNode, Paper, CleanNode } from '../types/paper';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const BASE_URL = 'http://43.227.20.36:82/DigitalLibrary/Old%20Question%20Papers/B%20Tech%20(Autonomy)/';
@@ -93,19 +94,49 @@ function getPathParts(path: string): string[] {
 async function fetchDirectory(path: string): Promise<DirectoryItem[]> {
   log('INFO', 'Fetching directory:', path);
   try {
-    const response = await fetch(path, {
+    // Ensure proper URL encoding
+    let normalizedPath = path;
+    
+    // Special handling for known problematic characters
+    if (path.includes('&') && !path.includes('%26')) {
+      // Replace & with %26 if not already encoded
+      normalizedPath = path.replace(/&/g, '%26');
+      if (VERBOSE) {
+        log('INFO', `Fixed URL encoding for ampersand: ${path} -> ${normalizedPath}`);
+      }
+    }
+    
+    const response = await fetch(normalizedPath, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
       }
     });
 
     if (!response.ok) {
+      // If the encoding fix didn't work and we modified the URL, try the original
+      if (normalizedPath !== path && response.status === 404) {
+        log('INFO', `Encoded URL failed, trying original: ${path}`);
+        return fetchDirectory(path);
+      }
+      
       throw new Error(`Failed to fetch directory: ${response.status}`);
     }
 
     const html = await response.text();
-    const items = parseDirectoryListing(html, path);
-    log('INFO', `Found ${items.length} items in ${path}`);
+    const items = parseDirectoryListing(html, normalizedPath);
+    log('INFO', `Found ${items.length} items in ${normalizedPath}`);
+    
+    // Check if we received an empty directory but it might be due to encoding issues
+    if (items.length === 0 && normalizedPath.includes('%')) {
+      log('INFO', 'Empty directory with encoded URL, trying to decode and retry');
+      // Try a different encoding approach in case the server expects a different format
+      const decodedPath = decodeURIComponent(normalizedPath);
+      if (decodedPath !== normalizedPath && decodedPath !== path) {
+        log('INFO', `Trying decoded URL: ${decodedPath}`);
+        return fetchDirectory(decodedPath);
+      }
+    }
+    
     return items;
   } catch (error) {
     log('ERROR', `Failed to fetch directory ${path}:`, error);
@@ -215,17 +246,66 @@ function isFirstYearPaper(fileName: string, path: string): boolean {
 function extractBranch(path: string, fileName: string): string {
   // Check if it's a first-year paper, which should be marked as COMMON
   if (isFirstYearPaper(fileName, path)) {
+    if (VERBOSE) {
+      log('INFO', `Branch: First Year -> COMMON for ${fileName}`);
+    }
     return STANDARD_VALUES.BRANCHES.COMMON;
   }
   
   const pathParts = getPathParts(path);
   const upperFileName = fileName.toUpperCase();
   
+  // Special case for MTech identification
+  if (upperFileName.includes('M.TECH') || upperFileName.includes('MTECH') || 
+      upperFileName.includes('M TECH') || path.includes('M.TECH') || 
+      path.includes('MTECH') || path.includes('M TECH')) {
+    if (VERBOSE) {
+      log('INFO', `Branch Match (MTech): ${fileName} -> ${STANDARD_VALUES.BRANCHES.MTECH}`);
+    }
+    return STANDARD_VALUES.BRANCHES.MTECH;
+  }
+  
+  // Special case for Re-Exams
+  if (upperFileName.includes('RE EXAM') || upperFileName.includes('RE-EXAM') || 
+      path.includes('RE EXAM') || path.includes('RE-EXAM') || 
+      path.includes('DEC Re Exam')) {
+    // Try to find the actual branch within the file name or path
+    // This helps with "DEC Re Exam" cases that were previously failing
+    for (const [abbr, branch] of Object.entries(branchMappings)) {
+      if (abbr === 'BTECH' || abbr === 'COMMON' || abbr === 'MTECH') continue; // Skip generic entries
+      
+      const escapedAbbr = abbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedAbbr}\\b`, 'i');
+      
+      if (regex.test(upperFileName)) {
+        if (VERBOSE) {
+          log('INFO', `Branch Match (Re-Exam): ${fileName} -> ${branch}`);
+        }
+        return branch;
+      }
+      
+      for (const part of pathParts) {
+        if (regex.test(part)) {
+          if (VERBOSE) {
+            log('INFO', `Branch Match (Re-Exam Path): ${fileName} -> ${branch}`);
+          }
+          return branch;
+        }
+      }
+    }
+  }
+  
   // Try to find branch in the filename
   for (const [abbr, branch] of Object.entries(branchMappings)) {
     // Make sure we match whole words or word boundaries to avoid partial matches
-    const regex = new RegExp(`\\b${abbr}\\b`, 'i');
+    // Escape special characters in the abbreviation to avoid regex errors
+    const escapedAbbr = abbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escapedAbbr}\\b`, 'i');
     if (regex.test(upperFileName)) {
+      if (VERBOSE) {
+        log('INFO', `Branch Match (Filename): ${fileName} -> ${branch}`);
+        log('INFO', `Match pattern: ${abbr}`);
+      }
       return branch;
     }
   }
@@ -233,11 +313,43 @@ function extractBranch(path: string, fileName: string): string {
   // Check in path parts
   for (const part of pathParts) {
     for (const [abbr, branch] of Object.entries(branchMappings)) {
-      const regex = new RegExp(`\\b${abbr}\\b`, 'i');
+      // Escape special characters in the abbreviation to avoid regex errors
+      const escapedAbbr = abbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedAbbr}\\b`, 'i');
       if (regex.test(part)) {
+        if (VERBOSE) {
+          log('INFO', `Branch Match (Path): ${fileName} -> ${branch}`);
+          log('INFO', `Match pattern: ${abbr} in path part: ${part}`);
+        }
         return branch;
       }
     }
+  }
+  
+  // If we have "BTECH" in the filename or path but no specific branch
+  // mark it as COMMON as a fallback
+  if (upperFileName.includes('BTECH') || upperFileName.includes('B.TECH') || 
+      upperFileName.includes('B TECH')) {
+    if (VERBOSE) {
+      log('INFO', `Branch Fallback (BTech): ${fileName} -> ${STANDARD_VALUES.BRANCHES.COMMON}`);
+    }
+    return STANDARD_VALUES.BRANCHES.COMMON;
+  }
+  
+  // Check path parts for BTech indicators
+  for (const part of pathParts) {
+    if (part.includes('BTECH') || part.includes('B.TECH') || part.includes('B TECH')) {
+      if (VERBOSE) {
+        log('INFO', `Branch Fallback (BTech Path): ${fileName} -> ${STANDARD_VALUES.BRANCHES.COMMON}`);
+      }
+      return STANDARD_VALUES.BRANCHES.COMMON;
+    }
+  }
+  
+  if (VERBOSE) {
+    log('ERROR', `Branch Extraction Failed: ${fileName}`);
+    log('INFO', `File Path: ${path}`);
+    log('INFO', `Path Parts: ${pathParts.join(' | ')}`);
   }
   
   return 'Unknown';
@@ -315,67 +427,440 @@ function extractExamType(path: string, fileName: string): string {
 }
 
 // Extract subject information
-function extractSubject(fileName: string, path: string): { subject: string, standardSubject: string } {
-  const upperFileName = fileName.toUpperCase();
+function extractSubject(fileName: string, verbose: boolean): { subject: string; standardSubject: string } {
+  const fileNameUpper = fileName.toUpperCase();
   
-  // Check against known subject variations
-  for (const subjectInfo of Object.values(SUBJECTS)) {
-    // Check against standard name
-    if (upperFileName.includes(subjectInfo.standard.toUpperCase())) {
-      return {
-        subject: subjectInfo.standard,
-        standardSubject: subjectInfo.standard
-      };
+  // Special case handling
+  
+  // IoT Networks and Protocols
+  if (
+    fileNameUpper.includes('IOT') && 
+    (fileNameUpper.includes('NETWORK') || fileNameUpper.includes('PROTOCOL'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: IoT Networks', { fileName });
     }
-    
-    // Check against variations
-    for (const variation of subjectInfo.variations) {
-      // Use more specific matching to avoid false positives
-      const regex = new RegExp(`\\b${variation}\\b`, 'i');
-      if (regex.test(upperFileName)) {
+      return {
+      subject: 'IoT Networks and Protocols',
+      standardSubject: SUBJECTS.IOT_NETWORKS.standard
+    };
+  }
+  
+  // Robot Dynamics and Control
+  if (
+    fileNameUpper.includes('ROBOT') && 
+    (fileNameUpper.includes('DYNAMIC') || fileNameUpper.includes('CONTROL'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Robot Dynamics', { fileName });
+    }
         return {
-          subject: variation,
-          standardSubject: subjectInfo.standard
-        };
-      }
-    }
+      subject: 'Robot Dynamics and Control',
+      standardSubject: SUBJECTS.ROBOT_DYNAMICS.standard
+    };
   }
-  
-  // If this is a first-year paper, try to extract subject from the file name
-  if (isFirstYearPaper(fileName, path)) {
-    // Common patterns for subject names in first-year papers
-    // These often appear between underscores or after "BTech_" prefix
-    const subjectPatterns = [
-      /_([A-Za-z\s&]+)_SEM/i,
-      /BTech_([A-Za-z\s&]+)_/i,
-      /(?:_|-)([A-Za-z\s&]+?)(?:_|-)/i
-    ];
-    
-    for (const pattern of subjectPatterns) {
-      const match = upperFileName.match(pattern);
-      if (match && match[1]) {
-        const potentialSubject = match[1].trim();
-        if (potentialSubject.length > 3) {
+
+  // Design and Analysis of Algorithms
+  if (
+    (fileNameUpper.includes('DESIGN') || fileNameUpper.includes('ANALYSIS')) && 
+    fileNameUpper.includes('ALGORITHM')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Design and Analysis of Algorithms', { fileName });
+    }
+    return {
+      subject: 'Design and Analysis of Algorithms',
+      standardSubject: SUBJECTS.ALGORITHMS.standard
+    };
+  }
+
+  // Database Management Systems
+  if (
+    fileNameUpper.includes('DATABASE') || 
+    fileNameUpper.includes('DBMS') ||
+    (fileNameUpper.includes('DATA') && fileNameUpper.includes('BASE'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Database Management Systems', { fileName });
+    }
+    return {
+      subject: 'Database Management Systems',
+      standardSubject: SUBJECTS.DATABASE_SYSTEMS.standard
+    };
+  }
+
+  // Electromagnetic Theory
+  if (
+    fileNameUpper.includes('ELECTROMAGNET') || 
+    (fileNameUpper.includes('ELECTRO') && fileNameUpper.includes('MAGNETIC'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Electromagnetic Theory', { fileName });
+    }
           return {
-            subject: potentialSubject,
-            standardSubject: 'Unknown'
-          };
-        }
-      }
+      subject: 'Electromagnetic Theory',
+      standardSubject: 'Electromagnetic Theory' // No corresponding entry in SUBJECTS
+    };
+  }
+
+  // Microcontroller and Interfacing
+  if (
+    fileNameUpper.includes('MICROCONTROL') || 
+    fileNameUpper.includes('MICRO CONTROL') ||
+    (fileNameUpper.includes('MICRO') && fileNameUpper.includes('INTERFAC'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Microcontroller and Interfacing', { fileName });
     }
+    return {
+      subject: 'Microcontroller and Interfacing',
+      standardSubject: 'Microcontroller and Interfacing' // No corresponding entry in SUBJECTS
+    };
+  }
+
+  // Network Analysis
+  if (
+    (fileNameUpper.includes('NETWORK') && fileNameUpper.includes('ANALYSIS')) ||
+    fileNameUpper.includes('NETWORK ANALYSIS')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Network Analysis', { fileName });
+    }
+    return {
+      subject: 'Network Analysis and Techniques',
+      standardSubject: 'Network Analysis and Techniques' // No corresponding entry in SUBJECTS
+    };
+  }
+
+  // Signals and Systems
+  if (
+    (fileNameUpper.includes('SIGNAL') && fileNameUpper.includes('SYSTEM')) ||
+    fileNameUpper.includes('SIGNALS AND SYSTEMS')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Signals and Systems', { fileName });
+    }
+      return {
+      subject: 'Signals and Systems',
+      standardSubject: SUBJECTS.SIGNALS_SYSTEMS.standard
+    };
+  }
+
+  // Strength of Materials
+  if (
+    (fileNameUpper.includes('STRENGTH') && fileNameUpper.includes('MATERIAL')) ||
+    fileNameUpper.includes('STRENGTH OF MATERIALS')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Strength of Materials', { fileName });
+    }
+    return {
+      subject: 'Strength of Materials',
+      standardSubject: 'Strength of Materials' // No corresponding entry in SUBJECTS
+    };
+  }
+
+  // Software Engineering
+  if (
+    fileNameUpper.includes('SOFTWARE') && 
+    (fileNameUpper.includes('ENGINEERING') || fileNameUpper.includes('ENGG'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Software Engineering', { fileName });
+    }
+    return {
+      subject: 'Software Engineering',
+      standardSubject: SUBJECTS.SOFTWARE_ENGINEERING.standard
+    };
+  }
+
+  // Predictive Analytics
+  if (
+    fileNameUpper.includes('PREDICTIVE ANALYTICS') || 
+    fileNameUpper.includes('PREDICTRIVE ANALYTICS')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Predictive Analytics', { fileName });
+    }
+    return {
+      subject: 'Predictive Analytics',
+      standardSubject: SUBJECTS.PREDICTIVE_ANALYTICS.standard
+    };
   }
   
-  // If no match, try to extract something that looks like a subject
-  // Look for capitalized words that might be part of a subject name
-  const potentialSubjectMatch = upperFileName.match(/(?:[A-Z]{2,}\s?)+(?=\s|$)/);
-  if (potentialSubjectMatch) {
-    const potentialSubject = potentialSubjectMatch[0].trim();
-    if (potentialSubject.length > 3 && !potentialSubject.match(/^(MSE|ESE|CAT|UT|SEM|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)$/)) {
-      return {
-        subject: potentialSubject,
-        standardSubject: 'Unknown'
-      };
+  // Computational Intelligence
+  if (
+    fileNameUpper.includes('COMPUTATIONAL INTELLIGENCE') || 
+    fileNameUpper.includes('COMPUATIONAL INTELLGENCE') ||
+    fileNameUpper.includes('COMPUTER INTELLIGENCE')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Computational Intelligence', { fileName });
     }
+    return {
+      subject: 'Computational Intelligence',
+      standardSubject: SUBJECTS.COMPUTATIONAL_INTELLIGENCE.standard
+    };
+  }
+  
+  // Cyber Security
+  if (
+    fileNameUpper.includes('CYBER SECURITY') || 
+    fileNameUpper.includes('CYBR SECURITY') ||
+    fileNameUpper.includes('CRYPTOGRAPHY') || 
+    fileNameUpper.includes('SYSTEM SECURITY')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Cyber Security', { fileName });
+    }
+    return {
+      subject: 'Cyber Security and Forensics',
+      standardSubject: SUBJECTS.CYBER_SECURITY.standard
+    };
+  }
+  
+  // Operation Research
+  if (
+    fileNameUpper.includes('OPERATION RESEARCH') || 
+    fileNameUpper.includes('OPRATION RESERTCH') ||
+    fileNameUpper.includes('OPERATIONAL RESEARCH')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Operation Research', { fileName });
+    }
+    return {
+      subject: 'Operation Research',
+      standardSubject: SUBJECTS.OPERATION_RESEARCH.standard
+    };
+  }
+  
+  // Water Resources Engineering
+  if (
+    fileNameUpper.includes('WATER RESOURCE') || 
+    fileNameUpper.includes('WATER RESOURCES')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Water Resources Engineering', { fileName });
+    }
+    return {
+      subject: 'Water Resources Engineering',
+      standardSubject: SUBJECTS.WATER_RESOURCES.standard
+    };
+  }
+  
+  // Turbomachines
+  if (fileNameUpper.includes('TURBOMACHINE')) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Turbomachines', { fileName });
+    }
+    return {
+      subject: 'Turbomachines',
+      standardSubject: 'Turbomachines' // No corresponding entry in SUBJECTS
+    };
+  }
+
+  // Digital Signal Processing
+  if (
+    (fileNameUpper.includes('DIGITAL') && fileNameUpper.includes('SIGNAL') && fileNameUpper.includes('PROCESS')) ||
+    fileNameUpper.includes('DSP')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Digital Signal Processing', { fileName });
+    }
+    return {
+      subject: 'Digital Signal Processing',
+      standardSubject: SUBJECTS.DIGITAL_SIGNAL_PROCESSING.standard
+    };
+  }
+
+  // Operating System
+  if (
+    fileNameUpper.includes('OPERATING SYSTEM') || 
+    fileNameUpper.includes('OPERATING SYS') ||
+    fileNameUpper.includes('OS ')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Operating System', { fileName });
+    }
+    return {
+      subject: 'Operating System',
+      standardSubject: SUBJECTS.OPERATING_SYSTEMS.standard
+    };
+  }
+
+  // Real Time Operating System
+  if (
+    (fileNameUpper.includes('REAL') && fileNameUpper.includes('TIME') && 
+     (fileNameUpper.includes('OPERATING') || fileNameUpper.includes('OS'))) ||
+    fileNameUpper.includes('RTOS')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Real Time Operating System', { fileName });
+    }
+    return {
+      subject: 'Real Time Operating System',
+      standardSubject: SUBJECTS.REAL_TIME_OS.standard
+    };
+  }
+
+  // Antenna Theory
+  if (
+    fileNameUpper.includes('ANTENNA') && 
+    (fileNameUpper.includes('THEORY') || fileNameUpper.includes('DESIGN'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Antenna Theory', { fileName });
+    }
+    return {
+      subject: 'Antenna Theory and Design',
+      standardSubject: SUBJECTS.ANTENNA_THEORY.standard
+    };
+  }
+
+  // Manufacturing Technology
+  if (
+    fileNameUpper.includes('MANUFACTURING') || 
+    (fileNameUpper.includes('MANUFACT') && fileNameUpper.includes('TECH'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Manufacturing Technology', { fileName });
+    }
+    return {
+      subject: 'Manufacturing Technology',
+      standardSubject: 'Manufacturing Technology' // No corresponding entry in SUBJECTS
+    };
+  }
+
+  // Kinematics and Dynamics of Robots
+  if (
+    (fileNameUpper.includes('KINEMAT') || fileNameUpper.includes('DYNAMIC')) && 
+    fileNameUpper.includes('ROBOT')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Kinematics and Dynamics of Robots', { fileName });
+    }
+    return {
+      subject: 'Kinematics and Dynamics of Robots',
+      standardSubject: 'Kinematics and Dynamics of Robots' // No corresponding entry in SUBJECTS
+    };
+  }
+
+  // Vehicle Dynamics
+  if (
+    fileNameUpper.includes('VEHICLE') && 
+    fileNameUpper.includes('DYNAMIC')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Vehicle Dynamics', { fileName });
+    }
+    return {
+      subject: 'Vehicle Dynamics',
+      standardSubject: SUBJECTS.VEHICLE_DYNAMICS.standard
+    };
+  }
+
+  // Computer Architecture
+  if (
+    (fileNameUpper.includes('COMPUTER') && fileNameUpper.includes('ARCHITECT')) ||
+    fileNameUpper.includes('COMP ARCHITECT')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Computer Architecture', { fileName });
+    }
+    return {
+      subject: 'Computer Architecture',
+      standardSubject: SUBJECTS.COMPUTER_ORGANIZATION.standard
+    };
+  }
+
+  // Engineering Mathematics
+  if (
+    (fileNameUpper.includes('ENGINEERING') && fileNameUpper.includes('MATH')) ||
+    (fileNameUpper.includes('ENGG') && fileNameUpper.includes('MATH'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Engineering Mathematics', { fileName });
+    }
+    return {
+      subject: 'Engineering Mathematics',
+      standardSubject: SUBJECTS.ENGINEERING_MATHEMATICS_1.standard // Use Math 1 as a default
+    };
+  }
+
+  // Power Electronics
+  if (
+    fileNameUpper.includes('POWER') && 
+    fileNameUpper.includes('ELECTRON')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Power Electronics', { fileName });
+    }
+    return {
+      subject: 'Power Electronics',
+      standardSubject: SUBJECTS.POWER_ELECTRONICS.standard
+    };
+  }
+
+  // Engineering Economics
+  if (
+    (fileNameUpper.includes('ENGINEERING') || fileNameUpper.includes('ENGG')) && 
+    fileNameUpper.includes('ECONOMIC')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Engineering Economics', { fileName });
+    }
+    return {
+      subject: 'Engineering Economics',
+      standardSubject: 'Engineering Economics' // No corresponding entry in SUBJECTS
+    };
+  }
+
+  // Soft Computing
+  if (
+    fileNameUpper.includes('SOFT') && 
+    fileNameUpper.includes('COMPUT')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Soft Computing', { fileName });
+    }
+    return {
+      subject: 'Soft Computing',
+      standardSubject: SUBJECTS.SOFT_COMPUTING.standard
+    };
+  }
+
+  // Engineering Drawing/Graphics
+  if (
+    (fileNameUpper.includes('ENGINEERING') || fileNameUpper.includes('ENGG')) && 
+    (fileNameUpper.includes('DRAWING') || fileNameUpper.includes('GRAPHIC'))
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Engineering Drawing', { fileName });
+    }
+    return {
+      subject: 'Engineering Drawing',
+      standardSubject: SUBJECTS.ENGINEERING_GRAPHICS.standard
+    };
+  }
+
+  // Thermodynamics
+  if (
+    fileNameUpper.includes('THERMODYNAMIC') || 
+    fileNameUpper.includes('THERMO DYNAMIC') ||
+    fileNameUpper.includes('THERMO-DYNAMIC')
+  ) {
+    if (verbose) {
+      log('METADATA', 'Subject Match: Thermodynamics', { fileName });
+    }
+    return {
+      subject: 'Thermodynamics',
+      standardSubject: SUBJECTS.THERMODYNAMICS.standard
+    };
+  }
+
+  // Default case - return unknown
+  if (verbose) {
+    log('METADATA', 'Subject Not Matched', { fileName });
   }
   
   return {
@@ -391,7 +876,7 @@ function extractMetadata(path: string, fileName: string): Paper {
     const branch = extractBranch(path, fileName);
     const semester = extractSemester(path, fileName);
     const examType = extractExamType(path, fileName);
-    const { subject, standardSubject } = extractSubject(fileName, path);
+    const { subject, standardSubject } = extractSubject(fileName, VERBOSE);
     
     const metadata: Paper = {
       fileName,
@@ -635,8 +1120,12 @@ async function runCrawler() {
   let db: mongoose.Connection | undefined;
   
   try {
-    // Connect to database
+    // Connect to database only if not in test mode
+    if (!TEST_MODE || DEBUG_MODE) {
     db = await connectToMongoDB();
+    } else {
+      log('INFO', 'Test mode enabled - skipping database connection');
+    }
     
     // Initialize flat collection structure
     const paperCollection: PaperCollection = {
@@ -684,10 +1173,12 @@ async function runCrawler() {
     // Process complete - update stats
     paperCollection.stats.lastUpdated = new Date();
     
+    // Only save to database if in debug mode or not in test mode
+    if (!TEST_MODE || DEBUG_MODE) {
     // Delete existing documents
     await Promise.all([
-      PYQModel.deleteMany({}),
-      DirectoryModel.deleteMany({})
+        DirectoryModel.deleteMany({}),
+        PaperModel.deleteMany({})
     ]);
     
     log('METADATA', `Deleted existing documents. Found ${paperCollection.papers.length} papers to insert.`);
@@ -698,7 +1189,7 @@ async function runCrawler() {
     // Insert new documents
     const [paperResult, directoryResult] = await Promise.all([
       // Insert paper collection
-      PYQModel.create({
+        PaperModel.create({
         papers: paperCollection.papers,
         meta: paperCollection.meta,
         stats: paperCollection.stats
@@ -725,6 +1216,46 @@ async function runCrawler() {
       uniqueStandardSubjects: paperCollection.meta.standardSubjects.length,
       directoryStats: directoryStructure.stats
     });
+    } else {
+      // For test mode, show a summary of found papers
+      log('METADATA', 'Crawler completed in test mode - no data saved to database', {
+        papersCount: paperCollection.papers.length,
+        uniqueYears: paperCollection.meta.years.length,
+        uniqueBranches: paperCollection.meta.branches.length,
+        uniqueExamTypes: paperCollection.meta.examTypes.length,
+        uniqueSemesters: paperCollection.meta.semesters.length,
+        uniqueSubjects: paperCollection.meta.subjects.length,
+        uniqueStandardSubjects: paperCollection.meta.standardSubjects.length,
+        uniqueSubjectValues: paperCollection.meta.subjects,
+        uniqueStandardSubjectValues: paperCollection.meta.standardSubjects,
+        directoryStats: directoryStructure.stats
+      });
+      
+      // If in test mode with verbose, print subject extraction stats
+      if (TEST_MODE && VERBOSE) {
+        // Count papers by subject
+        const subjectCounts: Record<string, number> = {};
+        const standardSubjectCounts: Record<string, number> = {};
+        
+        paperCollection.papers.forEach(paper => {
+          subjectCounts[paper.subject] = (subjectCounts[paper.subject] || 0) + 1;
+          standardSubjectCounts[paper.standardSubject] = (standardSubjectCounts[paper.standardSubject] || 0) + 1;
+        });
+        
+        // Count papers with unknown subjects
+        const unknownCount = subjectCounts['Unknown'] || 0;
+        const knownCount = paperCollection.papers.length - unknownCount;
+        
+        log('METADATA', 'Subject Extraction Statistics', {
+          total: paperCollection.papers.length,
+          identified: knownCount,
+          unidentified: unknownCount,
+          identificationRate: `${((knownCount / paperCollection.papers.length) * 100).toFixed(2)}%`,
+          subjectCounts,
+          standardSubjectCounts
+        });
+      }
+    }
     
   } catch (error) {
     log('ERROR', 'Crawler failed:', {
