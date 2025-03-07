@@ -1,15 +1,17 @@
-import type { DirectoryNode, Paper, DirectoryMeta } from '@/types/paper';
+import type { Paper, DirectoryMeta } from '@/types/paper';
 import { toast } from 'sonner';
 import { 
   STANDARD_VALUES,
   branchMappings, 
   yearMappings, 
   examMappings, 
-  semesterMappings 
+  semesterMappings,
+  subjectMappings 
 } from '@/config/mappings';
 
 export interface SearchFilters {
   query?: string;
+  subject?: string;
   year?: string;
   branch?: string;
   semester?: string;
@@ -34,64 +36,50 @@ function standardizeValue(value: string, mappings: Record<string, string>): stri
   return mappings[value.toUpperCase()] || value;
 }
 
-export function searchPapers(node: DirectoryNode, filters: SearchFilters): SearchResults {
-  const results: Paper[] = [];
+export function searchPapers(meta: DirectoryMeta, filters: SearchFilters): SearchResults {
   const page = filters.page || 1;
   const perPage = filters.perPage || 12;
-  const seenPaths = new Set<string>(); // Track unique papers
   
-  function traverse(node: DirectoryNode) {
-    if (node.type === 'file' && node.metadata) {
-      const metadata = node.metadata;
-      
-      // Skip if we've already seen this paper (avoid duplicates)
-      if (seenPaths.has(node.path)) {
-        return;
-      }
-      seenPaths.add(node.path);
-      
-      // Standardize values for comparison
-      const standardBranch = standardizeValue(metadata.branch, branchMappings);
-      const standardYear = standardizeValue(metadata.year, yearMappings);
-      const standardExam = standardizeValue(metadata.examType, examMappings);
-      const standardSem = standardizeValue(metadata.semester, semesterMappings);
-
-      // Apply filters
-      const matchesBranch = !filters.branch || standardBranch === filters.branch;
-      const matchesYear = !filters.year || standardYear === filters.year;
-      const matchesExam = !filters.examType || standardExam === filters.examType;
-      const matchesSem = !filters.semester || standardSem === filters.semester;
-      
-      // Full text search
-      const searchQuery = filters.query?.toLowerCase() || '';
-      const matchesQuery = !searchQuery || [
-        metadata.fileName,
-        standardBranch,
-        standardYear,
-        standardSem,
-        standardExam
-      ].some(field => 
-        field.toLowerCase().includes(searchQuery)
-      );
-
-      if (matchesBranch && matchesYear && matchesExam && matchesSem && matchesQuery) {
-        results.push({
-          ...metadata,
-          branch: standardBranch,
-          year: standardYear,
-          examType: standardExam,
-          semester: standardSem
-        });
-      }
-    }
-
-    // Recursively search children
-    if (node.children) {
-      Object.values(node.children).forEach(traverse);
-    }
+  if (!meta.papers) {
+    return {
+      papers: [],
+      totalPages: 0,
+      currentPage: page,
+      totalItems: 0
+    };
   }
+  
+  // Apply filters
+  const results = meta.papers.filter(paper => {
+    // Standardize values for comparison
+    const standardBranch = standardizeValue(paper.branch, branchMappings);
+    const standardYear = standardizeValue(paper.year, yearMappings);
+    const standardExam = standardizeValue(paper.examType, examMappings);
+    const standardSem = standardizeValue(paper.semester, semesterMappings);
+    const standardSubject = standardizeValue(paper.subject || '', subjectMappings);
 
-  traverse(node);
+    // Apply filters
+    const matchesBranch = !filters.branch || standardBranch === filters.branch;
+    const matchesYear = !filters.year || standardYear === filters.year;
+    const matchesExam = !filters.examType || standardExam === filters.examType;
+    const matchesSem = !filters.semester || standardSem === filters.semester;
+    const matchesSubject = !filters.subject || standardSubject === filters.subject;
+    
+    // Full text search
+    const searchQuery = filters.query?.toLowerCase() || '';
+    const matchesQuery = !searchQuery || [
+      paper.fileName,
+      standardBranch,
+      standardYear,
+      standardSem,
+      standardExam,
+      standardSubject
+    ].some(field => 
+      field?.toLowerCase().includes(searchQuery)
+    );
+
+    return matchesBranch && matchesYear && matchesExam && matchesSem && matchesSubject && matchesQuery;
+  });
 
   // Sort results by year (descending) and filename
   results.sort((a, b) => {
@@ -115,6 +103,7 @@ export function searchPapers(node: DirectoryNode, filters: SearchFilters): Searc
 
   // Show toast for filter changes
   const activeFilters = [
+    filters.subject && `Subject: ${filters.subject}`,
     filters.branch && `Branch: ${filters.branch}`,
     filters.year && `Year: ${filters.year}`,
     filters.semester && `Semester: ${filters.semester}`,
@@ -140,6 +129,12 @@ export function searchPapers(node: DirectoryNode, filters: SearchFilters): Searc
 export function getFilterOptions(meta: DirectoryMeta) {
   // Filter standard values based on what's available in meta
   return {
+    subjects: Object.values(STANDARD_VALUES.SUBJECTS)
+      .filter(subject => meta.subjects.includes(subject))
+      .map(subject => ({
+        label: subject,
+        value: subject
+      })),
     years: Object.values(STANDARD_VALUES.YEARS)
       .filter(year => meta.years.includes(year))
       .map(year => ({

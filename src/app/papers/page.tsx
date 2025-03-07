@@ -20,11 +20,12 @@ function SearchContent() {
   const [papers, setPapers] = useState<DBPaper[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const { structure, meta, isLoading } = usePapers();
+  const { meta, isLoading } = usePapers();
 
   // Get current filters from URL using useMemo to prevent unnecessary recalculations
   const filters = useMemo<SearchFilters>(() => ({
     query: searchParams.get('q') || '',
+    subject: searchParams.get('subject') || '',
     year: searchParams.get('year') || '',
     branch: searchParams.get('branch') || '',
     semester: searchParams.get('semester') || '',
@@ -55,17 +56,18 @@ function SearchContent() {
 
   // Search papers when filters or structure changes
   useEffect(() => {
-    if (structure) {
-      const results = searchPapers(structure, filters);
+    if (meta) {
+      const results = searchPapers(meta, filters);
       setPapers(results.papers as DBPaper[]);
       setTotalPages(results.totalPages);
       setTotalItems(results.totalItems);
     }
-  }, [structure, filters]);
+  }, [meta, filters]);
 
   // Get filter options using useMemo to prevent unnecessary recalculations
   const filterOptions = useMemo(() => 
     meta ? getFilterOptions(meta) : {
+      subjects: [],
       years: [],
       branches: [],
       semesters: [],
@@ -105,14 +107,17 @@ function SearchContent() {
           {/* Fixed Filters Column */}
           <aside className="sticky top-[73px] flex h-[calc(100vh-73px)] flex-none flex-col space-y-6 overflow-y-auto py-6">
             <PaperFilters
+              subjects={filterOptions.subjects}
               years={filterOptions.years}
               branches={filterOptions.branches}
               semesters={filterOptions.semesters}
               examTypes={filterOptions.examTypes}
+              selectedSubject={filters.subject || ''}
               selectedYear={filters.year || ''}
               selectedBranch={filters.branch || ''}
               selectedSemester={filters.semester || ''}
               selectedExamType={filters.examType || ''}
+              onSubjectChange={(subject) => handleFilterChange('subject', subject)}
               onYearChange={(year) => handleFilterChange('year', year)}
               onBranchChange={(branch) => handleFilterChange('branch', branch)}
               onSemesterChange={(semester) => handleFilterChange('semester', semester)}
@@ -120,10 +125,16 @@ function SearchContent() {
             />
 
             {/* Active Filters Summary */}
-            {(filters.year || filters.branch || filters.semester || filters.examType) && (
+            {(filters.subject || filters.year || filters.branch || filters.semester || filters.examType) && (
               <div className="rounded-lg border border-accent bg-secondary p-4">
                 <h4 className="mb-3 text-sm font-medium text-content">Active Filters</h4>
                 <div className="space-y-2">
+                  {filters.subject && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-content/60">Subject:</span>
+                      <span className="text-content">{filters.subject}</span>
+                    </div>
+                  )}
                   {filters.year && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-content/60">Year:</span>
@@ -158,11 +169,16 @@ function SearchContent() {
             <div className="flex-none mb-4">
               <div className="text-sm text-content/60">
                 {totalItems} {totalItems === 1 ? 'paper' : 'papers'} found
+                {filters.subject && ` in ${filters.subject}`}
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              <PaperGrid papers={papers} isLoading={isLoading} />
+              <PaperGrid 
+                papers={papers} 
+                isLoading={isLoading} 
+                groupBySubject={!filters.subject} 
+              />
             </div>
 
             <div className="flex-none mt-4 border-t border-accent/20 pt-4">
