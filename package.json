@@ -17,6 +17,7 @@
     "mongodb": "^6.13.1",
     "mongoose": "^8.10.1",
     "next": "^15.2.0",
+    "node-fetch": "^3.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sonner": "^2.0.1"
