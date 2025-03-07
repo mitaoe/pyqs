@@ -91,55 +91,45 @@ function getPathParts(path: string): string[] {
 }
 
 // Fetch directory contents
-async function fetchDirectory(path: string): Promise<DirectoryItem[]> {
-  log('INFO', 'Fetching directory:', path);
+async function fetchDirectory(urlStr: string): Promise<DirectoryItem[]> {
   try {
-    // Ensure proper URL encoding
-    let normalizedPath = path;
-    
-    // Special handling for known problematic characters
-    if (path.includes('&') && !path.includes('%26')) {
-      // Replace & with %26 if not already encoded
-      normalizedPath = path.replace(/&/g, '%26');
-      if (VERBOSE) {
-        log('INFO', `Fixed URL encoding for ampersand: ${path} -> ${normalizedPath}`);
+    // Ensure we're working with a complete URL
+    let fullUrl = urlStr;
+    if (!fullUrl.startsWith('http')) {
+      // Remove leading slash if present to avoid double slashes
+      if (fullUrl.startsWith('/')) {
+        fullUrl = fullUrl.substring(1);
       }
+      fullUrl = BASE_URL + fullUrl;
     }
     
-    const response = await fetch(normalizedPath, {
+    // Check for double slashes that aren't part of the protocol
+    fullUrl = fullUrl.replace(/([^:])\/\//g, '$1/');
+    
+    // Simply replace & with %26 - this is the only encoding we need to handle specially
+    fullUrl = fullUrl.replace(/&/g, '%26');
+    
+    if (VERBOSE) {
+      log('INFO', `Fetching URL: ${fullUrl}`);
+    }
+    
+    // Make the request
+    const response = await fetch(fullUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
       }
     });
 
-    if (!response.ok) {
-      // If the encoding fix didn't work and we modified the URL, try the original
-      if (normalizedPath !== path && response.status === 404) {
-        log('INFO', `Encoded URL failed, trying original: ${path}`);
-        return fetchDirectory(path);
-      }
-      
-      throw new Error(`Failed to fetch directory: ${response.status}`);
-    }
-
+    // Process the response
+    if (response.ok) {
     const html = await response.text();
-    const items = parseDirectoryListing(html, normalizedPath);
-    log('INFO', `Found ${items.length} items in ${normalizedPath}`);
-    
-    // Check if we received an empty directory but it might be due to encoding issues
-    if (items.length === 0 && normalizedPath.includes('%')) {
-      log('INFO', 'Empty directory with encoded URL, trying to decode and retry');
-      // Try a different encoding approach in case the server expects a different format
-      const decodedPath = decodeURIComponent(normalizedPath);
-      if (decodedPath !== normalizedPath && decodedPath !== path) {
-        log('INFO', `Trying decoded URL: ${decodedPath}`);
-        return fetchDirectory(decodedPath);
-      }
+      return parseDirectoryListing(html, urlStr);
+    } else {
+      log('ERROR', `Failed to fetch URL (${response.status}): ${fullUrl}`);
+      return [];
     }
-    
-    return items;
   } catch (error) {
-    log('ERROR', `Failed to fetch directory ${path}:`, error);
+    log('ERROR', `Exception fetching directory ${urlStr}:`, error);
     return [];
   }
 }
@@ -1036,15 +1026,17 @@ function propagateStats(node: DirectoryNode | undefined, deltaFiles: number, del
   }
 }
 
-// Clean structure by removing circular parent references for storage
+// Clean structure for storage by removing circular references
 function cleanStructure(node: DirectoryNode): CleanNode {
-  // Use proper destructuring to exclude parent without creating unused variable
+  if (!node) return {} as CleanNode;
+  
   const { children, ...rest } = node;
+  
+  // Process children recursively
   const cleanedChildren: Record<string, CleanNode> = {};
 
-  // Clean each child recursively
-  for (const [key, child] of Object.entries(children)) {
-    cleanedChildren[key] = cleanStructure(child);
+  for (const key in children) {
+    cleanedChildren[key] = cleanStructure(children[key]);
   }
 
   return {
@@ -1228,8 +1220,8 @@ async function runCrawler() {
         uniqueStandardSubjects: paperCollection.meta.standardSubjects.length,
         uniqueSubjectValues: paperCollection.meta.subjects,
         uniqueStandardSubjectValues: paperCollection.meta.standardSubjects,
-        directoryStats: directoryStructure.stats
-      });
+      directoryStats: directoryStructure.stats
+    });
       
       // If in test mode with verbose, print subject extraction stats
       if (TEST_MODE && VERBOSE) {
