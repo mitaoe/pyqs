@@ -1,17 +1,26 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode, useCallback } from 'react';
 import { toast } from 'sonner';
-import type { DirectoryStructure, DirectoryMeta } from '@/types/paper';
+import type { DirectoryMeta, Paper } from '@/types/paper';
 import { STANDARD_VALUES } from '@/config/mappings';
 
 interface PaperContextType {
-  structure: DirectoryStructure | null;
   meta: DirectoryMeta | null;
+  papers: Paper[];
+  structure: DirectoryNode | null;
   lastUpdated: Date | null;
   isLoading: boolean;
   error: Error | null;
   standardValues: typeof STANDARD_VALUES;
+  filters: {
+    subject: string;
+    year: string;
+    branch: string;
+    semester: string;
+    examType: string;
+  };
+  setFilter: (key: keyof PaperContextType['filters'], value: string) => void;
   refreshData: () => Promise<void>;
 }
 
@@ -33,14 +42,22 @@ interface PaperProviderProps {
 }
 
 export function PaperProvider({ children }: PaperProviderProps) {
-  const [structure, setStructure] = useState<DirectoryStructure | null>(null);
   const [meta, setMeta] = useState<DirectoryMeta | null>(null);
+  const [papers, setPapers] = useState<Paper[]>([]);
+  const [structure, setStructure] = useState<DirectoryNode | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [filters, setFilters] = useState({
+    subject: '',
+    year: '',
+    branch: '',
+    semester: '',
+    examType: ''
+  });
   const isMounted = useRef(false);
 
-  const fetchData = async (force = false) => {
+  const fetchData = useCallback(async (force = false) => {
     try {
       // Only check cache if mounted (client-side) and not forcing refresh
       if (!force && isMounted.current) {
@@ -51,8 +68,9 @@ export function PaperProvider({ children }: PaperProviderProps) {
             const age = Date.now() - timestamp;
             
             if (age < CACHE_DURATION) {
-              setStructure(data.structure);
               setMeta(data.meta);
+              setPapers(data.meta.papers || []);
+              setStructure(data.structure);
               setLastUpdated(new Date(data.lastUpdated));
               setIsLoading(false);
               return;
@@ -68,65 +86,71 @@ export function PaperProvider({ children }: PaperProviderProps) {
         toast.loading('Refreshing papers...');
       }
 
-      const response = await fetch('/api/papers');
+      // Build query string from filters
+      const query = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) query.append(key, value);
+      });
+
+      // Fetch both papers and directory structure
+      const [papersResponse, directoryResponse] = await Promise.all([
+        fetch(`/api/papers?${query}`),
+        fetch('/api/directory')
+      ]);
       
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!papersResponse.ok) {
+        const errorData = await papersResponse.json();
         throw new Error(errorData.error || 'Failed to fetch papers');
       }
-      
-      const data = await response.json();
-      
-      if (!data.structure || !data.meta) {
-        throw new Error('Invalid data format received from server');
+
+      if (!directoryResponse.ok) {
+        const errorData = await directoryResponse.json();
+        throw new Error(errorData.error || 'Failed to fetch directory structure');
       }
+      
+      const [papersData, directoryData] = await Promise.all([
+        papersResponse.json(),
+        directoryResponse.json()
+      ]);
 
-      // Update state
-      setStructure(data.structure);
-      setMeta(data.meta);
-      setLastUpdated(new Date(data.lastUpdated));
-      setError(null);
-
-      // Only cache if mounted (client-side)
+      // Update state with both papers and directory data
+      setMeta(papersData.meta);
+      setPapers(papersData.meta.papers || []);
+      setStructure(directoryData.structure);
+      setLastUpdated(new Date(papersData.lastUpdated));
+      
+      // Cache the combined data
       if (isMounted.current) {
         try {
           localStorage.setItem(CACHE_KEY, JSON.stringify({
-            data,
+            data: {
+              meta: papersData.meta,
+              structure: directoryData.structure,
+              lastUpdated: papersData.lastUpdated
+            },
             timestamp: Date.now()
           }));
         } catch (e) {
-          console.warn('Failed to write to cache:', e);
-          toast.error('Failed to cache data locally');
+          console.warn('Failed to cache data:', e);
+          console.error('Cache error details:', e);
         }
       }
 
       if (force) {
-        toast.success('Papers refreshed successfully!');
+        toast.success('Papers refreshed successfully');
       }
-
-    } catch (err) {
-      console.error('Error fetching papers:', err);
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      // Clear invalid data
-      setStructure(null);
-      setMeta(null);
-      setLastUpdated(null);
-
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to fetch papers'
-      );
+      
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      setError(error instanceof Error ? error : new Error('Unknown error'));
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch data');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters]);
 
-  const refreshData = async () => {
-    const promise = fetchData(true);
-    toast.promise(promise, {
-      loading: 'Refreshing papers...',
-      success: 'Papers refreshed successfully!',
-      error: 'Failed to refresh papers'
-    });
+  const setFilter = (key: keyof PaperContextType['filters'], value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   useEffect(() => {
@@ -135,20 +159,27 @@ export function PaperProvider({ children }: PaperProviderProps) {
     return () => {
       isMounted.current = false;
     };
-  }, []);
+  }, [fetchData]);
 
-  const value = {
-    structure,
-    meta,
-    lastUpdated,
-    isLoading,
-    error,
-    standardValues: STANDARD_VALUES,
-    refreshData
-  };
+  useEffect(() => {
+    if (isMounted.current) {
+      fetchData();
+    }
+  }, [fetchData]);
 
   return (
-    <PaperContext.Provider value={value}>
+    <PaperContext.Provider value={{
+      meta,
+      papers,
+      structure,
+      lastUpdated,
+      isLoading,
+      error,
+      standardValues: STANDARD_VALUES,
+      filters,
+      setFilter,
+      refreshData: () => fetchData(true)
+    }}>
       {children}
     </PaperContext.Provider>
   );

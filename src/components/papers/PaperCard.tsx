@@ -3,7 +3,7 @@ import type { Paper } from '@/types/paper';
 import { DownloadIcon } from '@/components/ui/icons';
 import { downloadFile } from '@/utils/download';
 
-type PaperCardProps = Pick<Paper, 'year' | 'branch' | 'semester' | 'examType' | 'fileName' | 'url'>;
+type PaperCardProps = Pick<Paper, 'year' | 'branch' | 'semester' | 'examType' | 'fileName' | 'url' | 'subject' | 'standardSubject'>;
 
 export default function PaperCard({
   year,
@@ -12,6 +12,8 @@ export default function PaperCard({
   examType,
   fileName,
   url,
+  subject,
+  standardSubject,
 }: PaperCardProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -27,15 +29,19 @@ export default function PaperCard({
     }
   };
 
+  // Display standardSubject if available, otherwise use subject
+  const displaySubject = standardSubject !== 'Unknown' ? standardSubject : subject;
+
   return (
     <div className="group relative rounded-lg border border-accent bg-secondary p-4 transition-all hover:border-accent/80">
       <div className="mb-4">
-        <h3 className="font-medium text-content">{fileName}</h3>
+        <h3 className="font-medium text-content">{displaySubject}</h3>
+        <p className="mt-1 text-sm text-content/60">{fileName}</p>
         <p className="mt-1 text-sm text-content/60">{year}</p>
       </div>
       
       <div className="mb-4 grid grid-cols-2 gap-2 text-sm">
-        {branch && (
+        {branch !== 'COMMON' && (
           <div>
             <span className="text-content/60">Branch:</span>
             <span className="ml-1 text-content">{branch}</span>
