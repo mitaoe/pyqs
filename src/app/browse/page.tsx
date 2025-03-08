@@ -8,7 +8,6 @@ import DirectoryBrowser from '@/components/directory/DirectoryBrowser';
 import { usePapers } from '@/contexts/PaperContext';
 import type { DirectoryNode, Paper } from '@/types/paper';
 
-// Extending Paper type for development purposes
 interface PaperWithSubject extends Paper {
   subject: string;
 }
@@ -33,8 +32,15 @@ function BrowseContent() {
   const searchParams = useSearchParams();
   const currentPath = searchParams.get('path') || '';
   
-  const { structure, isLoading, error } = usePapers();
+  const { structure, isLoading, error, fetchDirectoryData } = usePapers();
   const [currentNode, setCurrentNode] = useState<DirectoryNode | null>(null);
+
+  useEffect(() => {
+    // Only fetch directory data if it's not already loaded
+    if (!structure && !isLoading) {
+      fetchDirectoryData();
+    }
+  }, [structure, isLoading, fetchDirectoryData]);
 
   useEffect(() => {
     if (structure) {
@@ -63,7 +69,7 @@ function BrowseContent() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-content/60">Loading...</div>
+        <div className="text-content/60">Loading directory structure...</div>
       </div>
     );
   }
