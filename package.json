@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "crawl": "tsx src/scripts/crawler.ts"
+    "crawl": "tsx src/scripts/crawler.ts",
+    "crawl:list": "tsx src/scripts/crawler.ts --list-only",
+    "crawl:test": "tsx src/scripts/crawler.ts --test --verbose",
+    "crawl:interactive": "tsx src/scripts/crawler.ts --interactive",
+    "crawl:auto": "tsx src/scripts/crawler.ts --auto-classify"
   },
   "dependencies": {
     "@phosphor-icons/react": "2.1.7",

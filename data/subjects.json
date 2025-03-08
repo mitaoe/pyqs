@@ -1,302 +1,635 @@
 {
-  "ENGINEERING_MATHEMATICS_1": {
-    "standard": "Engineering Mathematics 1",
-    "branch": "COMMON",
-    "semester": "SEMESTER 1"
-  },
-  "ENGINEERING_MATHEMATICS_2": {
-    "standard": "Engineering Mathematics 2",
-    "branch": "COMMON",
-    "semester": "SEMESTER 2"
-  },
-  "ENGINEERING_PHYSICS": {
-    "standard": "Engineering Physics",
-    "branch": "COMMON",
-    "semester": "SEMESTER 1"
-  },
-  "ENGINEERING_CHEMISTRY": {
-    "standard": "Engineering Chemistry",
-    "branch": "COMMON",
-    "semester": "SEMESTER 1"
-  },
-  "BASIC_ELECTRICAL_ENGINEERING": {
-    "standard": "Basic Electrical Engineering",
-    "branch": "COMMON",
-    "semester": "SEMESTER 1"
-  },
-  "COMPUTER_PROGRAMMING": {
-    "standard": "Computer Programming",
-    "branch": "COMMON",
-    "semester": "SEMESTER 1"
-  },
-  "ENGINEERING_GRAPHICS": {
-    "standard": "Engineering Graphics",
-    "branch": "COMMON",
-    "semester": "SEMESTER 1"
+  "ADVANCED_DATA_STRUCTURES": {
+    "standard": "Advanced Data Structures"
   },
   "APPLIED_MECHANICS": {
-    "standard": "Applied Mechanics",
-    "branch": "COMMON",
-    "semester": "SEMESTER 1"
+    "standard": "Applied Mechanics"
   },
-  "LANGUAGE_COMMUNICATION": {
-    "standard": "Language and Communication",
-    "branch": "COMMON",
-    "semester": "SEMESTER 1"
+  "ENGINEERING_CHEMISTRY": {
+    "standard": "Engineering Chemistry"
+  },
+  "COMPUTER_PROGRAMMING": {
+    "standard": "Computer Programming"
+  },
+  "ELECTRICAL_AND_ELECTRONICS_ENGINEERING": {
+    "standard": "Electrical and Electronics Engineering"
+  },
+  "ENGINEERING_GRAPHICS": {
+    "standard": "Engineering Graphics"
+  },
+  "CALCULUS_AND_DIFFERENTIAL_EQUATIONS": {
+    "standard": "Calculus and Differential Equations"
+  },
+  "ENGINEERING_PHYSICS": {
+    "standard": "Engineering Physics"
+  },
+  "LANGUAGE_AND_COMMUNICATION": {
+    "standard": "Language and Communication"
+  },
+  "APPLIED_DIGITAL_CIRCUITS": {
+    "standard": "Applied Digital Circuits"
+  },
+  "MECHANICS_OF_SOLIDS": {
+    "standard": "Mechanics of Solids"
+  },
+  "MATERIAL_AND_ENERGY_BALANCES": {
+    "standard": "Material and Energy Balances"
+  },
+  "OBJECT_ORIENTED_TECHNOLOGY": {
+    "standard": "Object Oriented Technology"
+  },
+  "ANALOG_ELECTRONICS": {
+    "standard": "Analog Electronics"
+  },
+  "ENVIRONMENTAL_SCIENCE": {
+    "standard": "Environmental Science"
   },
   "DATA_STRUCTURES": {
-    "standard": "Data Structures",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 3"
+    "standard": "Data Structures"
   },
-  "DATABASE_SYSTEMS": {
-    "standard": "Database Systems",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 4"
+  "DIGITAL_ELECTRONICS_AND_MICROPROCESSOR": {
+    "standard": "Digital Electronics and Microprocessor"
   },
-  "OPERATING_SYSTEMS": {
-    "standard": "Operating Systems",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 5"
+  "DIGITAL_SYSTEMS_AND_APPLICATIONS": {
+    "standard": "Digital Systems and Applications"
+  },
+  "SYSTEM_ENGINEERING": {
+    "standard": "System Engineering"
   },
   "COMPUTER_NETWORKS": {
-    "standard": "Computer Networks",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 6"
-  },
-  "MECHANICS": {
-    "standard": "Mechanics",
-    "branch": "MECHANICAL",
-    "semester": "SEMESTER 3"
-  },
-  "THERMODYNAMICS": {
-    "standard": "Thermodynamics",
-    "branch": "MECHANICAL",
-    "semester": "SEMESTER 4"
-  },
-  "DIGITAL_ELECTRONICS": {
-    "standard": "Digital Electronics",
-    "branch": "ENTC",
-    "semester": "SEMESTER 3"
-  },
-  "SIGNALS_SYSTEMS": {
-    "standard": "Signals and Systems",
-    "branch": "ENTC",
-    "semester": "SEMESTER 4"
-  },
-  "CLOUD_COMPUTING": {
-    "standard": "Cloud Computing",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 6"
-  },
-  "COMPILER_DESIGN": {
-    "standard": "Compiler Design",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 6"
-  },
-  "MACHINE_LEARNING": {
-    "standard": "Machine Learning",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 6"
-  },
-  "ALGORITHMS": {
-    "standard": "Design and Analysis of Algorithms",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 6"
-  },
-  "SOFTWARE_ENGINEERING": {
-    "standard": "Software Engineering",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 6"
-  },
-  "PREDICTIVE_ANALYTICS": {
-    "standard": "Predictive Analytics",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 6"
-  },
-  "DESCRIPTIVE_ANALYTICS": {
-    "standard": "Descriptive Analytics",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 5"
-  },
-  "COMPUTER_ORGANIZATION": {
-    "standard": "Computer Organization and Architecture",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 5"
-  },
-  "ARTIFICIAL_INTELLIGENCE": {
-    "standard": "Artificial Intelligence",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 5"
-  },
-  "COMPUTER_GRAPHICS": {
-    "standard": "Computer Graphics",
-    "branch": "COMPUTER",
-    "semester": "SEMESTER 3"
-  },
-  "REINFORCED_CONCRETE": {
-    "standard": "Design of Reinforced Concrete Structures",
-    "branch": "CIVIL",
-    "semester": "SEMESTER 6"
-  },
-  "OPERATION_RESEARCH": {
-    "standard": "Operation Research",
-    "branch": "CIVIL",
-    "semester": "SEMESTER 6"
-  },
-  "TRANSPORTATION_ENGINEERING": {
-    "standard": "Transportation Engineering",
-    "branch": "CIVIL",
-    "semester": "SEMESTER 6"
-  },
-  "WASTE_TREATMENT": {
-    "standard": "Unit Operations for Liquid Waste Treatment",
-    "branch": "CIVIL",
-    "semester": "SEMESTER 6"
-  },
-  "WATER_RESOURCES": {
-    "standard": "Water Resources Engineering",
-    "branch": "CIVIL",
-    "semester": "SEMESTER 6"
-  },
-  "CONCRETE_TECHNOLOGY": {
-    "standard": "Concrete Technology",
-    "branch": "CIVIL",
-    "semester": "SEMESTER 5"
-  },
-  "CONSTRUCTION_MANAGEMENT": {
-    "standard": "Construction Planning and Management",
-    "branch": "CIVIL",
-    "semester": "SEMESTER 5"
-  },
-  "DIGITAL_COMMUNICATION": {
-    "standard": "Digital Communication",
-    "branch": "ENTC",
-    "semester": "SEMESTER 6"
-  },
-  "DIGITAL_SIGNAL_PROCESSING": {
-    "standard": "Digital Signal Processing",
-    "branch": "ENTC",
-    "semester": "SEMESTER 6"
-  },
-  "ANTENNA_THEORY": {
-    "standard": "Antenna Theory and Design",
-    "branch": "ENTC",
-    "semester": "SEMESTER 6"
-  },
-  "POWER_ELECTRONICS": {
-    "standard": "Power Electronics",
-    "branch": "ENTC",
-    "semester": "SEMESTER 6"
-  },
-  "SOFT_COMPUTING": {
-    "standard": "Soft Computing",
-    "branch": "ENTC",
-    "semester": "SEMESTER 6"
-  },
-  "IOT_NETWORKS": {
-    "standard": "IoT Networks and Protocols",
-    "branch": "ENTC",
-    "semester": "SEMESTER 6"
-  },
-  "ROBOT_DYNAMICS": {
-    "standard": "Robot Dynamics and Control",
-    "branch": "ENTC",
-    "semester": "SEMESTER 6"
-  },
-  "COMMUNICATION_SYSTEMS": {
-    "standard": "Principles of Communication Systems",
-    "branch": "ENTC",
-    "semester": "SEMESTER 6"
-  },
-  "REAL_TIME_OS": {
-    "standard": "Real Time Operating System",
-    "branch": "ENTC",
-    "semester": "SEMESTER 6"
-  },
-  "COMPUTATIONAL_FLUID_DYNAMICS": {
-    "standard": "Computational Fluid Dynamics",
-    "branch": "MECHANICAL",
-    "semester": "SEMESTER 6"
-  },
-  "TRANSMISSION_SYSTEMS": {
-    "standard": "Design of Transmission Systems",
-    "branch": "MECHANICAL",
-    "semester": "SEMESTER 6"
-  },
-  "QUALITY_MANAGEMENT": {
-    "standard": "Quality Management",
-    "branch": "MECHANICAL",
-    "semester": "SEMESTER 6"
-  },
-  "VEHICLE_DYNAMICS": {
-    "standard": "Vehicle Dynamics",
-    "branch": "MECHANICAL",
-    "semester": "SEMESTER 6"
-  },
-  "HEAT_TRANSFER": {
-    "standard": "Heat Transfer",
-    "branch": "MECHANICAL",
-    "semester": "SEMESTER 5"
-  },
-  "MACHINE_DESIGN": {
-    "standard": "Machine Design",
-    "branch": "MECHANICAL",
-    "semester": "SEMESTER 5"
-  },
-  "CHEMICAL_EQUIPMENT_DESIGN": {
-    "standard": "Chemical Equipment Design",
-    "branch": "CHEMICAL",
-    "semester": "SEMESTER 6"
-  },
-  "PROCESS_DYNAMICS": {
-    "standard": "Process Dynamics Control and Instrumentation",
-    "branch": "CHEMICAL",
-    "semester": "SEMESTER 6"
-  },
-  "ENERGY_SYSTEMS": {
-    "standard": "Energy System Analysis and Modelling",
-    "branch": "CHEMICAL",
-    "semester": "SEMESTER 6"
-  },
-  "PROCESS_MODELLING": {
-    "standard": "Process Modelling and Simulation",
-    "branch": "CHEMICAL",
-    "semester": "SEMESTER 6"
-  },
-  "PROCESS_ENGINEERING": {
-    "standard": "Process Engineering",
-    "branch": "CHEMICAL",
-    "semester": "SEMESTER 6"
-  },
-  "SEPARATION_PROCESS": {
-    "standard": "Separation Process",
-    "branch": "CHEMICAL",
-    "semester": "SEMESTER 6"
-  },
-  "CYBER_SECURITY": {
-    "standard": "Cyber Security and Forensics",
-    "branch": "IT",
-    "semester": "SEMESTER 6"
-  },
-  "COMPUTATIONAL_INTELLIGENCE": {
-    "standard": "Computational Intelligence",
-    "branch": "IT",
-    "semester": "SEMESTER 6"
+    "standard": "Computer Networks"
   },
   "ENGINEERING_INFORMATICS": {
-    "standard": "Engineering Informatics",
-    "branch": "COMMON",
-    "semester": "SEMESTER 3"
+    "standard": "Engineering Informatics"
   },
   "MATERIALS_ENGINEERING": {
-    "standard": "Materials Engineering",
-    "branch": "COMMON",
-    "semester": "SEMESTER 3"
+    "standard": "Materials Engineering"
+  },
+  "SOLID_MECHANICS": {
+    "standard": "Solid Mechanics"
+  },
+  "THERMAL_ENGINEERING": {
+    "standard": "Thermal Engineering"
+  },
+  "PSYCHOLOGY": {
+    "standard": "Psychology"
+  },
+  "APPLIED_MATHEMATICS": {
+    "standard": "Applied Mathematics"
+  },
+  "APPLIED_DIGITAL_CIRCUTS": {
+    "standard": "Applied Digital Circuts"
+  },
+  "STATISTICS_AND_INTEGRAL_CALCULUS": {
+    "standard": "Statistics and Integral Calculus"
+  },
+  "MOMENTUM_TRANSFER": {
+    "standard": "Momentum Transfer"
+  },
+  "BUILDING_DESIGN_AND_CONSTRUCTION": {
+    "standard": "Building Design and Construction"
+  },
+  "GEOTECHNICAL_ENGINEERING": {
+    "standard": "Geotechnical Engineering"
+  },
+  "DATABASE_MANAGEMENT_SYSTEM": {
+    "standard": "Database Management System"
+  },
+  "DISCRETE_STRUCTURES": {
+    "standard": "Discrete Structures"
+  },
+  "CIRCUIT_THEORY": {
+    "standard": "Circuit Theory"
+  },
+  "NETWORK_ANALYSIS_TECHNIQUES": {
+    "standard": "Network Analysis Techniques"
+  },
+  "SIGNALS_AND_SYSTEMS": {
+    "standard": "Signals and Systems"
+  },
+  "FLUID_MECHANICS": {
+    "standard": "Fluid Mechanics"
+  },
+  "MANUFACTURING_TECHNOLOGY": {
+    "standard": "Manufacturing Technology"
+  },
+  "ADVANCED_CHEMISTRY": {
+    "standard": "Advanced Chemistry"
+  },
+  "ANALOG_AND_DIGITAL_COMMUNICATION": {
+    "standard": "Analog and Digital Communication"
+  },
+  "CHEMICAL_ENGINEERING_OPERATIONS": {
+    "standard": "Chemical Engineering Operations"
+  },
+  "CHEMICAL_ENGINEERING_THERMODYNAMICS": {
+    "standard": "Chemical Engineering Thermodynamics"
+  },
+  "HEAT_TRANSFER": {
+    "standard": "Heat Transfer"
+  },
+  "MASS_TRANSFER": {
+    "standard": "Mass Transfer"
+  },
+  "PROCESS_MODELING_AND_SIMULATION": {
+    "standard": "Process Modeling and Simulation"
+  },
+  "CONCRETE_TECHNOLOGY": {
+    "standard": "Concrete Technology"
+  },
+  "CONSTRUCTION_PLANNING_AND_MANAGEMENT": {
+    "standard": "Construction Planning and Management"
+  },
+  "STRUCTURAL_ANALYSIS": {
+    "standard": "Structural Analysis"
+  },
+  "COMPUTER_ORGANIZATION_AND_ARCHITECTURE": {
+    "standard": "Computer Organization and Architecture"
+  },
+  "CRYPTOGRAPHY_AND_SYSTEM_SECURITY": {
+    "standard": "Cryptography and System Security"
+  },
+  "DESCRIPTIVE_ANALYTICS": {
+    "standard": "Descriptive Analytics"
+  },
+  "OPERATING_SYSTEM": {
+    "standard": "Operating System"
+  },
+  "THEORY_OF_COMPUTATION": {
+    "standard": "Theory of Computation"
+  },
+  "EMBEDDED_SYSTEM_DESIGN": {
+    "standard": "Embedded System Design"
+  },
+  "FUNDAMENTALS_OF_ROBOTICS": {
+    "standard": "Fundamentals of Robotics"
+  },
+  "WEB_TECHNOLOGY": {
+    "standard": "Web Technology"
+  },
+  "GEOMETRIC_MODELING_AND_DESIGN": {
+    "standard": "Geometric Modeling and Design"
+  },
+  "MACHINE_DESIGN": {
+    "standard": "Machine Design"
+  },
+  "MACHINES_AND_MECHANISMS": {
+    "standard": "Machines and Mechanisms"
+  },
+  "WORK_PROCESS_ASSESSMENT": {
+    "standard": "Work Process Assessment"
+  },
+  "CONTROL_SYSTEMS": {
+    "standard": "Control Systems"
+  },
+  "PROJECT_MANAGEMENT": {
+    "standard": "Project Management"
+  },
+  "EMBEDDED_SYSTEM_PROGRAMMING": {
+    "standard": "Embedded System Programming"
+  },
+  "ENGINEERING_ECONOMICS": {
+    "standard": "Engineering Economics"
+  },
+  "SOCIOLOGY": {
+    "standard": "Sociology"
+  },
+  "BIOCHEMICAL_ENGINEERING": {
+    "standard": "Biochemical Engineering"
+  },
+  "ENERGY_TECHNOLOGY": {
+    "standard": "Energy Technology"
+  },
+  "PETROLEUM_REFINING_TECHNOLOGY": {
+    "standard": "Petroleum Refining Technology"
+  },
+  "PROCESS_DESIGN_SYNTHESIS_AND_OPTIMIZATION": {
+    "standard": "Process Design Synthesis and Optimization"
+  },
+  "PROCESS_DYNAMICS_CONTROL_AND_INSTRUMENTATION": {
+    "standard": "Process Dynamics Control and Instrumentation"
+  },
+  "BUILDING_SERVICES": {
+    "standard": "Building Services"
+  },
+  "DRINKING_WATER_AND_SANITARY_ENGINEERING": {
+    "standard": "Drinking Water and Sanitary Engineering"
+  },
+  "FINANCIAL_MANAGEMENT": {
+    "standard": "Financial Management"
+  },
+  "RAILWAY_ENGINEERING": {
+    "standard": "Railway Engineering"
+  },
+  "BIG_DATA_ANALYTICS": {
+    "standard": "Big Data Analytics"
+  },
+  "DEEP_LEARNING": {
+    "standard": "Deep Learning"
+  },
+  "INFORMATION_RETRIEVAL": {
+    "standard": "Information Retrieval"
+  },
+  "PRIVACY_AND_SECURITY_IN_IOT": {
+    "standard": "Privacy and Security in IOT"
+  },
+  "SOFTWARE_ENGINEERING_TESTING_AND_QUALITY_ASSURANCE": {
+    "standard": "Software Engineering Testing and Quality Assurance"
+  },
+  "WIRELESS_AND_MOBILE_NETWORKS": {
+    "standard": "Wireless and Mobile Networks"
+  },
+  "ETHICAL_HACKING_AND_CYBER_LAWS": {
+    "standard": "Ethical Hacking and Cyber Laws"
+  },
+  "COMPUTATIONAL_FLUID_DYNAMICS": {
+    "standard": "Computational Fluid Dynamics"
+  },
+  "HEATING_VENTILATION_AND_AIR_CONDITIONING": {
+    "standard": "Heating Ventilation and Air Conditioning"
+  },
+  "OPERATIONS_MANAGEMENT": {
+    "standard": "Operations Management"
+  },
+  "POWER_PLANT_ENGINEERING": {
+    "standard": "Power Plant Engineering"
+  },
+  "PRODUCT_LIFECYCLE_MANAGEMENT": {
+    "standard": "Product Lifecycle Management"
+  },
+  "FOUNDATIONS_OF_COMPUTING": {
+    "standard": "Foundations of Computing"
   },
   "SCIENCE_OF_NATURE": {
-    "standard": "Science of Nature",
-    "branch": "COMMON",
-    "semester": "SEMESTER 1"
+    "standard": "Science of Nature"
+  },
+  "CHEMICAL_EQUIPMENT_DESIGN": {
+    "standard": "Chemical Equipment Design"
+  },
+  "PROCESS_ENGINEERING": {
+    "standard": "Process Engineering"
+  },
+  "SEPARATION_PROCESS": {
+    "standard": "Separation Process"
+  },
+  "CHEMICAL_REACTION_ENGINEERING": {
+    "standard": "Chemical Reaction Engineering"
+  },
+  "DESIGN_OF_STEEL_STRUCTURES": {
+    "standard": "Design of Steel Structures"
+  },
+  "OPERATION_RESEARCH_TECHNIQUES": {
+    "standard": "Operation Research Techniques"
+  },
+  "TRANSPORTATION_ENGINEERING": {
+    "standard": "Transportation Engineering"
+  },
+  "WATER_RESOURCES_AND_IRRIGATION_ENGINEERING": {
+    "standard": "Water Resources and Irrigation Engineering"
+  },
+  "ARTIFICIAL_INTELLIGENCE": {
+    "standard": "Artificial Intelligence"
+  },
+  "COMPILER_DESIGN": {
+    "standard": "Compiler Design"
+  },
+  "CYBER_SECURITY": {
+    "standard": "Cyber Security"
+  },
+  "DESIGN_AND_ANALYSIS_OF_ALGORITHMS": {
+    "standard": "Design and Analysis of Algorithms"
+  },
+  "MACHINE_LEARNING": {
+    "standard": "Machine Learning"
+  },
+  "PREDICTIVE_ANALYTICS": {
+    "standard": "Predictive Analytics"
+  },
+  "DIGITAL_SIGNAL_PROCESSING": {
+    "standard": "Digital Signal Processing"
+  },
+  "KINEMATICS_AND_DYNAMICS_OF_ROBOTS": {
+    "standard": "Kinematics and Dynamics of Robots"
+  },
+  "POWER_ELECTRONICS": {
+    "standard": "Power Electronics"
+  },
+  "CLOUD_SERVICES_AND_APPLICATIONS": {
+    "standard": "Cloud Services and Applications"
+  },
+  "COMPUTATIONAL_INTELLIGENCE": {
+    "standard": "Computational Intelligence"
+  },
+  "MOBILE_APPLICATION_DEVELOPMENT": {
+    "standard": "Mobile Application Development"
+  },
+  "FACILITY_PLANNING_AND_DESIGN": {
+    "standard": "Facility Planning and Design"
+  },
+  "FINITE_ELEMENT_ANALYSIS": {
+    "standard": "Finite Element Analysis"
+  },
+  "QUALITY_ASSURANCE": {
+    "standard": "Quality Assurance"
+  },
+  "OPERATIONS_RESEARCH": {
+    "standard": "Operations Research"
+  },
+  "TURBOMACHINES": {
+    "standard": "Turbomachines"
+  },
+  "ENERGY_ENGINEERING": {
+    "standard": "Energy Engineering"
+  },
+  "ENERGY_MANAGEMENT_AND_AUDIT": {
+    "standard": "Energy Management and Audit"
+  },
+  "ENVIRONMENT_ENGINEERING": {
+    "standard": "Environment Engineering"
+  },
+  "PDCI": {
+    "standard": "PDCI"
+  },
+  "PLANT_DESIGN_AND_PIPING": {
+    "standard": "Plant Design and Piping"
+  },
+  "PROCESS_INTENSIFICATION_AND_INTEGRATION": {
+    "standard": "Process Intensification and Integration"
+  },
+  "ENVIRONMENTAL_IMPACT_ASSESSMENT_AND_CLIMATE_CHANGE": {
+    "standard": "Environmental Impact Assessment and Climate Change"
+  },
+  "HYDRO_POWER_ENGINEERING": {
+    "standard": "Hydro Power Engineering"
+  },
+  "NUMERICAL_METHODS_IN_CIVIL_ENGINEERING": {
+    "standard": "Numerical Methods in Civil Engineering"
+  },
+  "CLOUD_NATIVE_DEVOPS": {
+    "standard": "Cloud Native Devops"
+  },
+  "DISTRIBUTED_SYSTEMS": {
+    "standard": "Distributed Systems"
+  },
+  "OPERATING_SYSTEM_DESIGN": {
+    "standard": "Operating System Design"
+  },
+  "DATA_MANAGEMENT_AND_ANALYTICS": {
+    "standard": "Data Management and Analytics"
+  },
+  "DIGITAL_IMAGE_PROCESSING": {
+    "standard": "Digital Image Processing"
+  },
+  "ELECTRIC_VEHICLES": {
+    "standard": "Electric Vehicles"
+  },
+  "VLSI_DESIGN": {
+    "standard": "VLSI Design"
+  },
+  "DATA_ANALYTICS": {
+    "standard": "Data Analytics"
+  },
+  "ROBOTICS_VISION": {
+    "standard": "Robotics Vision"
+  },
+  "AI_IN_ROBOTICS": {
+    "standard": "AI In Robotics"
+  },
+  "OPERATING_SYSTEM_ADMINISTRATION": {
+    "standard": "Operating System Administration"
+  },
+  "AUTOTRONICS_AND_E_VEHICLES": {
+    "standard": "Autotronics and E Vehicles"
+  },
+  "MECHANICAL_SYSTEM_DESIGN": {
+    "standard": "Mechanical System Design"
+  },
+  "MECHATRONICS": {
+    "standard": "Mechatronics"
+  },
+  "REFRIGERATION_AND_AIR_CONDITIONING": {
+    "standard": "Refrigeration and Air Conditioning"
+  },
+  "CHEMICAL_PROCESS_TECHNOLOGY": {
+    "standard": "Chemical Process Technology"
+  },
+  "PETROCHEMICAL_ENGINEERING": {
+    "standard": "Petrochemical Engineering"
+  },
+  "AIR_AND_NOISE_POLLUTION_AND_CONTROL_MEASURES": {
+    "standard": "Air and Noise Pollution and Control Measures"
+  },
+  "ESTIMATION_AND_COSTING": {
+    "standard": "Estimation and Costing"
+  },
+  "STATISTICAL_METHODS_IN_CONSTRUCTION": {
+    "standard": "Statistical Methods in Construction"
+  },
+  "CLOUD_AND_VIRTUALIZATION": {
+    "standard": "Cloud and Virtualization"
+  },
+  "DIGITAL_FORENSICS": {
+    "standard": "Digital Forensics"
+  },
+  "HUMAN_COMPUTER_INTERACTION": {
+    "standard": "Human Computer Interaction"
+  },
+  "ADVANCED_COMMUNICATION_SYSTEMS": {
+    "standard": "Advanced Communication Systems"
+  },
+  "BIOMEDICAL_ENGINEERING": {
+    "standard": "Biomedical Engineering"
+  },
+  "ENERGY_MANAGEMENT_FOR_IOT_DEVICES": {
+    "standard": "Energy Management for IOT Devices"
+  },
+  "LOW_POWER_SOC_ARCHITECTURE_AND_APPLICATIONS": {
+    "standard": "Low Power SOC Architecture and Applications"
+  },
+  "REAL_TIME_EMBEDDED_SYSTEMS": {
+    "standard": "Real Time Embedded Systems"
+  },
+  "RISC_PROCESSORS": {
+    "standard": "RISC Processors"
+  },
+  "CONSUMER_ELECTRONICS": {
+    "standard": "Consumer Electronics"
+  },
+  "INTELLIGENT_HIGH_PERFORMANCE_ROBOTICS": {
+    "standard": "Intelligent High Performance Robotics"
+  },
+  "ADVANCED_ANALYSIS": {
+    "standard": "Advanced Analysis"
+  },
+  "ENTERPRISE_RESOURCE_PLANNING": {
+    "standard": "Enterprise Resource Planning"
+  },
+  "HYDRAULICS_AND_PNEUMATICS": {
+    "standard": "Hydraulics and Pneumatics"
+  },
+  "NOISE_VIBRATION_AND_HARSHNESS": {
+    "standard": "Noise Vibration and Harshness"
+  },
+  "NON_CONVENTIONAL_MACHINING": {
+    "standard": "Non Conventional Machining"
+  },
+  "SUPPLY_CHAIN_MANAGEMENT": {
+    "standard": "Supply Chain Management"
+  },
+  "BIOPROCESS_TECHNOLOGY": {
+    "standard": "Bioprocess Technology"
+  },
+  "FOUNDATION_ENGINEERING": {
+    "standard": "Foundation Engineering"
+  },
+  "PATTERN_RECOGNITION": {
+    "standard": "Pattern Recognition"
+  },
+  "CLOUD_NATIVE_APPLICATION_DEVELOPMENT": {
+    "standard": "Cloud Native Application Development"
+  },
+  "COMPUTER_VISION": {
+    "standard": "Computer Vision"
+  },
+  "HDL_DIGITAL_CIRCUIT_DESIGN": {
+    "standard": "HDL Digital Circuit Design"
+  },
+  "COMPUTER_GRAPHICS": {
+    "standard": "Computer Graphics"
+  },
+  "GEOSPATIAL_ENGINEERING": {
+    "standard": "Geospatial Engineering"
+  },
+  "ELECTRONIC_DEVICES_AND_CIRCUITS": {
+    "standard": "Electronic Devices and Circuits"
+  },
+  "MICROCONTROLLER_AND_INTERFACING": {
+    "standard": "Microcontroller and Interfacing"
+  },
+  "STRENGTH_OF_MATERIALS": {
+    "standard": "Strength of Materials"
+  },
+  "ELECTROMAGNETIC_THEORY": {
+    "standard": "Electromagnetic Theory"
+  },
+  "SOLID_WASTE_MANAGEMENT": {
+    "standard": "Solid Waste Management"
+  },
+  "ESSENTIALS_OF_STATISTICS_FOR_DATA_SCIENCE": {
+    "standard": "Essentials of Statistics for Data Science"
+  },
+  "FUNDAMENTALS_OF_HEALTHCARE_TECHNOLOGY": {
+    "standard": "Fundamentals of Healthcare Technology"
+  },
+  "IOT_ARCHITECTURE_AND_SENSORS": {
+    "standard": "IOT Architecture and Sensors"
+  },
+  "MICROCONTROLLER_AND_APPLICATIONS": {
+    "standard": "Microcontroller and Applications"
+  },
+  "ANALOG_COMMUNICATION": {
+    "standard": "Analog Communication"
+  },
+  "LPSOC": {
+    "standard": "LPSOC"
+  },
+  "AUTOMOBILE_SYSTEM_DESIGN": {
+    "standard": "Automobile System Design"
+  },
+  "ROBOT_FUNDAMENTALS_AND_KINEMATICS": {
+    "standard": "Robot Fundamentals and Kinematics"
+  },
+  "ENERGY_SYSTEM_ANALYSIS_AND_MODELING": {
+    "standard": "Energy System Analysis and Modeling"
+  },
+  "UNIT_OPERATIONS_FOR_LIQUID_WASTE_TREATMENT": {
+    "standard": "Unit Operations for Liquid Waste Treatment"
+  },
+  "CLOUD_COMPUTING_FOUNDATIONS": {
+    "standard": "Cloud Computing Foundations"
+  },
+  "SOFTWARE_ENGINEERING": {
+    "standard": "Software Engineering"
+  },
+  "ANTENNA_THEORY_AND_DESIGN": {
+    "standard": "Antenna Theory and Design"
+  },
+  "DIGITAL_COMMUNICATION": {
+    "standard": "Digital Communication"
+  },
+  "EMBEDDED_PROCESSOR": {
+    "standard": "Embedded Processor"
+  },
+  "IOT_NETWORKS_AND_PROTOCOLS": {
+    "standard": "IOT Networks and Protocols"
+  },
+  "SOFT_COMPUTING": {
+    "standard": "Soft Computing"
+  },
+  "ROBOT_DYNAMICS_AND_CONTROL": {
+    "standard": "Robot Dynamics and Control"
+  },
+  "DESIGN_OF_TRANSMISSION_SYSTEMS": {
+    "standard": "Design of Transmission Systems"
+  },
+  "QUALITY_MANAGEMENT": {
+    "standard": "Quality Management"
+  },
+  "VEHICLE_DYNAMICS": {
+    "standard": "Vehicle Dynamics"
+  },
+  "PRINCIPLES_OF_COMMUNICATION_SYSTEMS": {
+    "standard": "Principles of Communication Systems"
+  },
+  "INTRODUCTION_TO_INDUSTRIAL_IOT_4_0": {
+    "standard": "Introduction to Industrial IOT 4.0"
+  },
+  "PROCESS_AUTOMATION": {
+    "standard": "Process Automation"
+  },
+  "SMART_MANUFACTURING": {
+    "standard": "Smart Manufacturing"
+  },
+  "SUSTAINABLE_ENERGY": {
+    "standard": "Sustainable Energy"
+  },
+  "DESIGN_OF_HYDRAULIC_STRUCTURES": {
+    "standard": "Design of Hydraulic Structures"
+  },
+  "MACHINE_DYNAMICS": {
+    "standard": "Machine Dynamics"
+  },
+  "ESSENTIALS_OF_DATA_SCIENCE": {
+    "standard": "Essentials of Data Science"
+  },
+  "MATERIAL_ENGINEERING": {
+    "standard": "Material Engineering"
+  },
+  "CHEMICAL_PROCESS_CALCULATION": {
+    "standard": "Chemical Process Calculation"
+  },
+  "ENGINEERING_ELECTROMAGNETICS": {
+    "standard": "Engineering Electromagnetics"
+  },
+  "FLUID_FLOW_OPERATIONS": {
+    "standard": "Fluid Flow Operations"
+  },
+  "ELECTRONICS_CIRCUITS_AND_APPLICATIONS": {
+    "standard": "Electronics Circuits and Applications"
+  },
+  "DESIGN_OF_REINFORCED_CONCRETE_STRUCTURES": {
+    "standard": "Design of Reinforced Concrete Structures"
+  },
+  "HEALTHCARE_INFORMATICS": {
+    "standard": "Healthcare Informatics"
+  },
+  "BASICS_OF_CIVIL_ENGINEERING": {
+    "standard": "Basics Of Civil Engineering"
+  },
+  "LOGIC_SENSING_AND_ACTUATION": {
+    "standard": "Logic Sensing and Actuation"
+  },
+  "SOLID_FLUID_OPERATION": {
+    "standard": "Solid Fluid Operation"
   }
 }
