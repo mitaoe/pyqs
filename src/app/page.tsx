@@ -7,7 +7,6 @@ import { usePapers, LoadingStatus } from '@/contexts/PaperContext';
 import { MagnifyingGlass } from '@phosphor-icons/react';
 import FadeIn from '@/components/animations/FadeIn';
 import LottieAnimation from '@/components/animations/LottieAnimation';
-import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export default function HomePage() {
@@ -25,13 +24,6 @@ export default function HomePage() {
       prefetchData();
     }
   }, [isClient, dataReady, isLoading, prefetchData]);
-
-  // Show a toast when loading is complete
-  useEffect(() => {
-    if (isClient && dataReady && !isLoading) {
-      toast.success('Papers loaded successfully');
-    }
-  }, [isClient, dataReady, isLoading]);
   
   if (!isClient) {
     return null;
@@ -56,7 +48,7 @@ export default function HomePage() {
   
   return (
     <Layout>
-      <div className="flex min-h-[80vh] flex-col items-center justify-center px-4 text-center">
+      <div className="flex min-h-[76vh] flex-col items-center justify-center px-4 text-center">
         {/* Main Title with gradient effect */}
         <FadeIn from="top" duration={0.8}>
           <div className="mb-6">
