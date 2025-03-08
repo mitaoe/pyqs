@@ -1,8 +1,0 @@
-{
-  "github": {
-    "silent": true
-  },
-  "buildCommand": "pnpm build",
-  "installCommand": "echo 'Skipping lint check during Vercel deployment' && pnpm install",
-  "devCommand": "pnpm dev"
-} 
