@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import { PaperProvider } from "@/contexts/PaperContext";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/react';
+import LoadingDataChecker from "@/components/middleware/LoadingDataChecker";
+import ClientProvider from "@/components/ClientProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -32,11 +34,15 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="canonical" href="https://mitaoe-pyqs.vercel.app" />
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#18181b" />
       </head>
       <body className={inter.className}>
         <PaperProvider>
-          {children}
+          <LoadingDataChecker>
+            <ClientProvider enableGhost={true}>
+              {children}
+            </ClientProvider>
+          </LoadingDataChecker>
         </PaperProvider>
         <SpeedInsights />
         <Analytics />
