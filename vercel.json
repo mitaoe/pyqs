@@ -3,6 +3,6 @@
     "silent": true
   },
   "buildCommand": "pnpm build",
-  "ignoreCommand": "echo 'Skipping lint check during Vercel deployment'",
+  "installCommand": "echo 'Skipping lint check during Vercel deployment' && pnpm install",
   "devCommand": "pnpm dev"
 } 
