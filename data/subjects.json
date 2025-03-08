@@ -1,0 +1,302 @@
+{
+  "ENGINEERING_MATHEMATICS_1": {
+    "standard": "Engineering Mathematics 1",
+    "branch": "COMMON",
+    "semester": "SEMESTER 1"
+  },
+  "ENGINEERING_MATHEMATICS_2": {
+    "standard": "Engineering Mathematics 2",
+    "branch": "COMMON",
+    "semester": "SEMESTER 2"
+  },
+  "ENGINEERING_PHYSICS": {
+    "standard": "Engineering Physics",
+    "branch": "COMMON",
+    "semester": "SEMESTER 1"
+  },
+  "ENGINEERING_CHEMISTRY": {
+    "standard": "Engineering Chemistry",
+    "branch": "COMMON",
+    "semester": "SEMESTER 1"
+  },
+  "BASIC_ELECTRICAL_ENGINEERING": {
+    "standard": "Basic Electrical Engineering",
+    "branch": "COMMON",
+    "semester": "SEMESTER 1"
+  },
+  "COMPUTER_PROGRAMMING": {
+    "standard": "Computer Programming",
+    "branch": "COMMON",
+    "semester": "SEMESTER 1"
+  },
+  "ENGINEERING_GRAPHICS": {
+    "standard": "Engineering Graphics",
+    "branch": "COMMON",
+    "semester": "SEMESTER 1"
+  },
+  "APPLIED_MECHANICS": {
+    "standard": "Applied Mechanics",
+    "branch": "COMMON",
+    "semester": "SEMESTER 1"
+  },
+  "LANGUAGE_COMMUNICATION": {
+    "standard": "Language and Communication",
+    "branch": "COMMON",
+    "semester": "SEMESTER 1"
+  },
+  "DATA_STRUCTURES": {
+    "standard": "Data Structures",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 3"
+  },
+  "DATABASE_SYSTEMS": {
+    "standard": "Database Systems",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 4"
+  },
+  "OPERATING_SYSTEMS": {
+    "standard": "Operating Systems",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 5"
+  },
+  "COMPUTER_NETWORKS": {
+    "standard": "Computer Networks",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 6"
+  },
+  "MECHANICS": {
+    "standard": "Mechanics",
+    "branch": "MECHANICAL",
+    "semester": "SEMESTER 3"
+  },
+  "THERMODYNAMICS": {
+    "standard": "Thermodynamics",
+    "branch": "MECHANICAL",
+    "semester": "SEMESTER 4"
+  },
+  "DIGITAL_ELECTRONICS": {
+    "standard": "Digital Electronics",
+    "branch": "ENTC",
+    "semester": "SEMESTER 3"
+  },
+  "SIGNALS_SYSTEMS": {
+    "standard": "Signals and Systems",
+    "branch": "ENTC",
+    "semester": "SEMESTER 4"
+  },
+  "CLOUD_COMPUTING": {
+    "standard": "Cloud Computing",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 6"
+  },
+  "COMPILER_DESIGN": {
+    "standard": "Compiler Design",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 6"
+  },
+  "MACHINE_LEARNING": {
+    "standard": "Machine Learning",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 6"
+  },
+  "ALGORITHMS": {
+    "standard": "Design and Analysis of Algorithms",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 6"
+  },
+  "SOFTWARE_ENGINEERING": {
+    "standard": "Software Engineering",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 6"
+  },
+  "PREDICTIVE_ANALYTICS": {
+    "standard": "Predictive Analytics",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 6"
+  },
+  "DESCRIPTIVE_ANALYTICS": {
+    "standard": "Descriptive Analytics",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 5"
+  },
+  "COMPUTER_ORGANIZATION": {
+    "standard": "Computer Organization and Architecture",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 5"
+  },
+  "ARTIFICIAL_INTELLIGENCE": {
+    "standard": "Artificial Intelligence",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 5"
+  },
+  "COMPUTER_GRAPHICS": {
+    "standard": "Computer Graphics",
+    "branch": "COMPUTER",
+    "semester": "SEMESTER 3"
+  },
+  "REINFORCED_CONCRETE": {
+    "standard": "Design of Reinforced Concrete Structures",
+    "branch": "CIVIL",
+    "semester": "SEMESTER 6"
+  },
+  "OPERATION_RESEARCH": {
+    "standard": "Operation Research",
+    "branch": "CIVIL",
+    "semester": "SEMESTER 6"
+  },
+  "TRANSPORTATION_ENGINEERING": {
+    "standard": "Transportation Engineering",
+    "branch": "CIVIL",
+    "semester": "SEMESTER 6"
+  },
+  "WASTE_TREATMENT": {
+    "standard": "Unit Operations for Liquid Waste Treatment",
+    "branch": "CIVIL",
+    "semester": "SEMESTER 6"
+  },
+  "WATER_RESOURCES": {
+    "standard": "Water Resources Engineering",
+    "branch": "CIVIL",
+    "semester": "SEMESTER 6"
+  },
+  "CONCRETE_TECHNOLOGY": {
+    "standard": "Concrete Technology",
+    "branch": "CIVIL",
+    "semester": "SEMESTER 5"
+  },
+  "CONSTRUCTION_MANAGEMENT": {
+    "standard": "Construction Planning and Management",
+    "branch": "CIVIL",
+    "semester": "SEMESTER 5"
+  },
+  "DIGITAL_COMMUNICATION": {
+    "standard": "Digital Communication",
+    "branch": "ENTC",
+    "semester": "SEMESTER 6"
+  },
+  "DIGITAL_SIGNAL_PROCESSING": {
+    "standard": "Digital Signal Processing",
+    "branch": "ENTC",
+    "semester": "SEMESTER 6"
+  },
+  "ANTENNA_THEORY": {
+    "standard": "Antenna Theory and Design",
+    "branch": "ENTC",
+    "semester": "SEMESTER 6"
+  },
+  "POWER_ELECTRONICS": {
+    "standard": "Power Electronics",
+    "branch": "ENTC",
+    "semester": "SEMESTER 6"
+  },
+  "SOFT_COMPUTING": {
+    "standard": "Soft Computing",
+    "branch": "ENTC",
+    "semester": "SEMESTER 6"
+  },
+  "IOT_NETWORKS": {
+    "standard": "IoT Networks and Protocols",
+    "branch": "ENTC",
+    "semester": "SEMESTER 6"
+  },
+  "ROBOT_DYNAMICS": {
+    "standard": "Robot Dynamics and Control",
+    "branch": "ENTC",
+    "semester": "SEMESTER 6"
+  },
+  "COMMUNICATION_SYSTEMS": {
+    "standard": "Principles of Communication Systems",
+    "branch": "ENTC",
+    "semester": "SEMESTER 6"
+  },
+  "REAL_TIME_OS": {
+    "standard": "Real Time Operating System",
+    "branch": "ENTC",
+    "semester": "SEMESTER 6"
+  },
+  "COMPUTATIONAL_FLUID_DYNAMICS": {
+    "standard": "Computational Fluid Dynamics",
+    "branch": "MECHANICAL",
+    "semester": "SEMESTER 6"
+  },
+  "TRANSMISSION_SYSTEMS": {
+    "standard": "Design of Transmission Systems",
+    "branch": "MECHANICAL",
+    "semester": "SEMESTER 6"
+  },
+  "QUALITY_MANAGEMENT": {
+    "standard": "Quality Management",
+    "branch": "MECHANICAL",
+    "semester": "SEMESTER 6"
+  },
+  "VEHICLE_DYNAMICS": {
+    "standard": "Vehicle Dynamics",
+    "branch": "MECHANICAL",
+    "semester": "SEMESTER 6"
+  },
+  "HEAT_TRANSFER": {
+    "standard": "Heat Transfer",
+    "branch": "MECHANICAL",
+    "semester": "SEMESTER 5"
+  },
+  "MACHINE_DESIGN": {
+    "standard": "Machine Design",
+    "branch": "MECHANICAL",
+    "semester": "SEMESTER 5"
+  },
+  "CHEMICAL_EQUIPMENT_DESIGN": {
+    "standard": "Chemical Equipment Design",
+    "branch": "CHEMICAL",
+    "semester": "SEMESTER 6"
+  },
+  "PROCESS_DYNAMICS": {
+    "standard": "Process Dynamics Control and Instrumentation",
+    "branch": "CHEMICAL",
+    "semester": "SEMESTER 6"
+  },
+  "ENERGY_SYSTEMS": {
+    "standard": "Energy System Analysis and Modelling",
+    "branch": "CHEMICAL",
+    "semester": "SEMESTER 6"
+  },
+  "PROCESS_MODELLING": {
+    "standard": "Process Modelling and Simulation",
+    "branch": "CHEMICAL",
+    "semester": "SEMESTER 6"
+  },
+  "PROCESS_ENGINEERING": {
+    "standard": "Process Engineering",
+    "branch": "CHEMICAL",
+    "semester": "SEMESTER 6"
+  },
+  "SEPARATION_PROCESS": {
+    "standard": "Separation Process",
+    "branch": "CHEMICAL",
+    "semester": "SEMESTER 6"
+  },
+  "CYBER_SECURITY": {
+    "standard": "Cyber Security and Forensics",
+    "branch": "IT",
+    "semester": "SEMESTER 6"
+  },
+  "COMPUTATIONAL_INTELLIGENCE": {
+    "standard": "Computational Intelligence",
+    "branch": "IT",
+    "semester": "SEMESTER 6"
+  },
+  "ENGINEERING_INFORMATICS": {
+    "standard": "Engineering Informatics",
+    "branch": "COMMON",
+    "semester": "SEMESTER 3"
+  },
+  "MATERIALS_ENGINEERING": {
+    "standard": "Materials Engineering",
+    "branch": "COMMON",
+    "semester": "SEMESTER 3"
+  },
+  "SCIENCE_OF_NATURE": {
+    "standard": "Science of Nature",
+    "branch": "COMMON",
+    "semester": "SEMESTER 1"
+  }
+}

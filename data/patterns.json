@@ -1,0 +1,88 @@
+{
+  "subjectPatterns": [
+    {
+      "pattern": "iot\\s*networks",
+      "subjectKey": "IOT_NETWORKS"
+    },
+    {
+      "pattern": "robot\\s*dynamics",
+      "subjectKey": "ROBOT_DYNAMICS"
+    },
+    {
+      "pattern": "design\\s*and\\s*analysis\\s*of\\s*algorithms",
+      "subjectKey": "ALGORITHMS"
+    },
+    {
+      "pattern": "database\\s*management\\s*systems",
+      "subjectKey": "DATABASE_SYSTEMS"
+    },
+    {
+      "pattern": "signals\\s*and\\s*systems",
+      "subjectKey": "SIGNALS_SYSTEMS"
+    },
+    {
+      "pattern": "software\\s*engineering",
+      "subjectKey": "SOFTWARE_ENGINEERING"
+    },
+    {
+      "pattern": "predictive\\s*analytics",
+      "subjectKey": "PREDICTIVE_ANALYTICS"
+    },
+    {
+      "pattern": "computational\\s*intelligence",
+      "subjectKey": "COMPUTATIONAL_INTELLIGENCE"
+    },
+    {
+      "pattern": "cyber\\s*security",
+      "subjectKey": "CYBER_SECURITY"
+    },
+    {
+      "pattern": "operation\\s*research",
+      "subjectKey": "OPERATION_RESEARCH"
+    },
+    {
+      "pattern": "water\\s*resources",
+      "subjectKey": "WATER_RESOURCES"
+    },
+    {
+      "pattern": "digital\\s*signal\\s*processing",
+      "subjectKey": "DIGITAL_SIGNAL_PROCESSING"
+    },
+    {
+      "pattern": "operating\\s*system",
+      "subjectKey": "OPERATING_SYSTEMS"
+    },
+    {
+      "pattern": "real\\s*time\\s*operating\\s*system",
+      "subjectKey": "REAL_TIME_OS"
+    },
+    {
+      "pattern": "antenna\\s*theory",
+      "subjectKey": "ANTENNA_THEORY"
+    },
+    {
+      "pattern": "vehicle\\s*dynamics",
+      "subjectKey": "VEHICLE_DYNAMICS"
+    },
+    {
+      "pattern": "computer\\s*organization",
+      "subjectKey": "COMPUTER_ORGANIZATION"
+    },
+    {
+      "pattern": "power\\s*electronics",
+      "subjectKey": "POWER_ELECTRONICS"
+    },
+    {
+      "pattern": "soft\\s*computing",
+      "subjectKey": "SOFT_COMPUTING"
+    },
+    {
+      "pattern": "engineering\\s*graphics",
+      "subjectKey": "ENGINEERING_GRAPHICS"
+    },
+    {
+      "pattern": "thermodynamics",
+      "subjectKey": "THERMODYNAMICS"
+    }
+  ]
+}
