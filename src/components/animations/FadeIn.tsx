@@ -1,7 +1,7 @@
 'use client';
 
-import { ReactNode } from 'react';
-import { motion, type Variants } from 'framer-motion';
+import { ReactNode, useMemo } from 'react';
+import { motion} from 'framer-motion';
 
 interface FadeInProps {
   children: ReactNode;
@@ -12,29 +12,6 @@ interface FadeInProps {
   className?: string;
 }
 
-const fadeInVariants: Record<string, Variants> = {
-  bottom: {
-    hidden: { opacity: 0, y: (distance) => distance },
-    visible: { opacity: 1, y: 0 }
-  },
-  top: {
-    hidden: { opacity: 0, y: (distance) => -distance },
-    visible: { opacity: 1, y: 0 }
-  },
-  left: {
-    hidden: { opacity: 0, x: (distance) => -distance },
-    visible: { opacity: 1, x: 0 }
-  },
-  right: {
-    hidden: { opacity: 0, x: (distance) => distance },
-    visible: { opacity: 1, x: 0 }
-  },
-  none: {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 }
-  }
-};
-
 export default function FadeIn({
   children,
   delay = 0,
@@ -43,14 +20,42 @@ export default function FadeIn({
   distance = 20,
   className = ''
 }: FadeInProps) {
-  const variants = fadeInVariants[from];
+    const variants = useMemo(() => {
+    switch (from) {
+      case 'bottom':
+        return {
+          hidden: { opacity: 0, y: distance },
+          visible: { opacity: 1, y: 0 }
+        };
+      case 'top':
+        return {
+          hidden: { opacity: 0, y: -distance },
+          visible: { opacity: 1, y: 0 }
+        };
+      case 'left':
+        return {
+          hidden: { opacity: 0, x: -distance },
+          visible: { opacity: 1, x: 0 }
+        };
+      case 'right':
+        return {
+          hidden: { opacity: 0, x: distance },
+          visible: { opacity: 1, x: 0 }
+        };
+      case 'none':
+      default:
+        return {
+          hidden: { opacity: 0 },
+          visible: { opacity: 1 }
+        };
+    }
+  }, [from, distance]);
 
   return (
     <motion.div
       initial="hidden"
       animate="visible"
       variants={variants}
-      custom={distance}
       transition={{ 
         duration,
         delay,
