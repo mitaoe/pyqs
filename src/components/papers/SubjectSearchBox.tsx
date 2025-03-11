@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePapers } from '@/contexts/PaperContext';
 import { MagnifyingGlass } from '@phosphor-icons/react';
+import { searchSubjects, getHighlightedText } from '@/utils/subjectSearch';
 
 interface SubjectSearchBoxProps {
   onSelect?: (subject: string) => void;
@@ -20,31 +21,9 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
 
   // Filter subjects based on search query
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSuggestions([]);
-      return;
-    }
-
-    if (meta?.standardSubjects?.length) {
-      const query = searchQuery.toLowerCase();
-      const filteredSubjects = meta.standardSubjects
-        .filter(subject => subject.toLowerCase().includes(query))
-        .sort((a, b) => {
-          // Prioritize subjects that start with the query
-          const aStartsWith = a.toLowerCase().startsWith(query);
-          const bStartsWith = b.toLowerCase().startsWith(query);
-          
-          if (aStartsWith && !bStartsWith) return -1;
-          if (!aStartsWith && bStartsWith) return 1;
-          
-          // Then sort alphabetically
-          return a.localeCompare(b);
-        })
-        .slice(0, 10); // Limit to top 10 matches
-      
-      setSuggestions(filteredSubjects);
-    }
-  }, [searchQuery, meta?.standardSubjects]);
+    const filteredSubjects = searchSubjects(meta, searchQuery);
+    setSuggestions(filteredSubjects);
+  }, [searchQuery, meta]);
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -76,24 +55,6 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
     }
   };
 
-  // Highlight matching text in suggestions
-  const highlightMatch = (text: string, query: string) => {
-    if (!query) return text;
-    
-    const index = text.toLowerCase().indexOf(query.toLowerCase());
-    if (index === -1) return text;
-    
-    return (
-      <>
-        {text.substring(0, index)}
-        <span className="font-bold text-accent">
-          {text.substring(index, index + query.length)}
-        </span>
-        {text.substring(index + query.length)}
-      </>
-    );
-  };
-
   return (
     <div className="relative w-full">
       <div className="relative">
@@ -104,13 +65,13 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
           placeholder="Search for subjects..."
-          className="w-full h-12 rounded-full border-2 border-accent/30 bg-secondary px-6 py-3 pl-12 text-content placeholder:text-content/50 focus:border-accent focus:outline-none shadow-sm transition-all"
+          className="w-full h-11 rounded-md border border-accent/30 bg-secondary py-2 pl-10 pr-12 text-content placeholder:text-content/50 focus:border-accent focus:outline-none"
           aria-label="Search for subjects"
         />
         <MagnifyingGlass 
-          className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-accent" 
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-accent/70" 
           weight="bold" 
-          size={20}
+          size={18}
         />
       </div>
 
@@ -118,19 +79,25 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
       {showSuggestions && suggestions.length > 0 && (
         <div 
           ref={suggestionsRef}
-          className="absolute z-50 mt-2 max-h-80 w-full overflow-auto rounded-lg border border-accent/20 bg-secondary shadow-lg"
+          className="absolute z-50 mt-1 max-h-72 w-full overflow-auto rounded-md border border-accent/20 bg-secondary shadow-md"
         >
-          <ul className="py-2">
-            {suggestions.map((subject) => (
-              <li key={subject}>
-                <button
-                  className="w-full px-5 py-3 text-left text-content hover:bg-accent/10 transition-colors"
-                  onClick={() => handleSelectSubject(subject)}
-                >
-                  {highlightMatch(subject, searchQuery)}
-                </button>
-              </li>
-            ))}
+          <ul className="py-1">
+            {suggestions.map((subject) => {
+              const { prefix, highlight, suffix } = getHighlightedText(subject, searchQuery);
+              
+              return (
+                <li key={subject}>
+                  <button
+                    className="w-full px-4 py-2.5 text-left text-content hover:bg-accent/10 transition-colors"
+                    onClick={() => handleSelectSubject(subject)}
+                  >
+                    {prefix}
+                    <span className="font-bold text-accent">{highlight}</span>
+                    {suffix}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
