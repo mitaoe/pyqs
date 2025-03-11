@@ -15,13 +15,14 @@ function SearchContent() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const alphabetRef = useRef<HTMLDivElement>(null);
-  const searchBarRef = useRef<HTMLDivElement>(null);
 
   // Get the subject from the URL if it exists
   useEffect(() => {
     const subjectParam = searchParams.get('subject');
     if (subjectParam) {
       setSelectedSubject(subjectParam);
+      // Scroll to top when selecting a subject
+      window.scrollTo(0, 0);
     } else {
       setSelectedSubject(null);
     }
@@ -30,13 +31,8 @@ function SearchContent() {
   // Handle scrolling
   useEffect(() => {
     const handleScroll = () => {
-      if (!searchBarRef.current) return;
-      
-      // Get the offset position of the navbar
-      const searchBarPosition = searchBarRef.current.offsetTop;
-      
-      // Check if we've scrolled past the search bar's original position
-      if (window.scrollY > searchBarPosition - 1) {
+      // Set scrolled to true when scrolling down even a little bit
+      if (window.scrollY > 100) {
         setScrolled(true);
       } else {
         setScrolled(false);
@@ -66,47 +62,36 @@ function SearchContent() {
       <div className="min-h-screen bg-primary text-content">
         {!selectedSubject ? (
           <>
-            {/* Main header with site title if needed */}
-            <header className="bg-primary border-b border-accent/10 px-4">
-              <div className="container mx-auto py-2">
-                {/* Any header content can go here */}
-              </div>
-            </header>
-            
             {/* Alphabet Navigation */}
             <div 
               ref={alphabetRef}
-              className="w-full bg-primary px-4 py-4 md:py-6"
+              className="w-full bg-primary px-4 py-6"
             >
               <div className="container mx-auto">
                 <AlphabetBar />
               </div>
             </div>
 
-            {/* Search bar container - this is what gets the sticky position */}
+            {/* Search bar container */}
             <div 
-              ref={searchBarRef}
-              className={`sticky top-0 z-30 bg-primary transition-all duration-300 
-                ${scrolled ? 'shadow-md border-b border-accent/10' : ''}
-              `}
+              className={`sticky top-0 z-30 transition-all duration-300 py-3 ${scrolled ? '' : ''}`}
             >
-              <div className="container mx-auto px-4 py-3">
-                <div className="relative w-full max-w-2xl mx-auto">
+              <div className="container mx-auto px-4">
+                <div className="relative max-w-xl mx-auto rounded-full">
                   <SubjectSearchBox onSelect={handleSelectSubject} />
                   
-                  {/* Go up button - positioned inside the search component */}
+                  {/* Go up button */}
                   <div 
-                    className={`absolute right-3 top-1/2 -translate-y-1/2 transition-opacity duration-300 
-                      ${scrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-                    `}
+                    className="fixed bottom-6 right-6 z-50 transition-all duration-300"
+                    style={{ opacity: scrolled ? 1 : 0, transform: scrolled ? 'scale(1)' : 'scale(0.8)', pointerEvents: scrolled ? 'auto' : 'none' }}
                   >
                     <button
                       onClick={scrollToTop}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-primary hover:bg-accent/80 transition-colors"
+                      className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-800 border-2 border-gray-500 text-white shadow-lg hover:border-white hover:bg-gray-700 transition-all transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white"
                       aria-label="Back to top"
                       tabIndex={scrolled ? 0 : -1}
                     >
-                      <ArrowUp size={16} weight="bold" />
+                      <ArrowUp size={24} weight="bold" />
                     </button>
                   </div>
                 </div>
