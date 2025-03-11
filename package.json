@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "crawl": "tsx src/scripts/crawler.ts",
-    "crawl:list": "tsx src/scripts/crawler.ts --list-only",
-    "crawl:auto": "tsx src/scripts/crawler.ts --auto-classify",
+    "crawl:debug": "tsx src/scripts/crawler.ts --debug",
     "pyq-gen": "tsx src/scripts/pyq-generator.ts",
     "pyq-gen:test": "tsx src/scripts/pyq-generator.ts --test --verbose",
     "pyq-gen:interactive": "tsx src/scripts/pyq-generator.ts --interactive"
