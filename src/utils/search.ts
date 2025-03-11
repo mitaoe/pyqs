@@ -5,8 +5,7 @@ import {
   branchMappings, 
   yearMappings, 
   examMappings, 
-  semesterMappings,
-  subjectMappings 
+  semesterMappings
 } from '@/config/mappings';
 
 export interface SearchFilters {
@@ -56,14 +55,12 @@ export function searchPapers(meta: DirectoryMeta, filters: SearchFilters): Searc
     const standardYear = standardizeValue(paper.year, yearMappings);
     const standardExam = standardizeValue(paper.examType, examMappings);
     const standardSem = standardizeValue(paper.semester, semesterMappings);
-    const standardSubject = standardizeValue(paper.subject || '', subjectMappings);
 
     // Apply filters
     const matchesBranch = !filters.branch || standardBranch === filters.branch;
     const matchesYear = !filters.year || standardYear === filters.year;
     const matchesExam = !filters.examType || standardExam === filters.examType;
     const matchesSem = !filters.semester || standardSem === filters.semester;
-    const matchesSubject = !filters.subject || standardSubject === filters.subject;
     
     // Full text search
     const searchQuery = filters.query?.toLowerCase() || '';
@@ -72,13 +69,12 @@ export function searchPapers(meta: DirectoryMeta, filters: SearchFilters): Searc
       standardBranch,
       standardYear,
       standardSem,
-      standardExam,
-      standardSubject
+      standardExam
     ].some(field => 
       field?.toLowerCase().includes(searchQuery)
     );
 
-    return matchesBranch && matchesYear && matchesExam && matchesSem && matchesSubject && matchesQuery;
+    return matchesBranch && matchesYear && matchesExam && matchesSem && matchesQuery;
   });
 
   // Sort results by year (descending) and filename

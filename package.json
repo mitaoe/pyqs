@@ -1,13 +1,17 @@
 {
   "name": "mitaoe-pyqs",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "crawl": "tsx src/scripts/crawler.ts"
+    "crawl": "tsx src/scripts/crawler.ts",
+    "crawl:debug": "tsx src/scripts/crawler.ts --debug",
+    "pyq-gen": "tsx src/scripts/pyq-generator.ts",
+    "pyq-gen:test": "tsx src/scripts/pyq-generator.ts --test --verbose",
+    "pyq-gen:interactive": "tsx src/scripts/pyq-generator.ts --interactive"
   },
   "dependencies": {
     "@phosphor-icons/react": "2.1.7",
