@@ -1,19 +1,20 @@
+// page.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
 import { Suspense } from 'react';
 import PageTransition from '@/components/animations/PageTransition';
 import SubjectAlphabetList, { AlphabetBar } from '@/components/papers/SubjectAlphabetList';
 import SubjectSearchBox from '@/components/papers/SubjectSearchBox';
-import { Funnel } from '@phosphor-icons/react';
+import { Funnel, ArrowUp } from '@phosphor-icons/react';
 
 function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const alphabetRef = useRef<HTMLDivElement>(null);
+  const [showGoUp, setShowGoUp] = useState(false);
 
   // Get the subject from the URL if it exists
   useEffect(() => {
@@ -27,9 +28,36 @@ function SearchContent() {
     }
   }, [searchParams]);
 
+  // Attach scroll listener to our scrollable container
+  useEffect(() => {
+    const scrollContainer = document.getElementById('scrollable-content');
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      if (scrollContainer.scrollTop > 100) {
+        setShowGoUp(true);
+      } else {
+        setShowGoUp(false);
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll);
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   // Handle subject selection
   const handleSelectSubject = (subject: string) => {
     router.push(`/papers?subject=${encodeURIComponent(subject)}`);
+  };
+
+  // Scroll to top when the arrow button is clicked
+  const handleGoUp = () => {
+    const scrollContainer = document.getElementById('scrollable-content');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -37,22 +65,30 @@ function SearchContent() {
       <div className="min-h-screen bg-primary text-content">
         {!selectedSubject ? (
           <>
+
             {/* Alphabet Navigation */}
-            <div 
-              ref={alphabetRef}
-              className="w-full bg-primary px-4 py-6"
-            >
+            <div className="w-full bg-primary px-4 py-6">
               <div className="container mx-auto">
                 <AlphabetBar />
               </div>
             </div>
 
-            {/* Search bar container */}
-            <div className="flex justify-center px-4 py-3 sticky top-0 z-30 pointer-events-none">
-              <div className="w-full max-w-xl pointer-events-auto">
+            {/* Top sticky container: search bar and arrow button side by side */}
+            <div className="flex items-center gap-3 justify-center px-4 py-3 sticky top-0 z-30">
+              <div className="w-full max-w-xl">
                 <SubjectSearchBox onSelect={handleSelectSubject} />
               </div>
+              {showGoUp && (
+                <button
+                  onClick={handleGoUp}
+                  aria-label="Go to top"
+                  className="p-2 rounded-full bg-accent transition-transform duration-200 hover:scale-105"
+                >
+                  <ArrowUp size={24} weight="bold" className="text-primary" />
+                </button>
+              )}
             </div>
+            
 
             {/* A-Z Subject listing */}
             <div className="container mx-auto px-4 py-6">
@@ -66,7 +102,6 @@ function SearchContent() {
               <h1 className="text-2xl font-semibold text-content">
                 {selectedSubject}
               </h1>
-              
               <button
                 onClick={() => router.push('/papers')}
                 className="flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm text-primary hover:bg-accent/80 transition-colors"
@@ -75,7 +110,6 @@ function SearchContent() {
                 Back to All Subjects
               </button>
             </div>
-            
             <div className="flex h-full items-center justify-center py-8">
               <div className="rounded-lg border border-accent/20 bg-secondary p-8 text-center">
                 <p className="text-content/60">
@@ -106,4 +140,4 @@ export default function SearchPage() {
       </Suspense>
     </Layout>
   );
-} 
+}
