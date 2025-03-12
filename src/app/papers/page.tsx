@@ -65,7 +65,6 @@ function SearchContent() {
       <div className="min-h-screen bg-primary text-content">
         {!selectedSubject ? (
           <>
-
             {/* Alphabet Navigation */}
             <div className="w-full bg-primary px-4 py-6">
               <div className="container mx-auto">
@@ -82,13 +81,12 @@ function SearchContent() {
                 <button
                   onClick={handleGoUp}
                   aria-label="Go to top"
-                  className="p-2 rounded-full bg-accent transition-transform duration-200 hover:scale-105"
+                  className="p-2 rounded-full bg-gray-800 shadow-md transition-transform duration-200 hover:scale-105 focus:outline-none"
                 >
-                  <ArrowUp size={24} weight="bold" className="text-primary" />
+                  <ArrowUp size={24} weight="bold" className="text-white" />
                 </button>
               )}
             </div>
-            
 
             {/* A-Z Subject listing */}
             <div className="container mx-auto px-4 py-6">
@@ -104,7 +102,7 @@ function SearchContent() {
               </h1>
               <button
                 onClick={() => router.push('/papers')}
-                className="flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm text-primary hover:bg-accent/80 transition-colors"
+                className="flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm text-primary transition-colors focus:outline-none"
               >
                 <Funnel size={18} weight="bold" />
                 Back to All Subjects
