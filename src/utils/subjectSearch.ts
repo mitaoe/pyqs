@@ -78,8 +78,12 @@ export function getPapersBySubject(
     return [];
   }
   
+  // Normalize subject comparison
+  const normalizedSubject = subject.trim().toUpperCase();
+  
   return meta.papers.filter(paper => 
-    paper.standardSubject === subject || paper.subject === subject
+    paper.standardSubject.toLowerCase() === normalizedSubject ||
+    paper.subject.toLowerCase() === normalizedSubject
   );
 }
 

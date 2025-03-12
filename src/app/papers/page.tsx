@@ -8,7 +8,8 @@ import { Suspense } from 'react';
 import PageTransition from '@/components/animations/PageTransition';
 import SubjectAlphabetList, { AlphabetBar } from '@/components/papers/SubjectAlphabetList';
 import SubjectSearchBox from '@/components/papers/SubjectSearchBox';
-import { Funnel, ArrowUp } from '@phosphor-icons/react';
+import SubjectPapers from '@/components/papers/SubjectPapers';
+import { ArrowUp } from '@phosphor-icons/react';
 
 function SearchContent() {
   const router = useRouter();
@@ -94,28 +95,7 @@ function SearchContent() {
             </div>
           </>
         ) : (
-          /* Subject papers view - will be implemented in Phase 5 */
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-semibold text-content">
-                {selectedSubject}
-              </h1>
-              <button
-                onClick={() => router.push('/papers')}
-                className="flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm text-primary transition-colors focus:outline-none"
-              >
-                <Funnel size={18} weight="bold" />
-                Back to All Subjects
-              </button>
-            </div>
-            <div className="flex h-full items-center justify-center py-8">
-              <div className="rounded-lg border border-accent/20 bg-secondary p-8 text-center">
-                <p className="text-content/60">
-                  Subject-specific papers view will be implemented in Phase 5.
-                </p>
-              </div>
-            </div>
-          </div>
+          <SubjectPapers />
         )}
       </div>
     </PageTransition>
