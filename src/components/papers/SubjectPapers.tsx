@@ -1,32 +1,53 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { usePapers } from '@/contexts/PaperContext';
 import { GridFour, List, Download, ArrowLeft } from '@phosphor-icons/react';
 import { downloadFile } from '@/utils/download';
 import { Paper } from '@/types/paper';
 
+// Utility function to trim redundant URL paths
+const trimRedundantUrlPath = (url: string): string => {
+  try {
+    const urlParts = url.split('/');
+    const uniqueParts = urlParts.filter((part, index, arr) => 
+      index === arr.indexOf(part)
+    );
+    return uniqueParts.join('/');
+  } catch (error) {
+    console.error('URL trimming failed:', error);
+    return url;
+  }
+};
+
 const SubjectPapersView = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { papers } = usePapers();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [filteredPapers, setFilteredPapers] = useState<Paper[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
 
   // Get the subject parameter from URL and filter papers
-  useEffect(() => {
+  const filteredPapers = useMemo(() => {
     const subjectParam = searchParams.get('subject');
     if (subjectParam) {
       setSelectedSubject(subjectParam);
-      const filtered = papers.filter(paper =>
+      // Filter papers by subject and remove duplicates based on fileName
+      const papersBySubject = papers.filter(paper =>
         paper.standardSubject.toLowerCase() === subjectParam.toLowerCase() ||
         paper.subject.toLowerCase() === subjectParam.toLowerCase()
       );
-      setFilteredPapers(filtered);
+
+      const uniquePapers = Array.from(
+        new Map(papersBySubject.map(paper => [paper.fileName, paper]))
+          .values()
+      );
+
+      return uniquePapers;
     }
+    return [];
   }, [searchParams, papers]);
 
   const toggleViewMode = () => {
@@ -37,7 +58,9 @@ const SubjectPapersView = () => {
     if (downloadingFile) return;
     setDownloadingFile(paper.fileName);
     try {
-      await downloadFile(paper.url, paper.fileName);
+      // Trim the redundant URL path before downloading
+      const trimmedUrl = trimRedundantUrlPath(paper.url);
+      await downloadFile(trimmedUrl, paper.fileName);
     } catch (error) {
       console.error('Download failed:', error);
     } finally {
@@ -48,9 +71,9 @@ const SubjectPapersView = () => {
   // Grid view: responsive card layout
   const renderGridView = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {filteredPapers.map(paper => (
+      {filteredPapers.map((paper, index) => (
         <div
-          key={paper.fileName}
+          key={`${paper.fileName}-${index}`} // Use unique key with index
           className="bg-secondary border border-accent rounded-lg p-4 flex flex-col justify-between transition-transform duration-200 hover:scale-105"
           onContextMenu={(e) => e.preventDefault()}
         >
@@ -73,9 +96,9 @@ const SubjectPapersView = () => {
 
   const renderListView = () => (
     <div className="space-y-4">
-      {filteredPapers.map(paper => (
+      {filteredPapers.map((paper, index) => (
         <div
-          key={paper.fileName}
+          key={`${paper.fileName}-${index}`} // Use unique key with index
           className="flex items-center justify-between bg-secondary border border-accent rounded-lg p-4 transition-transform duration-200 hover:scale-105"
           onContextMenu={(e) => e.preventDefault()}
         >
