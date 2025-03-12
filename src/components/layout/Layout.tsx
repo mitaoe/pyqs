@@ -12,7 +12,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="flex h-screen select-none flex-col bg-primary text-content">
       <Header />
       <main className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto px-4 py-8">
+        <div id="scrollable-content" className="h-full overflow-y-auto px-4 py-8">
           <div className="container mx-auto">
             {children}
           </div>
