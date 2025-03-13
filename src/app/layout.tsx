@@ -5,6 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/react';
 import LoadingDataChecker from "@/components/middleware/LoadingDataChecker";
 import ClientProvider from "@/components/ClientProvider";
+import { Suspense } from "react";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
     siteName: 'MITAOE PYQs',
     type: 'website'
   }
-}
+};
 
 export default function RootLayout({
   children,
@@ -38,11 +39,13 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <PaperProvider>
-          <LoadingDataChecker>
-            <ClientProvider enableGhost={true}>
-              {children}
-            </ClientProvider>
-          </LoadingDataChecker>
+          <Suspense fallback={<div>Loading...</div>}>
+            <LoadingDataChecker>
+              <ClientProvider enableGhost={true}>
+                {children}
+              </ClientProvider>
+            </LoadingDataChecker>
+          </Suspense>
         </PaperProvider>
         <SpeedInsights />
         <Analytics />
