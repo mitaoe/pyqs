@@ -152,7 +152,7 @@ export function PaperProvider({ children }: PaperProviderProps) {
           data: {
             meta: {
               ...papersData.meta,
-              papers: papersData.meta.papers?.slice(0, 100) || []
+              papers: papersData.meta.papers || []
             },
             lastUpdated: papersData.lastUpdated
           },
