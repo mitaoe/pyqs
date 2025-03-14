@@ -88,7 +88,9 @@ export async function POST(request: NextRequest) {
     
     // Fetch and add each paper to the zip
     let successCount = 0;
+    let errorCount = 0;
     
+    // Process papers sequentially to better track progress and avoid overwhelming the server
     for (let i = 0; i < papers.length; i++) {
       const paper = papers[i];
       try {
@@ -99,6 +101,7 @@ export async function POST(request: NextRequest) {
         const arrayBuffer = await fetchPaperContent(trimmedUrl);
         
         if (!arrayBuffer) {
+          errorCount++;
           continue;
         }
         
@@ -121,22 +124,28 @@ export async function POST(request: NextRequest) {
         zip.file(fileName, arrayBuffer);
         successCount++;
       } catch (error) {
+        errorCount++;
         console.error(`Error processing ${paper.fileName}:`, error);
       }
     }
     
     if (successCount === 0) {
       return NextResponse.json(
-        { error: 'Failed to fetch any of the requested papers' },
+        { 
+          error: 'Failed to fetch any of the requested papers',
+          details: errorCount > 0 ? `${errorCount} papers failed to download` : undefined
+        },
         { status: 500 }
       );
     }
     
-    // Generate the zip file
+    // Generate the zip file - use best compression settings for high quality
     const zipBlob = await zip.generateAsync({ 
       type: 'blob',
       compression: 'DEFLATE',
-      compressionOptions: { level: 5 }
+      compressionOptions: { 
+        level: 9  // Maximum compression level (0-9)
+      }
     });
     
     // Create a filename for the zip based on the selected subject and filters
@@ -145,14 +154,18 @@ export async function POST(request: NextRequest) {
     // Set content type using mime-types
     const contentType = mime.lookup('zip') || 'application/zip';
     
-    // Return the zip file
-    return new NextResponse(zipBlob, {
-      headers: {
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${zipFileName}"`,
-        'Cache-Control': 'no-store'
-      }
-    });
+    // Add metadata about the download
+    const responseHeaders = {
+      'Content-Type': contentType,
+      'Content-Disposition': `attachment; filename="${zipFileName}"`,
+      'Cache-Control': 'no-store',
+      'X-Download-Success-Count': successCount.toString(),
+      'X-Download-Error-Count': errorCount.toString(),
+      'X-Download-Total-Count': papers.length.toString(),
+    };
+    
+    // Return the zip file with metadata
+    return new NextResponse(zipBlob, { headers: responseHeaders });
     
   } catch (error) {
     console.error('Batch download error:', error);

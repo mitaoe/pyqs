@@ -8,7 +8,7 @@ import {
   List, 
   Download, 
   ArrowLeft, 
-  BookOpen, 
+  FileText, 
   CheckSquare, 
   Square,
   X,
@@ -349,7 +349,7 @@ const SubjectPapersView = () => {
                 </div>
               ) : (
                 <div className="hidden sm:flex h-10 w-10 sm:h-12 sm:w-12 min-w-10 sm:min-w-12 items-center justify-center rounded-xl bg-primary/60">
-                  <BookOpen size={24} weight="duotone" className="text-content/80" />
+                  <FileText size={24} weight="duotone" className="text-content/80" />
                 </div>
               )}
               <div className="flex flex-col overflow-hidden">
@@ -391,7 +391,7 @@ const SubjectPapersView = () => {
       <div className="container mx-auto px-4 py-8 sm:py-12">
         <div className="flex flex-col items-center justify-center h-[50vh] sm:h-[60vh]">
           <div className="animate-pulse w-16 h-16 sm:w-20 sm:h-20 bg-accent/20 rounded-full flex items-center justify-center mb-4">
-            <BookOpen size={28} weight="duotone" className="text-accent/40" />
+            <FileText size={28} weight="duotone" className="text-accent/40" />
           </div>
           <p className="text-content/60 text-base sm:text-lg">Loading papers...</p>
         </div>
@@ -405,7 +405,7 @@ const SubjectPapersView = () => {
       <div className="container mx-auto px-4 py-8 sm:py-12">
         <div className="flex flex-col items-center justify-center h-[50vh] sm:h-[60vh] text-center">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-accent/10 rounded-full flex items-center justify-center mb-4">
-            <BookOpen size={28} weight="duotone" className="text-accent/40" />
+            <FileText size={28} weight="duotone" className="text-accent/40" />
           </div>
           <h3 className="text-lg sm:text-xl font-semibold mb-2">No papers found</h3>
           <p className="text-content/60 mb-4 sm:mb-6 max-w-md text-sm sm:text-base">
@@ -442,9 +442,11 @@ const SubjectPapersView = () => {
         case 'preparing':
           return 'Preparing download...';
         case 'downloading':
-          return 'Downloading papers from server...';
+          return `Downloading ${batchDownloadProgress.completed || 0} of ${batchDownloadProgress.totalPapers} papers...`;
         case 'processing':
           return 'Creating ZIP file...';
+        case 'sending':
+          return 'Sending to your browser...';
         case 'complete':
           return 'Download complete!';
         case 'error':
@@ -459,23 +461,37 @@ const SubjectPapersView = () => {
         return batchDownloadProgress.percentage;
       }
       
+      // Fallback percentages
       if (batchDownloadProgress.status === 'complete') return 100;
       if (batchDownloadProgress.status === 'error') return 0;
       if (batchDownloadProgress.status === 'preparing') return 5;
       if (batchDownloadProgress.status === 'downloading') return 30;
       if (batchDownloadProgress.status === 'processing') return 70;
+      if (batchDownloadProgress.status === 'sending') return 90;
       return 0;
     };
 
     const getDetailText = () => {
+      if (batchDownloadProgress.currentPaper) {
+        return batchDownloadProgress.currentPaper;
+      }
+      
       if (batchDownloadProgress.status === 'complete') {
         return `Successfully downloaded ${batchDownloadProgress.totalPapers} papers`;
       }
       if (batchDownloadProgress.status === 'error') {
-        return '';
+        return batchDownloadProgress.error && batchDownloadProgress.error.includes('Failed to connect') 
+          ? 'Check your network connection and try again' 
+          : '';
       }
+      
+      if (batchDownloadProgress.status === 'downloading') {
+        const percent = getProgressPercentage();
+        return `${percent.toFixed(0)}%`;
+      }
+      
       const percentage = getProgressPercentage();
-      return `${percentage}% complete`;
+      return `${percentage.toFixed(0)}% complete`;
     };
 
     return (
@@ -513,7 +529,33 @@ const SubjectPapersView = () => {
             <div className="mt-4 text-center">
               <p className="text-red-500 mb-4 text-sm">{batchDownloadProgress.error}</p>
               <button
-                onClick={handleBatchDownload}
+                onClick={() => {
+                  // Directly restart the batch download with the same papers
+                  setBatchDownloadProgress({
+                    totalPapers: selectedPapersArray.length,
+                    completed: 0,
+                    status: 'preparing',
+                    percentage: 0
+                  });
+                  
+                  // Small delay to show the preparing state before starting
+                  setTimeout(() => {
+                    batchDownloadPapers(selectedPapersArray, filters, (progress) => {
+                      setBatchDownloadProgress(progress);
+                      
+                      if (progress.status === 'complete' || progress.status === 'error') {
+                        setTimeout(() => {
+                          setBatchDownloadProgress(null);
+                          
+                          if (progress.status === 'complete') {
+                            setIsSelectMode(false);
+                            setSelectedPapers({});
+                          }
+                        }, 3000);
+                      }
+                    });
+                  }, 300);
+                }}
                 className="bg-accent text-content px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-accent/90 focus:outline-none"
               >
                 Try Again
@@ -600,11 +642,36 @@ const SubjectPapersView = () => {
       return;
     }
 
-    // Reset any previous progress
+    // For a single paper, download directly instead of batching
+    if (selectedPapersArray.length === 1) {
+      const paper = selectedPapersArray[0];
+      try {
+        const toastId = toast.loading(`Downloading ${paper.fileName}...`);
+        
+        // Trim the redundant URL path before downloading
+        const trimmedUrl = trimRedundantUrlPath(paper.url);
+        const success = await downloadFile(trimmedUrl, paper.fileName);
+        
+        // Dismiss the loading toast
+        toast.dismiss(toastId);
+        
+        if (success) {
+          setIsSelectMode(false);
+          setSelectedPapers({});
+        }
+      } catch (error) {
+        console.error('Download failed:', error);
+        toast.error('Failed to download paper. Please try again.');
+      }
+      return;
+    }
+
+    // Reset any previous progress for batch downloads
     setBatchDownloadProgress({
       totalPapers: selectedPapersArray.length,
       completed: 0,
-      status: 'preparing'
+      status: 'preparing',
+      percentage: 0
     });
 
     // Attempt the batch download with filter information
@@ -621,7 +688,7 @@ const SubjectPapersView = () => {
             setIsSelectMode(false);
             setSelectedPapers({});
           }
-        }, 3000);
+        }, 1000);
       }
     });
   };
@@ -632,10 +699,10 @@ const SubjectPapersView = () => {
       <div className="sticky top-0 z-20 bg-secondary/90 backdrop-blur-lg px-3 sm:px-4 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-md">
         {/* Top row: Back button, subject title, selection toggle, filter toggle */}
         <div className="flex items-center justify-between mb-2 sm:mb-3">
-          <div className="flex items-center gap-2 sm:gap-4 max-w-[60%]">
+          <div className="flex items-center gap-2 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
             <button
               onClick={() => router.push('/papers')}
-              className="p-2 sm:p-2.5 rounded-lg bg-accent text-content hover:bg-accent/90 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent/40"
+              className="p-2 sm:p-2.5 rounded-lg bg-accent/90 text-content hover:bg-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent/40"
               aria-label="Back to Subjects"
             >
               <ArrowLeft size={18} weight="bold" />
@@ -649,7 +716,7 @@ const SubjectPapersView = () => {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden sm:flex items-center gap-2 sm:gap-3">
             <button
               onClick={toggleSelectMode}
               className={`p-2 sm:p-2.5 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
@@ -676,19 +743,10 @@ const SubjectPapersView = () => {
               </button>
               {renderFilterDropdown()}
             </div>
-
-            {/* View toggle button - moved for mobile layout */}
-            <button
-              onClick={toggleViewMode}
-              className="md:hidden p-2 sm:p-2.5 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
-              aria-label="Toggle view mode"
-            >
-              {viewMode === 'grid' ? <List size={18} weight="bold" /> : <GridFour size={18} weight="bold" />}
-            </button>
           </div>
         </div>
         
-        {/* Bottom row: Paper count and view toggle for desktop */}
+        {/* Bottom row: Paper count, selection controls, view toggle, and on mobile - action buttons */}
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             {isSelectMode ? (
@@ -711,6 +769,44 @@ const SubjectPapersView = () => {
             ) : (
               <span className="text-xs sm:text-sm text-content/80">{filteredPapers.length} papers</span>
             )}
+          </div>
+          
+          {/* Mobile only action buttons in second row */}
+          <div className="flex sm:hidden items-center gap-2">
+            <button
+              onClick={toggleSelectMode}
+              className={`p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                isSelectMode 
+                  ? 'bg-accent text-content hover:bg-accent/90 focus:ring-accent/40' 
+                  : 'bg-primary/60 text-content hover:bg-primary/70 focus:ring-primary/40'
+              }`}
+              aria-label={isSelectMode ? "Exit selection mode" : "Enter selection mode"}
+            >
+              {isSelectMode ? <X size={16} weight="bold" /> : <CheckSquare size={16} weight="bold" />}
+            </button>
+            
+            <div className="relative">
+              <button
+                onClick={() => setShowFilters(prev => !prev)}
+                className={`p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                  isAnyFilterActive || showFilters
+                    ? 'bg-accent text-content hover:bg-accent/90 focus:ring-accent/40' 
+                    : 'bg-primary/60 text-content hover:bg-primary/70 focus:ring-primary/40'
+                }`}
+                aria-label="Show filters"
+              >
+                <Funnel size={16} weight={isAnyFilterActive ? "fill" : "bold"} />
+              </button>
+              {renderFilterDropdown()}
+            </div>
+            
+            <button
+              onClick={toggleViewMode}
+              className="p-2 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              aria-label="Toggle view mode"
+            >
+              {viewMode === 'grid' ? <List size={16} weight="bold" /> : <GridFour size={16} weight="bold" />}
+            </button>
           </div>
           
           {/* View toggle slider for desktop */}
@@ -753,8 +849,12 @@ const SubjectPapersView = () => {
             onClick={handleBatchDownload}
             className="bg-accent text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-lg transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 flex items-center gap-2"
           >
-            <FileZip size={20} weight="duotone" />
-            <span>Download {selectedPapersCount} Papers</span>
+            {selectedPapersCount === 1 ? (
+              <Download size={20} weight="duotone" />
+            ) : (
+              <FileZip size={20} weight="duotone" />
+            )}
+            <span>Download {selectedPapersCount} {selectedPapersCount === 1 ? 'Paper' : 'Papers'}</span>
           </button>
         </div>
       )}

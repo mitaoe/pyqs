@@ -37,7 +37,7 @@ export async function downloadFile(url: string, fileName: string): Promise<boole
 export interface BatchDownloadProgress {
   totalPapers: number;
   completed: number;
-  status: 'preparing' | 'downloading' | 'processing' | 'complete' | 'error';
+  status: 'preparing' | 'downloading' | 'processing' | 'sending' | 'complete' | 'error';
   currentPaper?: string;
   error?: string;
   percentage?: number;
@@ -76,20 +76,38 @@ export async function batchDownloadPapers(
       return false;
     }
 
+    await new Promise(resolve => setTimeout(resolve, 400));
     progress.status = 'downloading';
-    progress.percentage = 5;
-    onProgress?.(progress);
-
-    const progressInterval = setInterval(() => {
-      if (progress.percentage && progress.percentage < 70) {
-        progress.percentage += 2;
-        onProgress?.({...progress});
-      } else {
-        clearInterval(progressInterval);
-      }
-    }, 400);
+    progress.percentage = 2;
+    progress.completed = 0;
+    onProgress?.({...progress});
 
     try {
+      let fileIndex = 0;
+      const updateInterval = setInterval(() => {
+        if (progress.status !== 'downloading') {
+          clearInterval(updateInterval);
+          return;
+        }
+        
+        // Only update every few papers for smoother UI and less updates
+        fileIndex += Math.max(1, Math.floor(papers.length / 30));
+        if (fileIndex > papers.length) {
+          fileIndex = papers.length - 1;
+        }
+        
+        progress.completed = fileIndex;
+        // Calculate percentage: 2% start + up to 80% for downloads
+        const downloadPercentage = Math.min(80, (fileIndex / papers.length) * 80);
+        progress.percentage = 2 + downloadPercentage;
+        onProgress?.({...progress});
+        
+        // If we've reached the end, stop updates
+        if (fileIndex >= papers.length - 1) {
+          clearInterval(updateInterval);
+        }
+      }, 250);
+      
       const response = await fetch('/api/download/batch', {
         method: 'POST',
         headers: {
@@ -101,7 +119,7 @@ export async function batchDownloadPapers(
         }),
       });
 
-      clearInterval(progressInterval);
+      clearInterval(updateInterval);
 
       if (!response.ok) {
         let errorMessage = 'Failed to create batch download';
@@ -115,14 +133,30 @@ export async function batchDownloadPapers(
         throw new Error(errorMessage);
       }
 
+      const successCount = parseInt(response.headers.get('X-Download-Success-Count') || '0');
+      const errorCount = parseInt(response.headers.get('X-Download-Error-Count') || '0');
+      
+      // Update progress with actual numbers from server
+      progress.completed = successCount;
+     
+      // Update to processing phase (creating ZIP)
       progress.status = 'processing';
-      progress.percentage = 75;
-      onProgress?.(progress);
+      progress.percentage = 90;
+      progress.currentPaper = `Successfully processed ${successCount} of ${papers.length} papers`;
+      onProgress?.({...progress});
+      
+      // Show processing state for a moment
+      await new Promise(resolve => setTimeout(resolve, 400));
 
       const blob = await response.blob();
       
-      progress.percentage = 90;
-      onProgress?.(progress);
+      // Update to sending phase (sending to browser)
+      progress.status = 'sending';
+      progress.percentage = 95;
+      onProgress?.({...progress});
+      
+      // Small delay to show the "sending to browser" message
+      await new Promise(resolve => setTimeout(resolve, 600));
       
       const objectUrl = URL.createObjectURL(blob);
       
@@ -146,16 +180,18 @@ export async function batchDownloadPapers(
       document.body.removeChild(link);
       URL.revokeObjectURL(objectUrl);
       
-      progress.completed = papers.length;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      progress.completed = successCount;
       progress.status = 'complete';
       progress.percentage = 100;
-      onProgress?.(progress);
+      progress.currentPaper = errorCount > 0 
+        ? `Downloaded ${successCount} papers (${errorCount} failed)` 
+        : `All ${successCount} papers downloaded successfully`;
+      onProgress?.({...progress});
       
-      toast.success(`Downloaded ${papers.length} papers as ${fileName}`);
       return true;
     } catch (fetchError) {
-      clearInterval(progressInterval);
-      
       console.error('Batch download request failed:', fetchError);
       
       progress.status = 'error';
@@ -165,7 +201,6 @@ export async function batchDownloadPapers(
       progress.percentage = 0;
       
       onProgress?.(progress);
-      toast.error(progress.error);
       return false;
     }
   } catch (error) {
@@ -180,7 +215,6 @@ export async function batchDownloadPapers(
     };
     
     onProgress?.(progress);
-    toast.error('Failed to download papers. Please try again.');
     return false;
   }
 } 
