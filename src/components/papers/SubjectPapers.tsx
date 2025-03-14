@@ -242,10 +242,10 @@ const SubjectPapersView = () => {
       {filteredPapers.map((paper, index) => (
         <FadeIn key={`${paper.fileName}-${index}`} delay={Math.min(index * 0.05, 0.3)} duration={0.5}>
           <div
-            className={`bg-secondary border rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-lg h-full ${
+            className={`bg-secondary border-2 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-lg h-full ${
               selectedPapers[paper.fileName] 
-                ? 'border-accent' 
-                : 'border-accent/40 hover:border-accent/70'
+                ? 'border-accent shadow-md shadow-accent/20' 
+                : 'border-accent/30 hover:border-accent/50'
             }`}
             onContextMenu={(e) => e.preventDefault()}
           >
@@ -291,7 +291,7 @@ const SubjectPapersView = () => {
                 onClick={() => togglePaperSelection(paper.fileName)}
                 className={`mt-auto w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 ${
                   selectedPapers[paper.fileName]
-                    ? 'bg-accent text-content hover:bg-accent/90 focus:ring-accent/40'
+                    ? 'bg-accent text-white hover:bg-accent/90 focus:ring-accent/40'
                     : 'bg-primary text-content hover:bg-primary/80 focus:ring-primary/40'
                 }`}
               >
@@ -319,10 +319,10 @@ const SubjectPapersView = () => {
       {filteredPapers.map((paper, index) => (
         <FadeIn key={`${paper.fileName}-${index}`} delay={Math.min(index * 0.03, 0.2)} duration={0.4}>
           <div
-            className={`flex items-center justify-between bg-secondary border rounded-xl p-3 sm:p-4 transition-all duration-300 hover:shadow-md ${
+            className={`flex items-center justify-between bg-secondary border-2 rounded-xl p-3 sm:p-4 transition-all duration-300 hover:shadow-md ${
               selectedPapers[paper.fileName] 
-                ? 'border-accent' 
-                : 'border-accent/40 hover:border-accent/70'
+                ? 'border-accent shadow-sm shadow-accent/20' 
+                : 'border-accent/30 hover:border-accent/50'
             }`}
             onContextMenu={(e) => e.preventDefault()}
           >
@@ -372,7 +372,7 @@ const SubjectPapersView = () => {
                 onClick={() => togglePaperSelection(paper.fileName)}
                 className={`flex items-center gap-1 sm:gap-2 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 ml-2 sm:ml-4 ${
                   selectedPapers[paper.fileName]
-                    ? 'bg-accent text-content hover:bg-accent/90 focus:ring-accent/40'
+                    ? 'bg-accent text-white hover:bg-accent/90 focus:ring-accent/40'
                     : 'bg-primary text-content hover:bg-primary/80 focus:ring-primary/40'
                 }`}
               >
@@ -633,6 +633,13 @@ const SubjectPapersView = () => {
               <ArrowLeft size={18} weight="bold" />
             </button>
             <h2 className="text-lg sm:text-2xl font-bold text-content truncate">{selectedSubject}</h2>
+            
+            {/* Selected count badge - moved up to the main title area for better visibility */}
+            {isSelectMode && selectedPapersCount > 0 && (
+              <span className="ml-1 text-sm bg-accent text-white font-medium rounded-full px-2.5 py-1 shadow-sm">
+                {selectedPapersCount}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <button
@@ -686,12 +693,6 @@ const SubjectPapersView = () => {
               </button>
             ) : (
               <span className="text-xs sm:text-sm text-content/80">{filteredPapers.length} papers</span>
-            )}
-
-            {isSelectMode && selectedPapersCount > 0 && (
-              <span className="ml-3 text-sm bg-accent/20 text-accent rounded-full px-2 py-0.5">
-                {selectedPapersCount} selected
-              </span>
             )}
           </div>
           
