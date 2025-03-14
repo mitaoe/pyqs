@@ -90,6 +90,8 @@ export async function POST(request: NextRequest) {
     let successCount = 0;
     let errorCount = 0;
     
+    const startTime = Date.now();
+    
     // Process papers sequentially to better track progress and avoid overwhelming the server
     for (let i = 0; i < papers.length; i++) {
       const paper = papers[i];
@@ -139,7 +141,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Generate the zip file - use best compression settings for high quality
+    const filesCollectedTime = Date.now();
+    const fileCollectionDuration = filesCollectedTime - startTime;
+    
+    // Generate the zip file
+    console.log(`Creating ZIP file with ${successCount} papers...`);
+    
     const zipBlob = await zip.generateAsync({ 
       type: 'blob',
       compression: 'DEFLATE',
@@ -148,13 +155,16 @@ export async function POST(request: NextRequest) {
       }
     });
     
+    const zipCreationTime = Date.now();
+    const zipCreationDuration = zipCreationTime - filesCollectedTime;
+    
     // Create a filename for the zip based on the selected subject and filters
     const zipFileName = formatZipFilename(papers, filters);
     
     // Set content type using mime-types
     const contentType = mime.lookup('zip') || 'application/zip';
     
-    // Add metadata about the download
+    // Add metadata about the download and processing times
     const responseHeaders = {
       'Content-Type': contentType,
       'Content-Disposition': `attachment; filename="${zipFileName}"`,
@@ -162,6 +172,8 @@ export async function POST(request: NextRequest) {
       'X-Download-Success-Count': successCount.toString(),
       'X-Download-Error-Count': errorCount.toString(),
       'X-Download-Total-Count': papers.length.toString(),
+      'X-Download-File-Collection-Duration': fileCollectionDuration.toString(),
+      'X-Download-Zip-Creation-Duration': zipCreationDuration.toString()
     };
     
     // Return the zip file with metadata

@@ -83,32 +83,7 @@ export async function batchDownloadPapers(
     onProgress?.({...progress});
 
     try {
-      let fileIndex = 0;
-      const updateInterval = setInterval(() => {
-        if (progress.status !== 'downloading') {
-          clearInterval(updateInterval);
-          return;
-        }
-        
-        // Only update every few papers for smoother UI and less updates
-        fileIndex += Math.max(1, Math.floor(papers.length / 30));
-        if (fileIndex > papers.length) {
-          fileIndex = papers.length - 1;
-        }
-        
-        progress.completed = fileIndex;
-        // Calculate percentage: 2% start + up to 80% for downloads
-        const downloadPercentage = Math.min(80, (fileIndex / papers.length) * 80);
-        progress.percentage = 2 + downloadPercentage;
-        onProgress?.({...progress});
-        
-        // If we've reached the end, stop updates
-        if (fileIndex >= papers.length - 1) {
-          clearInterval(updateInterval);
-        }
-      }, 250);
-      
-      const response = await fetch('/api/download/batch', {
+      const responsePromise = fetch('/api/download/batch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,8 +93,42 @@ export async function batchDownloadPapers(
           filters
         }),
       });
-
-      clearInterval(updateInterval);
+      
+      let fileIndex = 0;
+      const totalSteps = Math.min(30, papers.length);
+      const stepSize = papers.length / totalSteps;
+      const stepDelay = Math.max(100, Math.min(250, 3000 / totalSteps));
+      
+      const updateProgress = async () => {
+        for (let step = 0; step < totalSteps; step++) {
+          // Calculate how many papers we've "completed" in this step
+          fileIndex = Math.round((step + 1) * stepSize);
+          if (fileIndex > papers.length) fileIndex = papers.length;
+          
+          progress.completed = fileIndex;
+          // Calculate percentage: 2% start + up to 80% for downloads (leave room for processing)
+          const downloadPercentage = Math.min(80, ((step + 1) / totalSteps) * 80);
+          progress.percentage = 2 + downloadPercentage;
+          onProgress?.({...progress});
+          
+          // Slow down as we approach the end
+          const adjustedDelay = step >= totalSteps - 3 
+            ? stepDelay * 1.5  // Slow down for the last few items
+            : stepDelay;
+            
+          await new Promise(resolve => setTimeout(resolve, adjustedDelay));
+          
+          // Don't continue if we're already in a different state
+          if (progress.status !== 'downloading') break;
+        }
+      };
+      
+      const progressPromise = updateProgress();
+      
+      const [response] = await Promise.all([
+        responsePromise,
+        progressPromise
+      ]);
 
       if (!response.ok) {
         let errorMessage = 'Failed to create batch download';
@@ -136,19 +145,39 @@ export async function batchDownloadPapers(
       const successCount = parseInt(response.headers.get('X-Download-Success-Count') || '0');
       const errorCount = parseInt(response.headers.get('X-Download-Error-Count') || '0');
       
-      // Update progress with actual numbers from server
-      progress.completed = successCount;
-     
+      progress.completed = papers.length;
+      
       // Update to processing phase (creating ZIP)
       progress.status = 'processing';
-      progress.percentage = 90;
-      progress.currentPaper = `Successfully processed ${successCount} of ${papers.length} papers`;
+      progress.percentage = 85;
+      progress.currentPaper = `Creating ZIP file with ${successCount} papers`;
       onProgress?.({...progress});
       
-      // Show processing state for a moment
-      await new Promise(resolve => setTimeout(resolve, 400));
-
-      const blob = await response.blob();
+      const blobPromise = response.blob();
+      
+      const processingTime = 1000;
+      const startTime = Date.now();
+      const startPercentage = progress.percentage || 85;
+      
+      const processingInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        if (elapsed >= processingTime) {
+          clearInterval(processingInterval);
+          return;
+        }
+        
+        const progressRatio = elapsed / processingTime;
+        progress.percentage = startPercentage + (progressRatio * (92 - startPercentage));
+        onProgress?.({...progress});
+      }, 100);
+      
+      const blob = await blobPromise;
+      clearInterval(processingInterval);
+      
+      const processingElapsed = Date.now() - startTime;
+      if (processingElapsed < processingTime) {
+        await new Promise(resolve => setTimeout(resolve, processingTime - processingElapsed));
+      }
       
       // Update to sending phase (sending to browser)
       progress.status = 'sending';

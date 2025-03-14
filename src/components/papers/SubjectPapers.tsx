@@ -250,7 +250,7 @@ const SubjectPapersView = () => {
         }
       }
     }
-  }, [filters, isSelectMode, filteredPapers]);
+  }, [filters, isSelectMode, filteredPapers, selectedPapers]);
 
   // Grid view
   const renderGridView = () => (
@@ -488,6 +488,14 @@ const SubjectPapersView = () => {
       if (batchDownloadProgress.status === 'downloading') {
         const percent = getProgressPercentage();
         return `${percent.toFixed(0)}%`;
+      }
+      
+      if (batchDownloadProgress.status === 'processing') {
+        return 'Compressing files into ZIP archive';
+      }
+      
+      if (batchDownloadProgress.status === 'sending') {
+        return 'Starting browser download';
       }
       
       const percentage = getProgressPercentage();
