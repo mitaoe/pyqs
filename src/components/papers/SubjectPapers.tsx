@@ -37,7 +37,7 @@ const trimRedundantUrlPath = (url: string): string => {
 const SubjectPapersView = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { papers, dataReady } = usePapers();
+  const { papers, dataReady, meta } = usePapers();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
@@ -50,6 +50,25 @@ const SubjectPapersView = () => {
     examTypes: [] as string[]
   });
   const [batchDownloadProgress, setBatchDownloadProgress] = useState<BatchDownloadProgress | null>(null);
+
+  useEffect(() => {
+    if (dataReady && meta?.standardSubjects) {
+      const subjectParam = searchParams.get('subject');
+      
+      if (subjectParam && !meta.standardSubjects.some(
+        subject => subject.toLowerCase() === subjectParam.toLowerCase()
+      )) {
+        toast.error(`Subject "${subjectParam}" not found`, {
+          description: "Redirecting to the subject list",
+          duration: 4000
+        });
+        
+        setTimeout(() => {
+          router.push('/papers');
+        }, 1500);
+      }
+    }
+  }, [searchParams, dataReady, meta, router]);
 
   useEffect(() => {
     const checkScreenSize = () => {
