@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { House } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
@@ -8,6 +8,7 @@ import Layout from '@/components/layout/Layout';
 import LottieAnimation from '@/components/animations/LottieAnimation';
 import FadeIn from '@/components/animations/FadeIn';
 
+// Export the actual 404 component
 export default function NotFound() {
   const [isClient, setIsClient] = useState(false);
 
@@ -22,10 +23,9 @@ export default function NotFound() {
   const buttonClasses = "flex h-14 w-[180px] items-center justify-center overflow-hidden rounded-full px-4 text-sm font-medium text-primary shadow-lg shadow-white/5";
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Layout>
-        <div className="flex min-h-[76vh] flex-col items-center justify-center px-4 text-center">
-          {/* Main animation section */}
+    <Layout>
+      <div className="flex min-h-[76vh] flex-col items-center justify-center px-4 text-center">
+        {/* Main animation section */}
         <FadeIn from="top" duration={0.8}>
           <div className="relative mb-6">
             <div className="h-80 w-80 sm:h-96 sm:w-96">
@@ -62,9 +62,8 @@ export default function NotFound() {
               <span>Go Home</span>
             </Link>
           </motion.div>
-          </FadeIn>
-        </div>
-      </Layout>
-    </Suspense>
+        </FadeIn>
+      </div>
+    </Layout>
   );
 } 

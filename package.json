@@ -20,7 +20,9 @@
     "axios": "^1.8.2",
     "cheerio": "^1.0.0",
     "framer-motion": "12.4.10",
+    "jszip": "^3.10.1",
     "lottie-react": "2.4.1",
+    "mime-types": "^2.1.35",
     "mongodb": "^6.13.1",
     "mongoose": "^8.10.1",
     "next": "^15.2.0",
@@ -31,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/mime-types": "^2.1.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
