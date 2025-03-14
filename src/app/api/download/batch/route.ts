@@ -19,7 +19,6 @@ const trimRedundantUrlPath = (url: string): string => {
 
 async function fetchPaperContent(url: string): Promise<ArrayBuffer | null> {
   try {
-    console.log(`Fetching paper from: ${url}`);
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/pdf, application/octet-stream',
@@ -88,7 +87,10 @@ export async function POST(request: NextRequest) {
     const filenameMap = new Map<string, number>();
     
     // Fetch and add each paper to the zip
-    const fetchPromises = papers.map(async (paper) => {
+    let successCount = 0;
+    
+    for (let i = 0; i < papers.length; i++) {
+      const paper = papers[i];
       try {
         // Trim URL if needed
         const trimmedUrl = trimRedundantUrlPath(paper.url);
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest) {
         const arrayBuffer = await fetchPaperContent(trimmedUrl);
         
         if (!arrayBuffer) {
-          return { success: false, fileName: paper.fileName };
+          continue;
         }
         
         // Handle duplicate filenames by adding a suffix
@@ -117,15 +119,11 @@ export async function POST(request: NextRequest) {
         
         // Add the file to the zip using ArrayBuffer
         zip.file(fileName, arrayBuffer);
-        return { success: true, fileName };
+        successCount++;
       } catch (error) {
         console.error(`Error processing ${paper.fileName}:`, error);
-        return { success: false, fileName: paper.fileName };
       }
-    });
-    
-    const results = await Promise.all(fetchPromises);
-    const successCount = results.filter(r => r.success).length;
+    }
     
     if (successCount === 0) {
       return NextResponse.json(
@@ -135,7 +133,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Generate the zip file
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const zipBlob = await zip.generateAsync({ 
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 5 }
+    });
     
     // Create a filename for the zip based on the selected subject and filters
     const zipFileName = formatZipFilename(papers, filters);

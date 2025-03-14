@@ -38,7 +38,9 @@ export interface BatchDownloadProgress {
   totalPapers: number;
   completed: number;
   status: 'preparing' | 'downloading' | 'processing' | 'complete' | 'error';
+  currentPaper?: string;
   error?: string;
+  percentage?: number;
 }
 
 export type ProgressCallback = (progress: BatchDownloadProgress) => void;
@@ -58,7 +60,8 @@ export async function batchDownloadPapers(
     const progress: BatchDownloadProgress = {
       totalPapers: papers.length,
       completed: 0,
-      status: 'preparing'
+      status: 'preparing',
+      percentage: 0
     };
     
     onProgress?.(progress);
@@ -74,7 +77,17 @@ export async function batchDownloadPapers(
     }
 
     progress.status = 'downloading';
+    progress.percentage = 5;
     onProgress?.(progress);
+
+    const progressInterval = setInterval(() => {
+      if (progress.percentage && progress.percentage < 70) {
+        progress.percentage += 2;
+        onProgress?.({...progress});
+      } else {
+        clearInterval(progressInterval);
+      }
+    }, 400);
 
     try {
       const response = await fetch('/api/download/batch', {
@@ -87,6 +100,8 @@ export async function batchDownloadPapers(
           filters
         }),
       });
+
+      clearInterval(progressInterval);
 
       if (!response.ok) {
         let errorMessage = 'Failed to create batch download';
@@ -101,9 +116,14 @@ export async function batchDownloadPapers(
       }
 
       progress.status = 'processing';
+      progress.percentage = 75;
       onProgress?.(progress);
 
       const blob = await response.blob();
+      
+      progress.percentage = 90;
+      onProgress?.(progress);
+      
       const objectUrl = URL.createObjectURL(blob);
       
       // Get filename from header if available
@@ -128,17 +148,21 @@ export async function batchDownloadPapers(
       
       progress.completed = papers.length;
       progress.status = 'complete';
+      progress.percentage = 100;
       onProgress?.(progress);
       
       toast.success(`Downloaded ${papers.length} papers as ${fileName}`);
       return true;
     } catch (fetchError) {
+      clearInterval(progressInterval);
+      
       console.error('Batch download request failed:', fetchError);
       
       progress.status = 'error';
       progress.error = fetchError instanceof Error 
         ? fetchError.message 
         : 'Failed to connect to download service';
+      progress.percentage = 0;
       
       onProgress?.(progress);
       toast.error(progress.error);
@@ -151,7 +175,8 @@ export async function batchDownloadPapers(
       totalPapers: papers.length,
       completed: 0,
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      percentage: 0
     };
     
     onProgress?.(progress);

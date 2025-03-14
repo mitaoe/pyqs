@@ -9,12 +9,11 @@ import {
   Download, 
   ArrowLeft, 
   BookOpen, 
-  Copy, 
   CheckSquare, 
   Square,
   X,
   Funnel,
-  Package
+  FileZip
 } from '@phosphor-icons/react';
 import { downloadFile, batchDownloadPapers, BatchDownloadProgress } from '@/utils/download';
 import { Paper } from '@/types/paper';
@@ -183,14 +182,6 @@ const SubjectPapersView = () => {
     }
   };
 
-  const handleCopyLink = () => {
-    if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.href)
-        .then(() => toast.success('Link copied to clipboard'))
-        .catch(() => toast.error('Failed to copy link'));
-    }
-  };
-
   const handleDownload = async (paper: Paper) => {
     if (downloadingFile) return;
     setDownloadingFile(paper.fileName);
@@ -236,6 +227,31 @@ const SubjectPapersView = () => {
 
   const isAnyFilterActive = filters.years.length > 0 || filters.examTypes.length > 0;
 
+  // Add new useEffect to update selected papers when filters change
+  useEffect(() => {
+    if (isSelectMode) {
+      const newSelection: Record<string, boolean> = {};
+      
+      filteredPapers.forEach(paper => {
+        if (selectedPapers[paper.fileName]) {
+          newSelection[paper.fileName] = true;
+        }
+      });
+      
+      const currentSelectedCount = Object.keys(selectedPapers).length;
+      const newSelectedCount = Object.keys(newSelection).length;
+      
+      if (currentSelectedCount !== newSelectedCount) {
+        setSelectedPapers(newSelection);
+      } else if (currentSelectedCount > 0) {
+        const hasChanges = Object.keys(newSelection).some(key => !selectedPapers[key]);
+        if (hasChanges) {
+          setSelectedPapers(newSelection);
+        }
+      }
+    }
+  }, [filters, isSelectMode, filteredPapers]);
+
   // Grid view
   const renderGridView = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -246,7 +262,8 @@ const SubjectPapersView = () => {
               selectedPapers[paper.fileName] 
                 ? 'border-accent shadow-md shadow-accent/20' 
                 : 'border-accent/30 hover:border-accent/50'
-            }`}
+            } ${isSelectMode ? 'cursor-pointer' : ''}`}
+            onClick={isSelectMode ? () => togglePaperSelection(paper.fileName) : undefined}
             onContextMenu={(e) => e.preventDefault()}
           >
             <div className="mb-4">
@@ -260,17 +277,19 @@ const SubjectPapersView = () => {
                   </span>
                 </div>
                 {isSelectMode && (
-                  <button
-                    onClick={() => togglePaperSelection(paper.fileName)}
-                    className="text-content hover:text-accent transition-colors focus:outline-none p-1 -m-1"
-                    aria-label={selectedPapers[paper.fileName] ? "Deselect paper" : "Select paper"}
+                  <div 
+                    className={`w-6 h-6 rounded flex items-center justify-center ${
+                      selectedPapers[paper.fileName] 
+                        ? 'bg-accent text-white' 
+                        : 'bg-primary/40 text-content/80'
+                    }`}
                   >
                     {selectedPapers[paper.fileName] ? (
-                      <CheckSquare size={22} weight="fill" className="text-accent" />
+                      <CheckSquare size={18} weight="fill" />
                     ) : (
-                      <Square size={22} weight="regular" />
+                      <Square size={18} weight="regular" />
                     )}
-                  </button>
+                  </div>
                 )}
               </div>
               <h3 className="text-base sm:text-lg font-semibold text-content mb-2 line-clamp-2">
@@ -279,35 +298,17 @@ const SubjectPapersView = () => {
             </div>
             {!isSelectMode ? (
               <button
-                onClick={() => handleDownload(paper)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload(paper);
+                }}
                 disabled={downloadingFile === paper.fileName}
                 className="mt-auto w-full flex items-center justify-center gap-2 bg-accent rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50"
               >
                 <Download size={18} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
                 <span>{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
               </button>
-            ) : (
-              <button
-                onClick={() => togglePaperSelection(paper.fileName)}
-                className={`mt-auto w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 ${
-                  selectedPapers[paper.fileName]
-                    ? 'bg-accent text-white hover:bg-accent/90 focus:ring-accent/40'
-                    : 'bg-primary text-content hover:bg-primary/80 focus:ring-primary/40'
-                }`}
-              >
-                {selectedPapers[paper.fileName] ? (
-                  <>
-                    <CheckSquare size={18} weight="duotone" />
-                    <span>Selected</span>
-                  </>
-                ) : (
-                  <>
-                    <Square size={18} weight="duotone" />
-                    <span>Select</span>
-                  </>
-                )}
-              </button>
-            )}
+            ) : null}
           </div>
         </FadeIn>
       ))}
@@ -323,22 +324,29 @@ const SubjectPapersView = () => {
               selectedPapers[paper.fileName] 
                 ? 'border-accent shadow-sm shadow-accent/20' 
                 : 'border-accent/30 hover:border-accent/50'
-            }`}
+            } ${isSelectMode ? 'cursor-pointer' : ''}`}
+            onClick={isSelectMode ? () => togglePaperSelection(paper.fileName) : undefined}
             onContextMenu={(e) => e.preventDefault()}
           >
             <div className="flex items-start gap-2 sm:gap-4 max-w-[70%]">
               {isSelectMode ? (
-                <button
-                  onClick={() => togglePaperSelection(paper.fileName)}
-                  className="flex-shrink-0 text-content hover:text-accent transition-colors focus:outline-none p-1"
-                  aria-label={selectedPapers[paper.fileName] ? "Deselect paper" : "Select paper"}
+                <div 
+                  className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center ${
+                    selectedPapers[paper.fileName] 
+                      ? 'bg-accent text-white' 
+                      : 'bg-primary/40 text-content/80'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePaperSelection(paper.fileName);
+                  }}
                 >
                   {selectedPapers[paper.fileName] ? (
-                    <CheckSquare size={24} weight="fill" className="text-accent" />
+                    <CheckSquare size={16} weight="fill" />
                   ) : (
-                    <Square size={24} weight="regular" />
+                    <Square size={16} weight="regular" />
                   )}
-                </button>
+                </div>
               ) : (
                 <div className="hidden sm:flex h-10 w-10 sm:h-12 sm:w-12 min-w-10 sm:min-w-12 items-center justify-center rounded-xl bg-primary/60">
                   <BookOpen size={24} weight="duotone" className="text-content/80" />
@@ -360,35 +368,17 @@ const SubjectPapersView = () => {
             </div>
             {!isSelectMode ? (
               <button
-                onClick={() => handleDownload(paper)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload(paper);
+                }}
                 disabled={downloadingFile === paper.fileName}
                 className="flex items-center gap-1 sm:gap-2 bg-accent rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50 ml-2 sm:ml-4"
               >
                 <Download size={18} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
                 <span className="hidden sm:inline">{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
               </button>
-            ) : (
-              <button
-                onClick={() => togglePaperSelection(paper.fileName)}
-                className={`flex items-center gap-1 sm:gap-2 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 ml-2 sm:ml-4 ${
-                  selectedPapers[paper.fileName]
-                    ? 'bg-accent text-white hover:bg-accent/90 focus:ring-accent/40'
-                    : 'bg-primary text-content hover:bg-primary/80 focus:ring-primary/40'
-                }`}
-              >
-                {selectedPapers[paper.fileName] ? (
-                  <>
-                    <CheckSquare size={16} weight="duotone" />
-                    <span className="hidden sm:inline">Selected</span>
-                  </>
-                ) : (
-                  <>
-                    <Square size={16} weight="duotone" />
-                    <span className="hidden sm:inline">Select</span>
-                  </>
-                )}
-              </button>
-            )}
+            ) : null}
           </div>
         </FadeIn>
       ))}
@@ -452,7 +442,7 @@ const SubjectPapersView = () => {
         case 'preparing':
           return 'Preparing download...';
         case 'downloading':
-          return 'Downloading papers...';
+          return 'Downloading papers from server...';
         case 'processing':
           return 'Creating ZIP file...';
         case 'complete':
@@ -465,12 +455,27 @@ const SubjectPapersView = () => {
     };
 
     const getProgressPercentage = () => {
+      if (batchDownloadProgress.percentage !== undefined) {
+        return batchDownloadProgress.percentage;
+      }
+      
       if (batchDownloadProgress.status === 'complete') return 100;
       if (batchDownloadProgress.status === 'error') return 0;
       if (batchDownloadProgress.status === 'preparing') return 5;
       if (batchDownloadProgress.status === 'downloading') return 30;
       if (batchDownloadProgress.status === 'processing') return 70;
       return 0;
+    };
+
+    const getDetailText = () => {
+      if (batchDownloadProgress.status === 'complete') {
+        return `Successfully downloaded ${batchDownloadProgress.totalPapers} papers`;
+      }
+      if (batchDownloadProgress.status === 'error') {
+        return '';
+      }
+      const percentage = getProgressPercentage();
+      return `${percentage}% complete`;
     };
 
     return (
@@ -494,16 +499,19 @@ const SubjectPapersView = () => {
           <div className="mb-4">
             <div className="h-2 bg-primary/30 rounded-full overflow-hidden">
               <div 
-                className={`h-full ${batchDownloadProgress.status === 'error' ? 'bg-red-500' : 'bg-accent'} transition-all duration-500`} 
+                className={`h-full ${batchDownloadProgress.status === 'error' ? 'bg-red-500' : 'bg-accent'} transition-all duration-300`} 
                 style={{ width: `${getProgressPercentage()}%` }}
               ></div>
             </div>
+            <div className="mt-1 flex justify-between text-xs text-content/70">
+              <span>{getStatusText()}</span>
+              <span>{getDetailText()}</span>
+            </div>
           </div>
-          
-          <p className="text-content/80 text-center mb-2">{getStatusText()}</p>
           
           {batchDownloadProgress.status === 'error' && (
             <div className="mt-4 text-center">
+              <p className="text-red-500 mb-4 text-sm">{batchDownloadProgress.error}</p>
               <button
                 onClick={handleBatchDownload}
                 className="bg-accent text-content px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-accent/90 focus:outline-none"
@@ -622,7 +630,7 @@ const SubjectPapersView = () => {
     <div className="container mx-auto px-4 py-6 sm:py-8 relative">
       {/* Sticky header with Back button, subject title, and action buttons */}
       <div className="sticky top-0 z-20 bg-secondary/90 backdrop-blur-lg px-3 sm:px-4 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-md">
-        {/* Top row: Back button and subject title, select toggle */}
+        {/* Top row: Back button, subject title, selection toggle, filter toggle */}
         <div className="flex items-center justify-between mb-2 sm:mb-3">
           <div className="flex items-center gap-2 sm:gap-4 max-w-[60%]">
             <button
@@ -641,7 +649,7 @@ const SubjectPapersView = () => {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={toggleSelectMode}
               className={`p-2 sm:p-2.5 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
@@ -668,10 +676,19 @@ const SubjectPapersView = () => {
               </button>
               {renderFilterDropdown()}
             </div>
+
+            {/* View toggle button - moved for mobile layout */}
+            <button
+              onClick={toggleViewMode}
+              className="md:hidden p-2 sm:p-2.5 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              aria-label="Toggle view mode"
+            >
+              {viewMode === 'grid' ? <List size={18} weight="bold" /> : <GridFour size={18} weight="bold" />}
+            </button>
           </div>
         </div>
         
-        {/* Bottom row: Paper count, view toggle, and copy button */}
+        {/* Bottom row: Paper count and view toggle for desktop */}
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             {isSelectMode ? (
@@ -696,21 +713,29 @@ const SubjectPapersView = () => {
             )}
           </div>
           
-          <div className="flex items-center gap-1 sm:gap-2">
+          {/* View toggle slider for desktop */}
+          <div className="hidden md:flex items-center p-1 bg-primary/40 rounded-lg">
             <button
-              onClick={handleCopyLink}
-              className="p-2 sm:p-2.5 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
-              aria-label="Copy link to this subject"
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-md transition-colors ${
+                viewMode === 'grid' 
+                  ? 'bg-accent text-white' 
+                  : 'text-content/80 hover:text-content'
+              }`}
+              aria-label="Grid view"
             >
-              <Copy size={18} weight="bold" />
+              <GridFour size={18} weight={viewMode === 'grid' ? "fill" : "regular"} />
             </button>
-            
             <button
-              onClick={toggleViewMode}
-              className="p-2 sm:p-2.5 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
-              aria-label="Toggle view mode"
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-md transition-colors ${
+                viewMode === 'list' 
+                  ? 'bg-accent text-white' 
+                  : 'text-content/80 hover:text-content'
+              }`}
+              aria-label="List view"
             >
-              {viewMode === 'grid' ? <List size={18} weight="bold" /> : <GridFour size={18} weight="bold" />}
+              <List size={18} weight={viewMode === 'list' ? "fill" : "regular"} />
             </button>
           </div>
         </div>
@@ -726,9 +751,9 @@ const SubjectPapersView = () => {
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
           <button
             onClick={handleBatchDownload}
-            className="bg-accent text-content px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-lg transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 flex items-center gap-2"
+            className="bg-accent text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-lg transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 flex items-center gap-2"
           >
-            <Package size={20} weight="duotone" />
+            <FileZip size={20} weight="duotone" />
             <span>Download {selectedPapersCount} Papers</span>
           </button>
         </div>
