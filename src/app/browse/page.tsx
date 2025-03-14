@@ -6,7 +6,11 @@ import { toast } from 'sonner';
 import Layout from '@/components/layout/Layout';
 import DirectoryBrowser from '@/components/directory/DirectoryBrowser';
 import { usePapers } from '@/contexts/PaperContext';
-import type { DirectoryNode } from '@/types/paper';
+import type { DirectoryNode, Paper } from '@/types/paper';
+
+interface PaperWithSubject extends Paper {
+  subject: string;
+}
 
 function getCurrentNode(structure: DirectoryNode, path: string): DirectoryNode | null {
   if (!path) return structure;
@@ -28,8 +32,15 @@ function BrowseContent() {
   const searchParams = useSearchParams();
   const currentPath = searchParams.get('path') || '';
   
-  const { structure, isLoading, error } = usePapers();
+  const { structure, isLoading, error, fetchDirectoryData } = usePapers();
   const [currentNode, setCurrentNode] = useState<DirectoryNode | null>(null);
+
+  useEffect(() => {
+    // Only fetch directory data if it's not already loaded
+    if (!structure && !isLoading) {
+      fetchDirectoryData();
+    }
+  }, [structure, isLoading, fetchDirectoryData]);
 
   useEffect(() => {
     if (structure) {
@@ -58,7 +69,7 @@ function BrowseContent() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-content/60">Loading...</div>
+        <div className="text-content/60">Loading directory structure...</div>
       </div>
     );
   }
@@ -84,7 +95,14 @@ function BrowseContent() {
     name,
     isDirectory: node.type === 'directory',
     path: node.path,
-    metadata: node.metadata
+    metadata: node.metadata && {
+      ...node.metadata,
+      year: node.metadata.year || 'Unknown',
+      branch: node.metadata.branch || 'Unknown',
+      semester: node.metadata.semester || 'Unknown',
+      examType: node.metadata.examType || 'Unknown',
+      subject: (node.metadata as PaperWithSubject).subject || 'Unknown'
+    }
   }));
 
   return (
@@ -110,6 +128,9 @@ function LoadingFallback() {
 export default function BrowsePage() {
   return (
     <Layout>
+      <div className="mb-4 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4 text-yellow-500">
+        <strong>Developer Notice:</strong> This page is now hidden from regular navigation but maintained for development and verification purposes.
+      </div>
       <Suspense fallback={<LoadingFallback />}>
         <BrowseContent />
       </Suspense>

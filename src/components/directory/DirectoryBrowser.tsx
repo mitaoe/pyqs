@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { FolderIcon, ArrowLeftIcon, DownloadIcon } from '@/components/ui/icons';
+import { 
+  Folder, 
+  ArrowLeft, 
+  Download, 
+  Calendar, 
+  GitBranch, 
+  FileText, 
+  GraduationCap 
+} from '@phosphor-icons/react';
 import { downloadFile } from '@/utils/download';
 import type { DirectoryMeta } from '@/types/paper';
 
@@ -14,6 +22,7 @@ interface DirectoryItem {
     branch: string;
     semester: string;
     examType: string;
+    subject?: string;
   };
 }
 
@@ -77,15 +86,15 @@ export default function DirectoryBrowser({
 
   return (
     <div className="flex select-none flex-col space-y-6">
-      <div className="sticky top-0 z-10 bg-primary">
+      <div className="sticky top-0 z-10 bg-primary p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-content">Browse Papers</h1>
           {currentPath && (
             <button
               onClick={() => onNavigate('../')}
-              className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent/90"
+              className="flex items-center gap-1 rounded-lg bg-primary/60 p-2 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
-              <ArrowLeftIcon className="h-4 w-4" />
+              <ArrowLeft size={16} weight="bold" className="h-4 w-4" />
               Back
             </button>
           )}
@@ -101,27 +110,39 @@ export default function DirectoryBrowser({
           <div className="sticky top-[72px] z-10 border-b border-accent bg-secondary p-4">
             <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
               {meta.years.length > 0 && (
-                <div>
-                  <span className="text-content/60">Years:</span>
-                  <div className="mt-1 text-content">{meta.years.join(', ')}</div>
+                <div className="flex items-center gap-1">
+                  <Calendar size={16} weight="duotone" className="text-content/60" />
+                  <div>
+                    <span className="text-content/60">Years:</span>
+                    <div className="mt-1 text-content">{meta.years.join(', ')}</div>
+                  </div>
                 </div>
               )}
               {meta.branches.length > 0 && (
-                <div>
-                  <span className="text-content/60">Branches:</span>
-                  <div className="mt-1 text-content">{meta.branches.join(', ')}</div>
+                <div className="flex items-center gap-1">
+                  <GitBranch size={16} weight="duotone" className="text-content/60" />
+                  <div>
+                    <span className="text-content/60">Branches:</span>
+                    <div className="mt-1 text-content">{meta.branches.join(', ')}</div>
+                  </div>
                 </div>
               )}
               {meta.examTypes.length > 0 && (
-                <div>
-                  <span className="text-content/60">Exam Types:</span>
-                  <div className="mt-1 text-content">{meta.examTypes.join(', ')}</div>
+                <div className="flex items-center gap-1">
+                  <FileText size={16} weight="duotone" className="text-content/60" />
+                  <div>
+                    <span className="text-content/60">Exam Types:</span>
+                    <div className="mt-1 text-content">{meta.examTypes.join(', ')}</div>
+                  </div>
                 </div>
               )}
               {meta.semesters.length > 0 && (
-                <div>
-                  <span className="text-content/60">Semesters:</span>
-                  <div className="mt-1 text-content">{meta.semesters.join(', ')}</div>
+                <div className="flex items-center gap-1">
+                  <GraduationCap size={16} weight="duotone" className="text-content/60" />
+                  <div>
+                    <span className="text-content/60">Semesters:</span>
+                    <div className="mt-1 text-content">{meta.semesters.join(', ')}</div>
+                  </div>
                 </div>
               )}
             </div>
@@ -140,7 +161,7 @@ export default function DirectoryBrowser({
                   onClick={() => onNavigate(item.path)}
                   className="flex items-center gap-3 text-content transition-colors hover:text-white"
                 >
-                  <FolderIcon className="h-4 w-4" />
+                  <Folder size={16} weight="duotone" className="h-4 w-4" />
                   <span className="text-sm">{item.name}</span>
                 </button>
               </div>
@@ -149,21 +170,39 @@ export default function DirectoryBrowser({
             {files.map((item) => (
               <div
                 key={item.path}
-                className="flex items-center justify-between p-3 transition-colors hover:bg-accent/10"
+                className="flex flex-col p-3 transition-colors hover:bg-accent/10"
                 onContextMenu={preventRightClick}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-content">{item.name}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-content">{item.name}</span>
+                  </div>
+                  {item.metadata && (
+                    <button
+                      onClick={() => handleDownload(item.metadata!.url, item.metadata!.fileName)}
+                      disabled={downloadingFile === item.metadata.fileName}
+                      className="flex items-center gap-2 rounded-md bg-accent/90 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent hover:shadow-accent/25 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Download size={16} weight="duotone" className={`h-4 w-4 ${downloadingFile === item.metadata.fileName ? 'animate-spin' : ''}`} />
+                      <span>{downloadingFile === item.metadata.fileName ? 'Downloading...' : 'Download'}</span>
+                    </button>
+                  )}
                 </div>
                 {item.metadata && (
-                  <button
-                    onClick={() => handleDownload(item.metadata!.url, item.metadata!.fileName)}
-                    disabled={downloadingFile === item.metadata.fileName}
-                    className="flex items-center gap-2 rounded-md bg-accent/90 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent hover:shadow-accent/25 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <DownloadIcon className={`h-4 w-4 ${downloadingFile === item.metadata.fileName ? 'animate-spin' : ''}`} />
-                    <span>{downloadingFile === item.metadata.fileName ? 'Downloading...' : 'Download'}</span>
-                  </button>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {Object.entries(item.metadata).map(([key, value]) => {
+                      if (key === 'url' || key === 'fileName') return null;
+                      if (!value) return null;
+                      return (
+                        <span
+                          key={key}
+                          className="rounded-full bg-primary/50 px-2 py-0.5 text-xs text-content/80"
+                        >
+                          {key}: {value}
+                        </span>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             ))}
@@ -172,4 +211,4 @@ export default function DirectoryBrowser({
       </div>
     </div>
   );
-} 
+}
