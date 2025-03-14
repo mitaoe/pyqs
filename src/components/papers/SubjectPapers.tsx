@@ -552,6 +552,7 @@ const SubjectPapersView = () => {
                       setBatchDownloadProgress(progress);
                       
                       if (progress.status === 'complete' || progress.status === 'error') {
+                        const timeoutDuration = progress.status === 'error' ? 3000 : 1000;
                         setTimeout(() => {
                           setBatchDownloadProgress(null);
                           
@@ -559,7 +560,7 @@ const SubjectPapersView = () => {
                             setIsSelectMode(false);
                             setSelectedPapers({});
                           }
-                        }, 3000);
+                        }, timeoutDuration);
                       }
                     });
                   }, 300);
@@ -688,6 +689,7 @@ const SubjectPapersView = () => {
       
       // If complete or error, clear progress after a delay
       if (progress.status === 'complete' || progress.status === 'error') {
+        const timeoutDuration = progress.status === 'error' ? 3000 : 1000;
         setTimeout(() => {
           setBatchDownloadProgress(null);
           
@@ -696,7 +698,7 @@ const SubjectPapersView = () => {
             setIsSelectMode(false);
             setSelectedPapers({});
           }
-        }, 1000);
+        }, timeoutDuration);
       }
     });
   };
@@ -710,7 +712,7 @@ const SubjectPapersView = () => {
           <div className="flex items-center gap-2 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
             <button
               onClick={() => router.push('/papers')}
-              className="p-2 sm:p-2.5 rounded-lg bg-accent/90 text-content hover:bg-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent/40"
+              className="p-2 sm:p-2.5 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
               aria-label="Back to Subjects"
             >
               <ArrowLeft size={18} weight="bold" />
