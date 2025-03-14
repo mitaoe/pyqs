@@ -92,7 +92,7 @@ export default function DirectoryBrowser({
           {currentPath && (
             <button
               onClick={() => onNavigate('../')}
-              className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent/90"
+              className="flex items-center gap-1 rounded-lg bg-primary/60 p-2 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
               <ArrowLeft size={16} weight="bold" className="h-4 w-4" />
               Back

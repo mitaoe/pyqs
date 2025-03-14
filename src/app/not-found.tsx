@@ -8,6 +8,7 @@ import Layout from '@/components/layout/Layout';
 import LottieAnimation from '@/components/animations/LottieAnimation';
 import FadeIn from '@/components/animations/FadeIn';
 
+// Export the actual 404 component
 export default function NotFound() {
   const [isClient, setIsClient] = useState(false);
 
