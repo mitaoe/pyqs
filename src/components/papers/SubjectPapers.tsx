@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { usePapers } from '@/contexts/PaperContext';
 import { 
@@ -50,10 +50,27 @@ const SubjectPapersView = () => {
     examTypes: [] as string[]
   });
   const [batchDownloadProgress, setBatchDownloadProgress] = useState<BatchDownloadProgress | null>(null);
+  const previousSubjectRef = useRef<string | null>(null);
+
+  const scrollToTop = () => {
+    window.scrollTo(0, 0);
+    
+    const scrollContainer = document.getElementById('scrollable-content');
+    if (scrollContainer) {
+      scrollContainer.scrollTop = 0;
+    }
+  };
 
   useEffect(() => {
     if (dataReady && meta?.standardSubjects) {
       const subjectParam = searchParams.get('subject');
+      
+      if (subjectParam) {
+        if (previousSubjectRef.current !== null && previousSubjectRef.current !== subjectParam) {
+          scrollToTop();
+        }
+        previousSubjectRef.current = subjectParam;
+      }
       
       if (subjectParam && !meta.standardSubjects.some(
         subject => subject.toLowerCase() === subjectParam.toLowerCase()
@@ -69,6 +86,11 @@ const SubjectPapersView = () => {
       }
     }
   }, [searchParams, dataReady, meta, router]);
+
+  // When component mounts, ensure we're at the top of the page
+  useEffect(() => {
+    scrollToTop();
+  }, []);
 
   useEffect(() => {
     const checkScreenSize = () => {

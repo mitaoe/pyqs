@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import PageTransition from '@/components/animations/PageTransition';
 import SubjectAlphabetList, { AlphabetBar } from '@/components/papers/SubjectAlphabetList';
@@ -13,16 +13,39 @@ export default function SearchContentClient() {
   const searchParams = useSearchParams();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [showGoUp, setShowGoUp] = useState(false);
+  const scrollToTopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    const scrollContainer = document.getElementById('scrollable-content');
+    if (scrollContainer) {
+      scrollContainer.scrollTop = 0;
+    }
+  }, []);
 
   useEffect(() => {
     const subjectParam = searchParams.get('subject');
     if (subjectParam) {
       setSelectedSubject(subjectParam);
-      window.scrollTo(0, 0);
+      
+      if (scrollToTopTimeoutRef.current) {
+        clearTimeout(scrollToTopTimeoutRef.current);
+      }
+      
+      scrollToTopTimeoutRef.current = setTimeout(() => {
+        scrollToTop();
+      }, 50);
     } else {
       setSelectedSubject(null);
     }
-  }, [searchParams]);
+    
+    return () => {
+      if (scrollToTopTimeoutRef.current) {
+        clearTimeout(scrollToTopTimeoutRef.current);
+      }
+    };
+  }, [searchParams, scrollToTop]);
 
   useEffect(() => {
     const scrollContainer = document.getElementById('scrollable-content');
