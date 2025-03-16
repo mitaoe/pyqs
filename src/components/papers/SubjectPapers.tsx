@@ -725,7 +725,7 @@ const SubjectPapersView = () => {
   return (
     <div className="container mx-auto px-4 py-6 sm:py-8 relative">
       {/* Sticky header with Back button, subject title, and action buttons */}
-      <div className="sticky top-0 z-20 bg-secondary/90 backdrop-blur-lg px-3 sm:px-4 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-md">
+      <div className="sticky top-0 z-20 bg-secondary/60 backdrop-blur-2xl backdrop-saturate-150 px-3 sm:px-4 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-lg supports-[backdrop-filter]:bg-secondary/30">
         {/* Top row: Back button, subject title, selection toggle, filter toggle */}
         <div className="flex items-center justify-between mb-2 sm:mb-3">
           <div className="flex items-center gap-2 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
