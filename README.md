@@ -1,99 +1,79 @@
-# MITAOE PYQs
+# MITAoE PYQs - Previous Year Question Papers
 
-Enhanced interface for accessing MITAOE's previous year question papers, designed with a subject-focused approach for easier navigation and better user experience.
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square)](https://www.typescriptlang.org/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38B2AC?style=flat-square)](https://tailwindcss.com/)
+[![MIT License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](#license)
 
-## 📚 For Students
+Enhanced interface for accessing MIT Academy of Engineering (MITAoE) previous year question papers with a subject-focused approach for easier navigation.
 
-### Quick Access
-Simply visit [mitaoe-pyqs.vercel.app](https://mitaoe-pyqs.vercel.app) and:
-1. Search by subject name (e.g., "DBMS", "Computer Networks")
-2. Browse papers organized by subjects
-3. Download single papers or multiple papers at once
+![MITAoE PYQs Screenshot](https://mitaoe-pyqs.vercel.app/og-image.png)
 
-### Features
+## 🎯 Key Features
 
-- 📖 Subject-focused organization
-- 🔍 Smart search with subject abbreviations (e.g., DBMS, CN)
-- ⬇️ Batch download capability
-- 📱 Mobile-friendly interface
-- ⚡ Fast loading experience
-- 🎯 Simple, intuitive navigation
+- **Subject-focused organization** - Find papers by subject name
+- **Batch download capability** - Get multiple papers at once
+- **Mobile-friendly interface** - Access on any device
+- **Fast loading** with client-side caching
+- **Advanced filtering** by year and exam type
+- **Free access** - No login required
 
-### How to Use
+## 📚 Quick Start
 
-1. **Find Papers**
-   - Search by subject name
-   - Use filters for specific years/branches (optional)
-   - Papers are sorted by recency by default
+Visit [mitaoe-pyqs.vercel.app](https://mitaoe-pyqs.vercel.app) and:
+1. Search by subject name (e.g., "Computer Networks")
+2. Apply filters for specific years/exam types (optional)
+3. Download individual papers or select multiple for batch download
 
-2. **Download Options**
-   - Single click to download individual papers
-   - Select multiple papers for batch download
-   - Progress indicators show download status
+## 🎓 Supported Departments
 
----
+- 💻 Computer Engineering
+- 🧪 Chemical Engineering
+- ⚙️ Mechanical Engineering
+- 🏗️ Civil Engineering
+- ⚡ Electrical Engineering
+- 📡 Electronics & Telecommunication
+- ➕ and more.
 
 ## 💻 For Developers
 
 ### Tech Stack
 
 - **Frontend**: Next.js 15
-- **Backend**: MongoDB/Mongoose
+- **Backend**: Next.js API routes
 - **Language**: TypeScript
 - **Styling**: TailwindCSS
-- **Package Manager**: pnpm
+- **Deployment**: Vercel
 
-### Quick Start
+### Local Development
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/mitaoe-pyqs.git
+git clone https://github.com/mitaoe/mitaoe-pyqs.git
 cd mitaoe-pyqs
 
 # Install dependencies
 pnpm install
 
-# Set up environment
-cp .env.example .env
-# Add your MongoDB URI to .env
-
 # Run development server
 pnpm dev
 ```
 
-### Project Structure
+## Acknowledgements
 
-```
-mitaoe-pyqs/
-├── app/                # Next.js app directory
-│   ├── api/           # API routes
-│   ├── papers/        # Subject-focused paper view
-│   └── browse/        # Developer paper browser
-├── components/        # React components
-├── lib/              # Utility functions
-├── models/           # MongoDB models
-└── scripts/          # Crawler and data processing
-```
+We extend our sincere gratitude to:
 
-### Key Features Implementation
+- **MIT Academy of Engineering** for their educational resources that make this project possible
+- **Our dedicated contributors** whose passion and expertise continue to enhance this platform
+- **The open source community** for providing the remarkable tools that power this application
+- **MITAoE students** whose feedback and suggestions help us improve continuously
 
-- **Subject Extraction**: Automated subject identification from paper names
-- **Data Caching**: Optimized loading with client-side caching
-- **Batch Downloads**: Server-side ZIP creation for multiple papers
-- **Search System**: Enhanced search with subject abbreviation support
+This project stands as a testament to collaborative efforts in making educational resources more accessible.
 
-### Contributing
+## Legal Notice
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## Legal
-
-We don't store any papers - all content is served directly from MITAOE servers.
+We don't store any papers - all content is served directly from MITAoE servers. This project is maintained by students for educational purposes.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see the [LICENSE](LICENSE) file for details.

@@ -11,9 +11,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'MITAOE PYQs | MIT Academy of Engineering Previous Year Question Papers',
-  description: 'Access MITAOE (MIT Academy of Engineering Alandi) previous year question papers. A student-driven initiative to help engineering students prepare better for exams with organized subject-based question papers.',
-  keywords: 'MITAOE PYQs, MIT Academy of Engineering, previous year papers, question papers, MITAOE exam papers, MIT Alandi, engineering exam preparation, engineering subjects, batch download, previous semester papers',
+  title: 'MITAoE PYQs | MIT Academy of Engineering Previous Year Question Papers',
+  description: 'Access MITAoE (MIT Academy of Engineering Alandi) previous year question papers. A student-driven initiative to help engineering students prepare better for exams with organized subject-based question papers.',
+  keywords: 'MITAoE PYQs, MIT Academy of Engineering, previous year papers, question papers, MITAoE exam papers, MIT Alandi, engineering exam preparation, engineering subjects, batch download, previous semester papers',
   icons: {
     icon: '/favicon.ico'
   },
@@ -21,20 +21,20 @@ export const metadata: Metadata = {
     canonical: 'https://mitaoe-pyqs.vercel.app',
   },
   authors: [
-    { name: 'MITAOE Students' }
+    { name: 'MITAoE Students' }
   ],
   creator: 'Aditya Kotkar',
-  publisher: 'MITAOE Students',
+  publisher: 'MITAoE Students',
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
   openGraph: {
-    title: 'MITAOE Previous Year Question Papers',
+    title: 'MITAoE Previous Year Question Papers',
     description: 'Free access to MIT Academy of Engineering previous year question papers. Browse by subject, year, or exam type. Download multiple papers with a single click.',
     url: 'https://mitaoe-pyqs.vercel.app',
-    siteName: 'MITAOE PYQs',
+    siteName: 'MITAoE PYQs',
     locale: 'en_US',
     type: 'website',
     images: [
@@ -42,13 +42,13 @@ export const metadata: Metadata = {
         url: 'https://mitaoe-pyqs.vercel.app/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'MITAOE PYQs Preview'
+        alt: 'MITAoE PYQs Preview'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MITAOE Previous Year Question Papers',
+    title: 'MITAoE Previous Year Question Papers',
     description: 'Access MIT Academy of Engineering question papers by subject',
     images: ['https://mitaoe-pyqs.vercel.app/og-image.png'],
   },

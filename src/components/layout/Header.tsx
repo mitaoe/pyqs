@@ -10,11 +10,11 @@ export default function Header() {
           href="/" 
           className="text-xl font-bold tracking-tight text-white hover:text-white/90"
         >
-          <span className="ml-1 text-content">MITAOE PYQs</span>
+          <span className="ml-1 text-content">MITAoE PYQs</span>
         </Link>
 
         <a
-          href="https://github.com/AdityaKotkar47/mitaoe-pyqs"
+          href="https://github.com/mitaoe/mitaoe-pyqs"
           target="_blank"
           rel="noopener noreferrer"
           className="text-content/60 transition-colors hover:text-white"

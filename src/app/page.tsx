@@ -56,7 +56,7 @@ export default function HomePage() {
               PYQs
             </h1>
             <p className="mt-2 bg-gradient-to-r from-content/80 via-content/60 to-content/80 bg-clip-text text-lg text-transparent">
-              MITAOE Question Papers
+              MITAoE Question Papers
             </p>
           </div>
           

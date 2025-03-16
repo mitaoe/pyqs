@@ -181,7 +181,7 @@ export async function batchDownloadPapers(
       
       // Get filename from header if available
       const contentDisposition = response.headers.get('content-disposition');
-      let fileName = 'MITAOE_Papers.zip';
+      let fileName = 'MITAoE_Papers.zip';
       
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="(.+?)"/);

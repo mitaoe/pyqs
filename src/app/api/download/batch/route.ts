@@ -44,7 +44,7 @@ function formatZipFilename(papers: Paper[], filters: Record<string, string[]>): 
   const subject = papers[0]?.standardSubject || papers[0]?.subject || '';
   const sanitizedSubject = subject.replace(/\s+/g, '_');
   
-  let filename = sanitizedSubject ? `${sanitizedSubject}_Papers` : 'MITAOE_Papers';
+  let filename = sanitizedSubject ? `${sanitizedSubject}_Papers` : 'MITAoE_Papers';
   
   // Add filters to filename if they exist
   if (filters.years?.length) {

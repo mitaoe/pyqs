@@ -30,7 +30,7 @@ function question(query: string): Promise<string> {
 
 function clearConsole() {
     console.clear();
-    console.log("🎓 MITAOE PYQs - Subject Classifier\n");
+    console.log("🎓 MITAoE PYQs - Subject Classifier\n");
 }
 
 let processedFilesCount = 0;
