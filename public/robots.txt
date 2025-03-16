@@ -1,3 +1,9 @@
 User-agent: *
 Allow: /
-Sitemap: https://mitaoe-pyqs.vercel.app/sitemap.xml 
+
+Allow: /papers
+Allow: /papers?subject=*
+
+Sitemap: https://mitaoe-pyqs.vercel.app/sitemap.xml
+
+Host: https://mitaoe-pyqs.vercel.app 
