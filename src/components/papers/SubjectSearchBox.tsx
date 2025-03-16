@@ -19,6 +19,7 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const selectedItemRef = useRef<HTMLLIElement>(null);
 
   // Filter subjects based on search query
   useEffect(() => {
@@ -44,6 +45,16 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Scroll selected item into view when it changes
+  useEffect(() => {
+    if (selectedIndex >= 0 && selectedItemRef.current) {
+      selectedItemRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    }
+  }, [selectedIndex]);
 
   // Handle subject selection
   const handleSelectSubject = (subject: string) => {
@@ -127,7 +138,11 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
               const { prefix, highlight, suffix } = getHighlightedText(subject, searchQuery);
               const isActive = index === selectedIndex;
               return (
-                <li key={subject} className={`group ${isActive ? 'bg-gray-800' : ''}`}>
+                <li 
+                  key={subject} 
+                  className={`group ${isActive ? 'bg-gray-800' : ''}`}
+                  ref={isActive ? selectedItemRef : null}
+                >
                   <button
                     className="w-full px-4 py-2.5 text-left text-gray-300 group-hover:text-white group-hover:bg-gray-800 transition-all duration-150"
                     onClick={() => handleSelectSubject(subject)}
