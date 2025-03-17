@@ -14,7 +14,7 @@ export default function Header() {
         </Link>
 
         <a
-          href="https://github.com/mitaoe/mitaoe-pyqs"
+          href="https://github.com/MlTAoE/mitaoe-pyqs"
           target="_blank"
           rel="noopener noreferrer"
           className="text-content/60 transition-colors hover:text-white"
