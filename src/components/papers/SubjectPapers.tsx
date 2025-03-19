@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { usePapers } from '@/contexts/PaperContext';
+import Image from 'next/image';
 import { 
   GridFour, 
   List, 
@@ -440,35 +441,152 @@ const SubjectPapersView = () => {
     );
   }
 
+  // Render filter dropdown
+  const renderFilterDropdown = () => {
+    if (!showFilters) return null;
+
+    return (
+      <div className="absolute right-0 top-full mt-2 bg-secondary border border-accent/30 rounded-xl shadow-lg p-4 z-30 w-64">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-sm font-medium text-content">Filters</h3>
+          <button
+            onClick={() => setShowFilters(false)}
+            className="text-content/60 hover:text-content p-1"
+            aria-label="Close filters"
+          >
+            <X size={16} weight="bold" />
+          </button>
+        </div>
+        
+        {/* Year filter - Updated for multi-select */}
+        <div className="mb-4">
+          <h4 className="text-xs font-medium text-content/70 mb-2">Year</h4>
+          <div className="flex flex-wrap gap-2">
+            {filterOptions.years.map(year => (
+              <button
+                key={year}
+                onClick={() => toggleFilterItem('years', year)}
+                className={`px-2 py-1 text-xs rounded-lg ${
+                  filters.years.includes(year)
+                    ? 'bg-accent text-content'
+                    : 'bg-primary/40 text-content/80 hover:bg-primary/60'
+                }`}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        {/* Exam Type filter - Updated for multi-select */}
+        <div className="mb-4">
+          <h4 className="text-xs font-medium text-content/70 mb-2">Exam Type</h4>
+          <div className="flex gap-2">
+            {filterOptions.examTypes.map(examType => (
+              <button
+                key={examType}
+                onClick={() => toggleFilterItem('examTypes', examType)}
+                className={`px-2 py-1 text-xs rounded-lg ${
+                  filters.examTypes.includes(examType)
+                    ? 'bg-accent text-content'
+                    : 'bg-primary/40 text-content/80 hover:bg-primary/60'
+                }`}
+              >
+                {examType}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        {isAnyFilterActive && (
+          <button
+            onClick={clearFilters}
+            className="w-full text-xs bg-primary/60 hover:bg-primary/80 text-content py-1.5 rounded-lg transition-colors"
+          >
+            Clear All Filters
+          </button>
+        )}
+      </div>
+    );
+  };
+
   // Fallback if no papers match the subject
   if (!filteredPapers.length) {
     return (
-      <div className="container mx-auto px-4 py-8 sm:py-12">
-        <div className="flex flex-col items-center justify-center h-[50vh] sm:h-[60vh] text-center">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-accent/10 rounded-full flex items-center justify-center mb-4">
-            <FileText size={28} weight="duotone" className="text-accent/40" />
+      <div className="container mx-auto px-4 py-6 sm:py-8 relative">
+        {/* Sticky header with Back button, subject title, and action buttons */}
+        <div className="sticky top-0 z-20 bg-secondary/60 backdrop-blur-2xl backdrop-saturate-150 px-3 sm:px-4 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-lg supports-[backdrop-filter]:bg-secondary/30">
+          {/* Top row: Back button, subject title, selection toggle, filter toggle */}
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <div className="flex items-center gap-2 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
+              <button
+                onClick={() => router.push('/papers')}
+                className="p-2 sm:p-2.5 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                aria-label="Back to Subjects"
+              >
+                <ArrowLeft size={18} weight="bold" />
+              </button>
+              <h2 className="text-lg sm:text-2xl font-bold text-content truncate">{selectedSubject}</h2>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 sm:gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setShowFilters(prev => !prev)}
+                  className={`p-2 sm:p-2.5 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                    isAnyFilterActive || showFilters
+                      ? 'bg-accent text-content hover:bg-accent/90 focus:ring-accent/40' 
+                      : 'bg-primary/60 text-content hover:bg-primary/70 focus:ring-primary/40'
+                  }`}
+                  aria-label="Show filters"
+                >
+                  <Funnel size={18} weight={isAnyFilterActive ? "fill" : "bold"} />
+                </button>
+                {renderFilterDropdown()}
+              </div>
+            </div>
           </div>
-          <h3 className="text-lg sm:text-xl font-semibold mb-2">No papers found</h3>
-          <p className="text-content/60 mb-4 sm:mb-6 max-w-md text-sm sm:text-base">
+          
+          {/* Bottom row: Paper count and filter controls */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <span className="text-xs sm:text-sm text-content/80">0 papers</span>
+            </div>
+            
+            {/* Mobile only action buttons in second row */}
+            <div className="flex sm:hidden items-center gap-2">
+              <div className="relative">
+                <button
+                  onClick={() => setShowFilters(prev => !prev)}
+                  className={`p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                    isAnyFilterActive || showFilters
+                      ? 'bg-accent text-content hover:bg-accent/90 focus:ring-accent/40' 
+                      : 'bg-primary/60 text-content hover:bg-primary/70 focus:ring-primary/40'
+                  }`}
+                  aria-label="Show filters"
+                >
+                  <Funnel size={16} weight={isAnyFilterActive ? "fill" : "bold"} />
+                </button>
+                {renderFilterDropdown()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* No papers found content with image */}
+        <div className="flex flex-col items-center justify-center mt-8 sm:mt-12">
+          <Image 
+            src="/images/not-found.png" 
+            alt="No papers found" 
+            width={256}
+            height={256}
+            className="w-48 sm:w-64 h-auto mb-6"
+          />
+          <h3 className="text-lg sm:text-xl font-semibold mb-2 text-center">No papers found</h3>
+          <p className="text-content/60 mb-4 text-sm sm:text-base text-center max-w-md">
             {isAnyFilterActive 
-              ? 'No papers match the current filters. Try changing or clearing the filters.' 
+              ? 'No papers match the current filters.' 
               : `We couldn't find any papers for ${selectedSubject || 'this subject'}. Please try another subject.`}
           </p>
-          {isAnyFilterActive ? (
-            <button
-              onClick={clearFilters}
-              className="bg-accent text-content px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 font-medium"
-            >
-              Clear Filters
-            </button>
-          ) : (
-            <button
-              onClick={() => router.push('/papers')}
-              className="bg-accent text-content px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 font-medium"
-            >
-              Back to Subjects
-            </button>
-          )}
         </div>
       </div>
     );
@@ -613,75 +731,6 @@ const SubjectPapersView = () => {
             </div>
           )}
         </div>
-      </div>
-    );
-  };
-
-  // Render filter dropdown
-  const renderFilterDropdown = () => {
-    if (!showFilters) return null;
-
-    return (
-      <div className="absolute right-0 top-full mt-2 bg-secondary border border-accent/30 rounded-xl shadow-lg p-4 z-30 w-64">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-medium text-content">Filters</h3>
-          <button
-            onClick={() => setShowFilters(false)}
-            className="text-content/60 hover:text-content p-1"
-            aria-label="Close filters"
-          >
-            <X size={16} weight="bold" />
-          </button>
-        </div>
-        
-        {/* Year filter - Updated for multi-select */}
-        <div className="mb-4">
-          <h4 className="text-xs font-medium text-content/70 mb-2">Year</h4>
-          <div className="flex flex-wrap gap-2">
-            {filterOptions.years.map(year => (
-              <button
-                key={year}
-                onClick={() => toggleFilterItem('years', year)}
-                className={`px-2 py-1 text-xs rounded-lg ${
-                  filters.years.includes(year)
-                    ? 'bg-accent text-content'
-                    : 'bg-primary/40 text-content/80 hover:bg-primary/60'
-                }`}
-              >
-                {year}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {/* Exam Type filter - Updated for multi-select */}
-        <div className="mb-4">
-          <h4 className="text-xs font-medium text-content/70 mb-2">Exam Type</h4>
-          <div className="flex gap-2">
-            {filterOptions.examTypes.map(examType => (
-              <button
-                key={examType}
-                onClick={() => toggleFilterItem('examTypes', examType)}
-                className={`px-2 py-1 text-xs rounded-lg ${
-                  filters.examTypes.includes(examType)
-                    ? 'bg-accent text-content'
-                    : 'bg-primary/40 text-content/80 hover:bg-primary/60'
-                }`}
-              >
-                {examType}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {isAnyFilterActive && (
-          <button
-            onClick={clearFilters}
-            className="w-full text-xs bg-primary/60 hover:bg-primary/80 text-content py-1.5 rounded-lg transition-colors"
-          >
-            Clear All Filters
-          </button>
-        )}
       </div>
     );
   };
