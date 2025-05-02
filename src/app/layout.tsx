@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { PaperProvider } from "@/contexts/PaperContext";
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Analytics } from '@vercel/analytics/react';
 import LoadingDataChecker from "@/components/middleware/LoadingDataChecker";
 import ClientProvider from "@/components/ClientProvider";
 import { Suspense } from "react";
@@ -87,8 +85,6 @@ export default function RootLayout({
             </LoadingDataChecker>
           </Suspense>
         </PaperProvider>
-        <SpeedInsights />
-        <Analytics />
       </body>
     </html>
   );
