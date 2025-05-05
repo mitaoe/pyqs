@@ -71,9 +71,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="canonical" href="https://mitaoe-pyqs.vercel.app" />
         <meta name="theme-color" content="#18181b" />
-        <meta name="google-site-verification" content="add-your-verification-code-here" />
+        <meta name="google-site-verification" content="pU3C4VTSXE2v7DFFiwp2acvtZO-RXj0cBBlfYsWBVn8" />
       </head>
       <body className={inter.className}>
         <PaperProvider>
