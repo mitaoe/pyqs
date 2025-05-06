@@ -3,7 +3,9 @@ Allow: /
 
 Allow: /papers
 Allow: /papers?subject=*
+Disallow: /api/
+Disallow: /browse
 
 Sitemap: https://mitaoe-pyqs.vercel.app/sitemap.xml
 
-Host: https://mitaoe-pyqs.vercel.app 
+Host: https://mitaoe-pyqs.vercel.app

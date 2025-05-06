@@ -1,0 +1,31 @@
+{
+  "name": "MITAoE Previous Year Question Papers",
+  "short_name": "MITAoE PYQs",
+  "description": "Access MIT Academy of Engineering previous year question papers for better exam preparation",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#18181b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Papers by Subject",
+      "short_name": "Papers",
+      "description": "Browse papers by subject",
+      "url": "/papers",
+      "icons": [{ "src": "/favicon.ico", "sizes": "48x48" }]
+    }
+  ],
+  "categories": ["education", "productivity", "utilities"],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "lang": "en-US",
+  "dir": "ltr"
+}
