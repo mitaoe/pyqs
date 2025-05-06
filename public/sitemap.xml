@@ -1,51 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+                            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
+                            http://www.google.com/schemas/sitemap-image/1.1
+                            http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd">
   <url>
     <loc>https://mitaoe-pyqs.vercel.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://mitaoe-pyqs.vercel.app/og-image.png</image:loc>
+      <image:title>MITAoE PYQs Homepage</image:title>
+      <image:caption>MIT Academy of Engineering Previous Year Question Papers</image:caption>
+    </image:image>
   </url>
-  
+
   <url>
     <loc>https://mitaoe-pyqs.vercel.app/papers</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://mitaoe-pyqs.vercel.app/papers-og-image.png</image:loc>
+      <image:title>MITAoE Papers Page</image:title>
+      <image:caption>Browse papers by subject</image:caption>
+    </image:image>
   </url>
-  
+
   <url>
     <loc>https://mitaoe-pyqs.vercel.app/papers?subject=Calculus%20and%20Differential%20Equations</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
   <url>
     <loc>https://mitaoe-pyqs.vercel.app/papers?subject=Science%20of%20Nature</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
   <url>
     <loc>https://mitaoe-pyqs.vercel.app/papers?subject=Applied%20Mathematics</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
   <url>
     <loc>https://mitaoe-pyqs.vercel.app/papers?subject=Data%20Structures</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
   <url>
     <loc>https://mitaoe-pyqs.vercel.app/papers?subject=Computer%20Networks</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
   <url>
     <loc>https://mitaoe-pyqs.vercel.app/papers?subject=Database%20Management%20Systems</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
-</urlset> 
+  <url>
+    <loc>https://mitaoe-pyqs.vercel.app/papers?subject=Operating%20Systems</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://mitaoe-pyqs.vercel.app/papers?subject=Software%20Engineering</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://mitaoe-pyqs.vercel.app/papers?subject=Computer%20Organization%20and%20Architecture</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>
