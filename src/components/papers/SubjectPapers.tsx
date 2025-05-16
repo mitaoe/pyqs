@@ -14,12 +14,14 @@ import {
   Square,
   X,
   Funnel,
-  FileZip
+  FileZip,
+  Eye
 } from '@phosphor-icons/react';
 import { downloadFile, batchDownloadPapers, BatchDownloadProgress } from '@/utils/download';
 import { Paper } from '@/types/paper';
 import FadeIn from '@/components/animations/FadeIn';
 import { toast } from 'sonner';
+import PaperViewer from './PaperViewer';
 
 // Utility function to trim redundant URL paths
 const trimRedundantUrlPath = (url: string): string => {
@@ -52,6 +54,7 @@ const SubjectPapersView = () => {
   });
   const [batchDownloadProgress, setBatchDownloadProgress] = useState<BatchDownloadProgress | null>(null);
   const previousSubjectRef = useRef<string | null>(null);
+  const [selectedPaper, setSelectedPaper] = useState<Paper | null>(null);
 
   const scrollToTop = () => {
     window.scrollTo(0, 0);
@@ -294,19 +297,24 @@ const SubjectPapersView = () => {
     }
   }, [filters, isSelectMode, filteredPapers, selectedPapers]);
 
+  const handleView = (paper: Paper) => {
+    setSelectedPaper(paper);
+  };
+
+  const handleCloseViewer = () => {
+    setSelectedPaper(null);
+  };
+
   // Grid view
   const renderGridView = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
       {filteredPapers.map((paper, index) => (
         <FadeIn key={`${paper.fileName}-${index}`} delay={Math.min(index * 0.05, 0.3)} duration={0.5}>
-          <div
-            className={`bg-secondary border-2 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-lg h-full ${
-              selectedPapers[paper.fileName] 
-                ? 'border-accent shadow-md shadow-accent/20' 
-                : 'border-accent/30 hover:border-accent/50'
-            } ${isSelectMode ? 'cursor-pointer' : ''}`}
-            onClick={isSelectMode ? () => togglePaperSelection(paper.fileName) : undefined}
-            onContextMenu={(e) => e.preventDefault()}
+          <div 
+            className={`bg-secondary rounded-xl p-4 sm:p-5 flex flex-col h-full transition-colors duration-200 ${
+              isSelectMode ? 'cursor-pointer hover:bg-secondary/80' : ''
+            }`}
+            onClick={() => isSelectMode && togglePaperSelection(paper.fileName)}
           >
             <div className="mb-4">
               <div className="flex items-start justify-between mb-3">
@@ -338,19 +346,32 @@ const SubjectPapersView = () => {
                 {paper.fileName}
               </h3>
             </div>
-            {!isSelectMode ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload(paper);
-                }}
-                disabled={downloadingFile === paper.fileName}
-                className="mt-auto w-full flex items-center justify-center gap-2 bg-accent rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50"
-              >
-                <Download size={18} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
-                <span>{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
-              </button>
-            ) : null}
+            
+            {!isSelectMode && (
+              <div className="mt-auto flex gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleView(paper);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 bg-primary/60 rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-content transition-colors duration-200 hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <Eye size={18} weight="duotone" />
+                  <span>View</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(paper);
+                  }}
+                  disabled={downloadingFile === paper.fileName}
+                  className="flex-1 flex items-center justify-center gap-2 bg-accent rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50"
+                >
+                  <Download size={18} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
+                  <span>{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
+                </button>
+              </div>
+            )}
           </div>
         </FadeIn>
       ))}
@@ -361,14 +382,11 @@ const SubjectPapersView = () => {
     <div className="space-y-3 sm:space-y-4">
       {filteredPapers.map((paper, index) => (
         <FadeIn key={`${paper.fileName}-${index}`} delay={Math.min(index * 0.03, 0.2)} duration={0.4}>
-          <div
-            className={`flex items-center justify-between bg-secondary border-2 rounded-xl p-3 sm:p-4 transition-all duration-300 hover:shadow-md ${
-              selectedPapers[paper.fileName] 
-                ? 'border-accent shadow-sm shadow-accent/20' 
-                : 'border-accent/30 hover:border-accent/50'
-            } ${isSelectMode ? 'cursor-pointer' : ''}`}
-            onClick={isSelectMode ? () => togglePaperSelection(paper.fileName) : undefined}
-            onContextMenu={(e) => e.preventDefault()}
+          <div 
+            className={`bg-secondary rounded-xl p-4 sm:p-5 flex items-center justify-between transition-colors duration-200 ${
+              isSelectMode ? 'cursor-pointer hover:bg-secondary/80' : ''
+            }`}
+            onClick={() => isSelectMode && togglePaperSelection(paper.fileName)}
           >
             <div className="flex items-start gap-2 sm:gap-4 max-w-[70%]">
               {isSelectMode ? (
@@ -408,19 +426,32 @@ const SubjectPapersView = () => {
                 </h3>
               </div>
             </div>
-            {!isSelectMode ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload(paper);
-                }}
-                disabled={downloadingFile === paper.fileName}
-                className="flex items-center gap-1 sm:gap-2 bg-accent rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50 ml-2 sm:ml-4"
-              >
-                <Download size={18} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
-                <span className="hidden sm:inline">{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
-              </button>
-            ) : null}
+            
+            {!isSelectMode && (
+              <div className="flex gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleView(paper);
+                  }}
+                  className="flex items-center gap-1 sm:gap-2 bg-primary/60 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-content transition-colors duration-200 hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <Eye size={18} weight="duotone" />
+                  <span className="hidden sm:inline">View</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(paper);
+                  }}
+                  disabled={downloadingFile === paper.fileName}
+                  className="flex items-center gap-1 sm:gap-2 bg-accent rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50"
+                >
+                  <Download size={18} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
+                  <span className="hidden sm:inline">{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
+                </button>
+              </div>
+            )}
           </div>
         </FadeIn>
       ))}
@@ -794,7 +825,7 @@ const SubjectPapersView = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 sm:py-8 relative">
+    <div className="container mx-auto px-4 py-8 sm:py-12">
       {/* Sticky header with Back button, subject title, and action buttons */}
       <div className="sticky top-0 z-20 bg-secondary/60 backdrop-blur-2xl backdrop-saturate-150 px-3 sm:px-4 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-lg supports-[backdrop-filter]:bg-secondary/30">
         {/* Top row: Back button, subject title, selection toggle, filter toggle */}
@@ -941,6 +972,14 @@ const SubjectPapersView = () => {
       <FadeIn>
         {viewMode === 'grid' ? renderGridView() : renderListView()}
       </FadeIn>
+
+      {/* Paper viewer */}
+      {selectedPaper && (
+        <PaperViewer
+          paper={selectedPaper}
+          onClose={handleCloseViewer}
+        />
+      )}
 
       {/* Batch download floating button */}
       {isSelectMode && selectedPapersCount > 0 && (
