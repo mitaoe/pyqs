@@ -49,7 +49,7 @@ Visit [mitaoe-pyqs.vercel.app](https://mitaoe-pyqs.vercel.app) and:
 
 ```bash
 # Clone the repository
-git clone https://github.com/mitaoe/mitaoe-pyqs.git
+git clone https://github.com/mitaoe/pyqs.git
 cd mitaoe-pyqs
 
 # Install dependencies
