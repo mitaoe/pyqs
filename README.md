@@ -50,7 +50,7 @@ Visit [mitaoe-pyqs.vercel.app](https://mitaoe-pyqs.vercel.app) and:
 ```bash
 # Clone the repository
 git clone https://github.com/mitaoe/pyqs.git
-cd mitaoe-pyqs
+cd pyqs
 
 # Install dependencies
 pnpm install

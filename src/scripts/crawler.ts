@@ -10,6 +10,9 @@ import {
 import path from "path";
 import fs from "fs";
 import DirectoryModel from "@/models/Directory";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const BASE_URL =

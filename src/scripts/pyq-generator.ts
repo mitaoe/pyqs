@@ -15,6 +15,10 @@ import PaperModel from "../models/Paper";
 import { DirectoryNode, Paper } from "../types/paper";
 import { SubjectManager } from "../utils/SubjectManager";
 import readline from "readline";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 const MONGODB_URI = process.env.MONGODB_URI;
 const BASE_URL =
     "http://43.227.20.36:82/DigitalLibrary/Old%20Question%20Papers/B%20Tech%20(Autonomy)/";
