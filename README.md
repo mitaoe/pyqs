@@ -55,11 +55,19 @@ cd pyqs
 # Install dependencies
 pnpm install
 
-# Copy env file
+# Copy env file and configure your MongoDB connection
 cp .env.example .env
+# Edit the .env file and add your MongoDB URI:
+# MONGODB_URI=your_mongodb_connection_string_here
+
+# Generate question papers data for local development
+pnpm pyq-gen
 
 # Run development server
 pnpm dev
+
+# Optional: Run crawler for /browse route data
+# pnpm crawl
 ```
 
 ## Acknowledgements
