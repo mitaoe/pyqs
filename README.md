@@ -16,6 +16,7 @@ Enhanced interface for accessing MIT Academy of Engineering (MITAoE) previous ye
 - **Mobile-friendly interface** - Access on any device
 - **Fast loading** with client-side caching
 - **Advanced filtering** by year and exam type
+- **Intelligent subject classification** with fuzzy matching
 - **Free access** - No login required
 
 ## 📚 Quick Start

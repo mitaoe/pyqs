@@ -137,17 +137,14 @@
   "CONCRETE_TECHNOLOGY": {
     "standard": "Concrete Technology"
   },
-  "CONSTRUCTION_PLANNING_AND_MANAGEMENT": {
-    "standard": "Construction Planning and Management"
+  "CONSTRUCTION_ENGINEERING_AND_MANAGEMENT": {
+    "standard": "Construction Engineering and Management"
   },
   "STRUCTURAL_ANALYSIS": {
     "standard": "Structural Analysis"
   },
   "COMPUTER_ORGANIZATION_AND_ARCHITECTURE": {
     "standard": "Computer Organization and Architecture"
-  },
-  "CRYPTOGRAPHY_AND_SYSTEM_SECURITY": {
-    "standard": "Cryptography and System Security"
   },
   "DESCRIPTIVE_ANALYTICS": {
     "standard": "Descriptive Analytics"
@@ -284,8 +281,8 @@
   "TRANSPORTATION_ENGINEERING": {
     "standard": "Transportation Engineering"
   },
-  "WATER_RESOURCES_AND_IRRIGATION_ENGINEERING": {
-    "standard": "Water Resources and Irrigation Engineering"
+  "HYDROLOGY_AND_IRRIGATION_ENGINEERING": {
+    "standard": "Hydrology and Irrigation Engineering"
   },
   "ARTIFICIAL_INTELLIGENCE": {
     "standard": "Artificial Intelligence"
@@ -293,8 +290,8 @@
   "COMPILER_DESIGN": {
     "standard": "Compiler Design"
   },
-  "CYBER_SECURITY": {
-    "standard": "Cyber Security"
+  "CYBER_SECURITY_ESSENTIALS": {
+    "standard": "Cyber Security Essentials"
   },
   "DESIGN_AND_ANALYSIS_OF_ALGORITHMS": {
     "standard": "Design and Analysis of Algorithms"
@@ -335,8 +332,8 @@
   "OPERATIONS_RESEARCH": {
     "standard": "Operations Research"
   },
-  "TURBOMACHINES": {
-    "standard": "Turbomachines"
+  "TURBOMACHINERY": {
+    "standard": "Turbomachinery"
   },
   "ENERGY_ENGINEERING": {
     "standard": "Energy Engineering"
@@ -631,5 +628,71 @@
   },
   "SOLID_FLUID_OPERATION": {
     "standard": "Solid Fluid Operation"
+  },
+  "RTOS": {
+    "standard": "RTOS"
+  },
+  "MANAGEMENT_OF_TECHNOLOGY": {
+    "standard": "Management of Technology"
+  },
+  "SUSTAINABILITY_AND_GREEN_TECHNOLOGY": {
+    "standard": "Sustainability and Green Technology"
+  },
+  "SMART_CITIES": {
+    "standard": "Smart Cities"
+  },
+  "CONFIGURABLE_LOGIC_DESIGN": {
+    "standard": "Configurable Logic Design"
+  },
+  "EMBEDDED_SYSTEM_FOR_IOT": {
+    "standard": "Embedded System for IOT"
+  },
+  "EV_ARCHITECTURE_AND_DYNAMICS": {
+    "standard": "EV Architecture and Dynamics"
+  },
+  "CRYPTOGRAPHY_AND_INFORMATION_SECURITY": {
+    "standard": "Cryptography and Information Security"
+  },
+  "CAD_AUTOMATION_AND_CUSTOMISATION": {
+    "standard": "CAD Automation and Customisation"
+  },
+  "CLOUD_AND_BLOCKCHAIN_SECURITY": {
+    "standard": "Cloud and Blockchain Security"
+  },
+  "COMPUTING_AND_HIGHER_MATHEMATICS": {
+    "standard": "Computing and Higher Mathematics"
+  },
+  "MODERN_TECHNOLOGIES": {
+    "standard": "Modern Technologies"
+  },
+  "Research Methodology": {
+    "standard": "Research Methodology"
+  },
+  "EMERGING_TECHNOLOGY_IN_HEAT_POWER_ENGINEERING": {
+    "standard": "Emerging Technology in Heat Power Engineering"
+  },
+  "Organization Management and Information System": {
+    "standard": "Organization Management and Information System"
+  },
+  "ORGANIZATIONAL_BEHAVIOUR": {
+    "standard": "Organizational Behaviour"
+  },
+  "PRODUCT_MANAGEMENT": {
+    "standard": "Product Management"
+  },
+  "CONTRACTS_MANAGEMENT": {
+    "standard": "Contracts Management"
+  },
+  "SUSTAINABLE_ENGINEERING": {
+    "standard": "Sustainable Engineering"
+  },
+  "EMBEDDED_EDGE_AI": {
+    "standard": "Embedded Edge AI"
+  },
+  "NETWORK_SECURITY": {
+    "standard": "Network Security"
+  },
+  "COMPUTER_AIDED_SIMULATION": {
+    "standard": "Computer Aided Simulation"
   }
 }

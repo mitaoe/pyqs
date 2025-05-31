@@ -534,11 +534,47 @@ async function extractSubject(
             };
         }
 
+        // If we're not in interactive mode and no match found, we attempt a high-confidence fuzzy match
+        if (!INTERACTIVE) {
+            // Use a high threshold (lower score = better match) for automatic classification
+            const fuzzyThreshold = 0.3; // Very strict threshold for non-interactive mode
+            const fuzzySuggestions = subjectManager.getFuzzySubjectSuggestions(fullNamePart, fuzzyThreshold, 1);
+            
+            // If exactly one high-confidence match is found
+            if (fuzzySuggestions.length === 1 && fuzzySuggestions[0].score < fuzzyThreshold) {
+                const suggestion = fuzzySuggestions[0];
+                const similarityPercentage = Math.round((1 - suggestion.score) * 100);
+                
+                // Extract just the subject part from the filename
+                const subjectPartOnly = extractSubjectPartFromFilename(fileName);
+                
+                log(
+                    "METADATA",
+                    `🔍 AUTO-FUZZY Classified: ${subjectPartOnly} → ${suggestion.standardName} (${suggestion.subjectKey}) - ${similarityPercentage}% match`,
+                    { fileName, filePath }
+                );
+                
+                processedFilesCount++;
+                
+                // Automatically add this variation for future use
+                await subjectManager.addVariation(subjectPartOnly, suggestion.subjectKey);
+                
+                return {
+                    subject: subjectPartOnly,
+                    standardSubject: suggestion.standardName,
+                };
+            }
+            
+            processedFilesCount++;
+            return {
+                subject: "Unknown Subject",
+                standardSubject: "Unknown Subject",
+            };
+        }
+
         if (INTERACTIVE) {
             const relativePath = filePath.replace(BASE_URL, "");
-
             const fullUrl = new URL(filePath, BASE_URL).toString();
-
             processedFilesCount++;
 
             console.log(`\n------------------------------`);
@@ -546,6 +582,20 @@ async function extractSubject(
             console.log(`File: ${fileName}`);
             console.log(`URL: ${fullUrl}`);
             console.log(`❌ Unable to automatically classify subject.`);
+            
+            // Get fuzzy suggestions to display to the user
+            const fuzzyThreshold = 0.7; // More permissive threshold for interactive suggestions
+            const fuzzySuggestions = subjectManager.getFuzzySubjectSuggestions(fullNamePart, fuzzyThreshold);
+            
+            // Display fuzzy suggestions if any were found
+            if (fuzzySuggestions.length > 0) {
+                console.log(`\n🔍 Did you mean one of these?`);
+                fuzzySuggestions.forEach((suggestion, index) => {
+                    const similarityPercentage = Math.round((1 - suggestion.score) * 100);
+                    console.log(`${index + 1}. ${suggestion.standardName} (${suggestion.subjectKey}) - ${similarityPercentage}% match`);
+                });
+                console.log(); // Empty line for readability
+            }
 
             const rl = readline.createInterface({
                 input: process.stdin,
@@ -555,9 +605,36 @@ async function extractSubject(
             return await new Promise((resolve) => {
                 console.log(`\n📊 Processed: ${processedFilesCount} files`);
 
+                // Modify prompt to include suggestion selection option
+                const promptOptions = fuzzySuggestions.length > 0 
+                    ? `(or enter 1-${fuzzySuggestions.length} to select a suggestion, "s" to skip, "q" to quit, "e" to exclude, "f" to use file name)`
+                    : `(or "s" to skip, "q" to quit, "e" to exclude, "f" to use file name)`;
+                
                 rl.question(
-                    `File name part [${fullNamePart}] (or "s" to skip, "q" to quit, "e" to exclude, "f" to use file name): `,
+                    `File name part [${fullNamePart}] ${promptOptions}: `,
                     async (correctSubjectPart: string) => {
+                        // Check if user selected a suggestion by number
+                        const suggestionIndex = parseInt(correctSubjectPart) - 1;
+                        if (!isNaN(suggestionIndex) && suggestionIndex >= 0 && suggestionIndex < fuzzySuggestions.length) {
+                            const selectedSuggestion = fuzzySuggestions[suggestionIndex];
+                            
+                            // Extract just the subject part from the filename instead of using the full filename
+                            const subjectPartOnly = extractSubjectPartFromFilename(fileName);
+                            
+                            // Add this variation for future automatic classification
+                            await subjectManager.addVariation(subjectPartOnly, selectedSuggestion.subjectKey);
+                            await subjectManager.addMapping(relativePath, selectedSuggestion.subjectKey);
+                            
+                            console.log(`✅ Added variation: "${subjectPartOnly}" → ${selectedSuggestion.subjectKey}`);
+                            rl.close();
+                            
+                            return resolve({
+                                subject: selectedSuggestion.standardName,
+                                standardSubject: selectedSuggestion.standardName
+                            });
+                        }
+                        
+                        // Original options remain unchanged
                         if (correctSubjectPart.toLowerCase() === "s") {
                             await subjectManager.addUnclassified(relativePath);
                             rl.close();
@@ -892,9 +969,9 @@ function extractSubjectPartFromFilename(filename: string): string {
             /\bSEM\b/gi, // Standalone "SEM"
         ],
 
-        // Year indicators
+        // Year indicators and branch codes - remove them completely
         [
-            /\bFE[\s\-_]*BTECH\b/gi, // FE-BTECH and variations
+            /\bFY[\s\-_]*BTECH\b/gi, // FY-BTECH and variations
             /\bSY[\s\-_]*BTECH\b/gi, // SY-BTECH and variations
             /\bTY[\s\-_]*BTECH\b/gi, // TY-BTECH and variations
             /\bF[\s\-_]*E\b/gi, // F E, F-E, etc.
@@ -909,10 +986,12 @@ function extractSubjectPartFromFilename(filename: string): string {
             /\bBTECH\b/gi, // Standalone BTECH
             /\bB[\s\-_]*TECH\b/gi, // B TECH, B-TECH, etc.
             /\bB\.TECH\b/gi, // B.TECH
+            /\bFY\b/gi, // First Year (FY)
+            /\b(CV|CS|ET|IT|ME|CE|EE|EC|CH)\b/gi, // Branch codes
         ],
 
         [
-            /\b(cse|it|civil|mech|entc|comp|computer|mechanical|electrical|electronics|instrumentation|information|technology)\b/gi,
+            /\b(cse|it|civil|mech|entc|comp|computer|mechanical|electrical|electronics|instrumentation)\b/gi,
         ],
 
         [
@@ -948,6 +1027,8 @@ function extractSubjectPartFromFilename(filename: string): string {
         name = name.replace(/\s+/g, " ").trim();
     }
 
+    name = name.replace(/^\s*(CV|CS|ET|IT|ME|CE|EE|EC|FY|CH|SY|TY|MDM)\s+/i, "");
+    
     name = name.replace(/\s+/g, " ").trim();
 
     return name.toUpperCase();
