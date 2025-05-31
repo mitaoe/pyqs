@@ -1027,7 +1027,7 @@ function extractSubjectPartFromFilename(filename: string): string {
         name = name.replace(/\s+/g, " ").trim();
     }
 
-    name = name.replace(/^\s*(CV|CS|ET|IT|ME|CE|EE|EC|FY|CH|SY|TY)\s+/i, "");
+    name = name.replace(/^\s*(CV|CS|ET|IT|ME|CE|EE|EC|FY|CH|SY|TY|MDM)\s+/i, "");
     
     name = name.replace(/\s+/g, " ").trim();
 
