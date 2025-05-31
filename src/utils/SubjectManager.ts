@@ -10,6 +10,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import Fuse from 'fuse.js';
 
 // Define types for the JSON structures
 interface SubjectData {
@@ -403,5 +404,45 @@ export class SubjectManager {
     
     // Log the action
     console.log(`✅ Added mapping: "${filePath}" → ${subjectKey}`);
+  }
+
+  /**
+   * Get fuzzy subject suggestions
+   */
+  public getFuzzySubjectSuggestions(
+    textToMatch: string,
+    threshold: number = 0.7,
+    maxSuggestions: number = 3
+  ): Array<{ subjectKey: string, standardName: string, score: number }> {
+    // Normalize the query text
+    const normalizedQuery = textToMatch.toUpperCase().trim().replace(/[_\-\.]/g, ' ').replace(/\s+/g, ' ');
+    
+    // Prepare data for Fuse.js
+    const searchData = Object.entries(this.subjects).map(([key, data]) => ({
+      subjectKey: key,
+      standardName: data.standard
+    }));
+    
+    // Configure Fuse.js
+    const fuseOptions = {
+      keys: ['standardName'],
+      includeScore: true,
+      threshold: threshold,
+      ignoreLocation: true
+    };
+    
+    const fuse = new Fuse(searchData, fuseOptions);
+    
+    // Perform the search
+    const results = fuse.search(normalizedQuery);
+    
+    // Map results to expected format and limit to maxSuggestions
+    return results
+      .slice(0, maxSuggestions)
+      .map(result => ({
+        subjectKey: result.item.subjectKey,
+        standardName: result.item.standardName,
+        score: result.score || 1.0 // Default to 1.0 (worst) if score is undefined
+      }));
   }
 } 
