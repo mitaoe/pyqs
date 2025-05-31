@@ -631,5 +631,50 @@
   },
   "SOLID_FLUID_OPERATION": {
     "standard": "Solid Fluid Operation"
+  },
+  "RTOS": {
+    "standard": "RTOS"
+  },
+  "MANAGEMENT_OF_TECHNOLOGY": {
+    "standard": "Management of Technology"
+  },
+  "SUSTAINABILITY_AND_GREEN_TECHNOLOGY": {
+    "standard": "Sustainability and Green Technology"
+  },
+  "SMART_CITIES": {
+    "standard": "Smart Cities"
+  },
+  "CONFIGURABLE_LOGIC_DESIGN": {
+    "standard": "Configurable Logic Design"
+  },
+  "EMBEDDED_SYSTEM_FOR_IOT": {
+    "standard": "Embedded System for IOT"
+  },
+  "EV_ARCHITECTURE_AND_DYNAMICS": {
+    "standard": "EV Architecture and Dynamics"
+  },
+  "CRYPTOGRAPHY_AND_INFORMATION_SECURITY": {
+    "standard": "Cryptography and Information Security"
+  },
+  "CAD_AUTOMATION_AND_CUSTOMISATION": {
+    "standard": "CAD Automation and Customisation"
+  },
+  "CLOUD_AND_BLOCKCHAIN_SECURITY": {
+    "standard": "Cloud and Blockchain Security"
+  },
+  "COMPUTING_AND_HIGHER_MATHEMATICS": {
+    "standard": "Computing and Higher Mathematics"
+  },
+  "MODERN_TECHNOLOGIES": {
+    "standard": "Modern Technologies"
+  },
+  "Research Methodology": {
+    "standard": "Research Methodology"
+  },
+  "EMERGING_TECHNOLOGY_IN_HEAT_POWER_ENGINEERING": {
+    "standard": "Emerging Technology in Heat Power Engineering"
+  },
+  "Organization Management and Information System": {
+    "standard": "Organization Management and Information System"
   }
 }
