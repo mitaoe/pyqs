@@ -3,7 +3,7 @@ import { Paper } from '@/types/paper';
 
 export async function downloadFile(url: string, fileName: string): Promise<boolean> {
   try {
-    const proxyUrl = `/api/download/proxy?url=${encodeURIComponent(url)}`;
+    const proxyUrl = `/api/download/proxy?url=${encodeURIComponent(url)}&download=true`;
     const response = await fetch(proxyUrl);
     
     if (!response.ok) {
