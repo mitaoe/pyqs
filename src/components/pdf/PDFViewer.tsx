@@ -121,32 +121,32 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
       {/* Header */}
-      <div className="bg-secondary/95 backdrop-blur-sm border-b border-accent/20 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="bg-secondary/95 backdrop-blur-sm border-b border-accent/20 p-2 sm:p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors"
+            className="p-2 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors flex-shrink-0"
             aria-label="Close PDF viewer"
           >
-            <X size={20} weight="bold" />
+            <X size={18} weight="bold" />
           </button>
-          <h2 className="text-lg font-semibold text-content truncate max-w-md">
+          <h2 className="text-sm sm:text-lg font-semibold text-content truncate">
             {fileName}
           </h2>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {/* Page navigation */}
           {totalPages > 0 && (
-            <div className="flex items-center gap-2 bg-primary/40 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-1 bg-primary/40 rounded-lg px-2 py-1 sm:px-3 sm:py-2">
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage <= 1}
                 className="p-1 rounded text-content hover:bg-primary/60 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ArrowLeft size={16} weight="bold" />
+                <ArrowLeft size={14} weight="bold" />
               </button>
-              <span className="text-sm text-content min-w-[80px] text-center">
+              <span className="text-xs sm:text-sm text-content min-w-[60px] sm:min-w-[80px] text-center">
                 {currentPage} of {totalPages}
               </span>
               <button
@@ -154,40 +154,40 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
                 disabled={currentPage >= totalPages}
                 className="p-1 rounded text-content hover:bg-primary/60 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ArrowRight size={16} weight="bold" />
+                <ArrowRight size={14} weight="bold" />
               </button>
             </div>
           )}
-          
+
           {/* Zoom controls */}
-          <div className="flex items-center gap-1 bg-primary/40 rounded-lg p-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-primary/40 rounded-lg p-1">
             <button
               onClick={zoomOut}
-              className="p-2 rounded text-content hover:bg-primary/60"
+              className="p-1.5 sm:p-2 rounded text-content hover:bg-primary/60"
               aria-label="Zoom out"
             >
-              <MagnifyingGlassMinus size={16} weight="bold" />
+              <MagnifyingGlassMinus size={14} weight="bold" />
             </button>
-            <span className="text-sm text-content px-2 min-w-[50px] text-center">
+            <span className="text-xs sm:text-sm text-content px-1 sm:px-2 min-w-[35px] sm:min-w-[50px] text-center">
               {Math.round(scale * 100)}%
             </span>
             <button
               onClick={zoomIn}
-              className="p-2 rounded text-content hover:bg-primary/60"
+              className="p-1.5 sm:p-2 rounded text-content hover:bg-primary/60"
               aria-label="Zoom in"
             >
-              <MagnifyingGlassPlus size={16} weight="bold" />
+              <MagnifyingGlassPlus size={14} weight="bold" />
             </button>
           </div>
-          
+
           {/* Download button */}
           {onDownload && (
             <button
               onClick={onDownload}
-              className="p-2 rounded-lg bg-accent text-content hover:bg-accent/90 transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg bg-accent text-content hover:bg-accent/90 transition-colors"
               aria-label="Download PDF"
             >
-              <Download size={20} weight="bold" />
+              <Download size={16} weight="bold" />
             </button>
           )}
         </div>
