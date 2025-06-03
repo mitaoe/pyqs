@@ -67,6 +67,7 @@ const SubjectPapersView = () => {
     isDownloading: false
   });
   const previousSubjectRef = useRef<string | null>(null);
+  const manuallyClosedRef = useRef<boolean>(false);
 
   const scrollToTop = () => {
     window.scrollTo(0, 0);
@@ -207,6 +208,35 @@ const SubjectPapersView = () => {
     return filteredPapers.filter(paper => selectedPapers[paper.fileName]);
   }, [filteredPapers, selectedPapers]);
 
+  // Check for PDF parameter in URL to recover preview state on refresh
+  useEffect(() => {
+    if (dataReady && filteredPapers.length > 0 && !manuallyClosedRef.current) {
+      const pdfParam = searchParams.get('pdf');
+      if (pdfParam && !pdfViewerState.isOpen) {
+        const decodedFileName = decodeURIComponent(pdfParam);
+        const paper = filteredPapers.find(p => p.fileName === decodedFileName);
+
+        if (paper) {
+          const trimmedUrl = trimRedundantUrlPath(paper.url);
+          const paperIndex = filteredPapers.findIndex(p => p.fileName === paper.fileName);
+
+          setPdfViewerState({
+            isOpen: true,
+            pdfUrl: trimmedUrl,
+            fileName: paper.fileName,
+            currentIndex: paperIndex >= 0 ? paperIndex : 0,
+            isDownloading: false
+          });
+        } else {
+          // PDF not found in current subject, remove the parameter
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.delete('pdf');
+          window.history.replaceState({}, '', currentUrl.toString());
+        }
+      }
+    }
+  }, [dataReady, filteredPapers, searchParams]);
+
   const toggleViewMode = () => {
     setViewMode(prev => (prev === 'grid' ? 'list' : 'grid'));
   };
@@ -258,6 +288,12 @@ const SubjectPapersView = () => {
     const trimmedUrl = trimRedundantUrlPath(paper.url);
     // Find the index of this paper in the filtered papers
     const paperIndex = filteredPapers.findIndex(p => p.fileName === paper.fileName);
+
+    // Update URL to include PDF parameter for recovery on refresh
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('pdf', encodeURIComponent(paper.fileName));
+    window.history.pushState({}, '', currentUrl.toString());
+
     // Open PDF viewer with the paper
     setPdfViewerState({
       isOpen: true,
@@ -269,6 +305,14 @@ const SubjectPapersView = () => {
   };
 
   const closePdfViewer = () => {
+    // Mark as manually closed to prevent auto-reopening
+    manuallyClosedRef.current = true;
+
+    // Remove PDF parameter from URL
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete('pdf');
+    window.history.pushState({}, '', currentUrl.toString());
+
     setPdfViewerState({
       isOpen: false,
       pdfUrl: '',
@@ -276,12 +320,23 @@ const SubjectPapersView = () => {
       currentIndex: 0,
       isDownloading: false
     });
+
+    // Reset the flag after a short delay
+    setTimeout(() => {
+      manuallyClosedRef.current = false;
+    }, 100);
   };
 
   const handlePdfNavigation = (newIndex: number) => {
     if (newIndex >= 0 && newIndex < filteredPapers.length) {
       const newPaper = filteredPapers[newIndex];
       const trimmedUrl = trimRedundantUrlPath(newPaper.url);
+
+      // Update URL to reflect the new PDF
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('pdf', encodeURIComponent(newPaper.fileName));
+      window.history.pushState({}, '', currentUrl.toString());
+
       setPdfViewerState({
         isOpen: true,
         pdfUrl: trimmedUrl,
