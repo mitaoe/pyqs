@@ -45,9 +45,11 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
 
       setIsMobile(mobileDetected);
 
-      // Only adjust scale once when PDF loads, and only for desktop
-      if (isDesktop && scale === 1.0) {
-        setScale(1.3); // Better initial scale for desktop
+      // Set initial scale based on device type
+      if (mobileDetected && scale === 1.0) {
+        setScale(4.0); // 400% for mobile (high quality)
+      } else if (isDesktop && scale === 1.0) {
+        setScale(1.3); // 130% for desktop
       }
     }
   }, [pdfDoc]);
@@ -170,11 +172,21 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
       if (pdfDoc && totalPages > 0 && containerRef.current) {
         const containerWidth = containerRef.current.clientWidth;
         const mobileDetected = containerWidth < 768;
+        const wasDesktop = !isMobile;
 
         // Update mobile state
         setIsMobile(mobileDetected);
 
-        // Only re-render on mobile for orientation changes
+        // Adjust scale when switching between mobile/desktop
+        if (mobileDetected && wasDesktop) {
+          // Switching to mobile - set high quality scale
+          setScale(4.0);
+        } else if (!mobileDetected && !wasDesktop) {
+          // Switching to desktop - set reasonable desktop scale
+          setScale(1.3);
+        }
+
+        // Re-render on mobile for orientation changes
         if (mobileDetected) {
           setTimeout(() => {
             renderAllPages();
@@ -190,7 +202,7 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
     };
-  }, [pdfDoc, totalPages, scale]);
+  }, [pdfDoc, totalPages, scale, isMobile]);
 
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
