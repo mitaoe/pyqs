@@ -4,6 +4,7 @@ import mime from 'mime-types';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const url = searchParams.get('url');
+  const download = searchParams.get('download') === 'true';
 
   if (!url) {
     return NextResponse.json({ error: 'URL parameter is required' }, { status: 400 });
@@ -62,12 +63,17 @@ export async function GET(request: NextRequest) {
     
     // Get the file content
     const blob = await response.blob();
-    
+
+    // Set Content-Disposition based on download parameter
+    const contentDispositionValue = download
+      ? `attachment; filename="${fileName}"`
+      : 'inline';
+
     // Return the file with proper headers
     return new NextResponse(blob, {
       headers: {
         'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Disposition': contentDispositionValue,
         'Cache-Control': 'no-store'
       }
     });
