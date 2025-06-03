@@ -57,10 +57,12 @@ const SubjectPapersView = () => {
     isOpen: boolean;
     pdfUrl: string;
     fileName: string;
+    currentIndex: number;
   }>({
     isOpen: false,
     pdfUrl: '',
-    fileName: ''
+    fileName: '',
+    currentIndex: 0
   });
   const previousSubjectRef = useRef<string | null>(null);
 
@@ -252,11 +254,14 @@ const SubjectPapersView = () => {
   const handlePreview = (paper: Paper) => {
     // Trim the redundant URL path before previewing
     const trimmedUrl = trimRedundantUrlPath(paper.url);
+    // Find the index of this paper in the filtered papers
+    const paperIndex = filteredPapers.findIndex(p => p.fileName === paper.fileName);
     // Open PDF viewer with the paper
     setPdfViewerState({
       isOpen: true,
       pdfUrl: trimmedUrl,
-      fileName: paper.fileName
+      fileName: paper.fileName,
+      currentIndex: paperIndex >= 0 ? paperIndex : 0
     });
   };
 
@@ -264,8 +269,22 @@ const SubjectPapersView = () => {
     setPdfViewerState({
       isOpen: false,
       pdfUrl: '',
-      fileName: ''
+      fileName: '',
+      currentIndex: 0
     });
+  };
+
+  const handlePdfNavigation = (newIndex: number) => {
+    if (newIndex >= 0 && newIndex < filteredPapers.length) {
+      const newPaper = filteredPapers[newIndex];
+      const trimmedUrl = trimRedundantUrlPath(newPaper.url);
+      setPdfViewerState({
+        isOpen: true,
+        pdfUrl: trimmedUrl,
+        fileName: newPaper.fileName,
+        currentIndex: newIndex
+      });
+    }
   };
 
   const handlePdfDownload = () => {
@@ -1034,6 +1053,9 @@ const SubjectPapersView = () => {
           fileName={pdfViewerState.fileName}
           onClose={closePdfViewer}
           onDownload={handlePdfDownload}
+          papers={filteredPapers}
+          currentIndex={pdfViewerState.currentIndex}
+          onNavigate={handlePdfNavigation}
         />
       )}
     </div>

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, MagnifyingGlassPlus, MagnifyingGlassMinus, Download, Plus, Minus } from '@phosphor-icons/react';
+import { X, MagnifyingGlassPlus, MagnifyingGlassMinus, Download, Plus, Minus, CaretLeft, CaretRight } from '@phosphor-icons/react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { Paper } from '@/types/paper';
 
 // Set up PDF.js worker
 if (typeof window !== 'undefined') {
@@ -14,9 +15,21 @@ interface PDFViewerProps {
   fileName: string;
   onClose: () => void;
   onDownload?: () => void;
+  // Navigation props for desktop
+  papers?: Paper[];
+  currentIndex?: number;
+  onNavigate?: (index: number) => void;
 }
 
-export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDFViewerProps) {
+export default function PDFViewer({
+  pdfUrl,
+  fileName,
+  onClose,
+  onDownload,
+  papers,
+  currentIndex,
+  onNavigate
+}: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
@@ -155,9 +168,30 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
     setScale(prev => Math.max(prev - 0.3, 0.5));
   };
 
+  // Navigation functions (desktop only)
+  const goToPrevious = () => {
+    if (papers && currentIndex !== undefined && onNavigate && currentIndex > 0) {
+      onNavigate(currentIndex - 1);
+    }
+  };
+
+  const goToNext = () => {
+    if (papers && currentIndex !== undefined && onNavigate && currentIndex < papers.length - 1) {
+      onNavigate(currentIndex + 1);
+    }
+  };
+
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       onClose();
+    }
+    // Navigation with arrow keys (desktop only)
+    if (!isMobile && papers && currentIndex !== undefined && onNavigate) {
+      if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        onNavigate(currentIndex - 1);
+      } else if (e.key === 'ArrowRight' && currentIndex < papers.length - 1) {
+        onNavigate(currentIndex + 1);
+      }
     }
   };
 
@@ -222,6 +256,31 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {/* Navigation buttons (desktop only) */}
+          {!isMobile && papers && currentIndex !== undefined && onNavigate && (
+            <div className="flex items-center gap-1 bg-primary/40 rounded-lg p-1">
+              <button
+                onClick={goToPrevious}
+                disabled={currentIndex === 0}
+                className="p-2 rounded text-content hover:bg-primary/60 active:bg-primary/70 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                aria-label="Previous PDF"
+              >
+                <CaretLeft size={16} weight="bold" />
+              </button>
+              <span className="text-xs text-content px-2 min-w-[60px] text-center">
+                {currentIndex + 1} of {papers.length}
+              </span>
+              <button
+                onClick={goToNext}
+                disabled={currentIndex === papers.length - 1}
+                className="p-2 rounded text-content hover:bg-primary/60 active:bg-primary/70 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                aria-label="Next PDF"
+              >
+                <CaretRight size={16} weight="bold" />
+              </button>
+            </div>
+          )}
+
           {/* Total pages indicator */}
           {totalPages > 0 && (
             <div className="bg-primary/40 rounded-lg px-2 py-1 sm:px-3 sm:py-2">
