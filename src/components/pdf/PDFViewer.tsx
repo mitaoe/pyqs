@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, MagnifyingGlassPlus, MagnifyingGlassMinus, Download, ArrowLeft, ArrowRight } from '@phosphor-icons/react';
+import { X, MagnifyingGlassPlus, MagnifyingGlassMinus, Download } from '@phosphor-icons/react';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Set up PDF.js worker
@@ -17,43 +17,42 @@ interface PDFViewerProps {
 }
 
 export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDFViewerProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [scale, setScale] = useState(1.2);
+  const [scale, setScale] = useState(1.0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [renderedPages, setRenderedPages] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadPDF();
   }, [pdfUrl]);
 
   useEffect(() => {
-    if (pdfDoc) {
-      renderPage(currentPage);
+    if (pdfDoc && totalPages > 0) {
+      renderAllPages();
     }
-  }, [pdfDoc, currentPage, scale]);
+  }, [pdfDoc, scale]);
 
   const loadPDF = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Load PDF using our proxy API
       const proxyUrl = `/api/download/proxy?url=${encodeURIComponent(pdfUrl)}`;
       const response = await fetch(proxyUrl);
-      
+
       if (!response.ok) {
         throw new Error('Failed to load PDF');
       }
-      
+
       const arrayBuffer = await response.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      
+
       setPdfDoc(pdf);
       setTotalPages(pdf.numPages);
-      setCurrentPage(1);
     } catch (err) {
       console.error('Error loading PDF:', err);
       setError('Failed to load PDF. Please try again.');
@@ -62,61 +61,98 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
     }
   };
 
-  const renderPage = async (pageNumber: number) => {
-    if (!pdfDoc || !canvasRef.current) return;
+  const renderAllPages = async () => {
+    if (!pdfDoc || !containerRef.current) return;
 
-    try {
-      const page = await pdfDoc.getPage(pageNumber);
-      const viewport = page.getViewport({ scale });
-      
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      
-      if (!context) return;
-      
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      
-      const renderContext = {
-        canvasContext: context,
-        viewport: viewport,
-      };
-      
-      await page.render(renderContext).promise;
-    } catch (err) {
-      console.error('Error rendering page:', err);
-      setError('Failed to render PDF page.');
-    }
-  };
+    // Clear existing content
+    containerRef.current.innerHTML = '';
 
-  const goToPage = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      try {
+        const page = await pdfDoc.getPage(pageNum);
+
+        // Get container width for responsive scaling
+        const containerWidth = containerRef.current.clientWidth;
+        const maxWidth = Math.min(containerWidth - 32, 800); // 16px padding on each side, max 800px
+
+        // Calculate scale based on container width
+        const originalViewport = page.getViewport({ scale: 1 });
+        const responsiveScale = Math.min(scale, maxWidth / originalViewport.width);
+        const viewport = page.getViewport({ scale: responsiveScale });
+
+        // Create canvas for this page
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        if (!context) continue;
+
+        // Set canvas dimensions
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // Apply responsive CSS classes
+        canvas.className = 'shadow-lg border border-gray-300 bg-white mb-4 w-full max-w-full h-auto mx-auto block';
+        canvas.style.maxWidth = '100%';
+        canvas.style.height = 'auto';
+
+        // Create page container with proper responsive classes
+        const pageContainer = document.createElement('div');
+        pageContainer.className = 'flex justify-center px-2 sm:px-4';
+        pageContainer.appendChild(canvas);
+
+        containerRef.current.appendChild(pageContainer);
+
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport,
+        };
+
+        await page.render(renderContext).promise;
+        setRenderedPages(prev => new Set([...prev, pageNum]));
+      } catch (err) {
+        console.error(`Error rendering page ${pageNum}:`, err);
+      }
     }
   };
 
   const zoomIn = () => {
-    setScale(prev => Math.min(prev + 0.2, 3));
+    setScale(prev => Math.min(prev + 0.3, 4));
   };
 
   const zoomOut = () => {
-    setScale(prev => Math.max(prev - 0.2, 0.5));
+    setScale(prev => Math.max(prev - 0.3, 0.5));
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       onClose();
-    } else if (e.key === 'ArrowLeft') {
-      goToPage(currentPage - 1);
-    } else if (e.key === 'ArrowRight') {
-      goToPage(currentPage + 1);
     }
   };
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [currentPage, totalPages]);
+  }, []);
+
+  // Handle window resize for responsive scaling
+  useEffect(() => {
+    const handleResize = () => {
+      if (pdfDoc && totalPages > 0) {
+        // Debounce resize to avoid too many re-renders
+        setTimeout(() => {
+          renderAllPages();
+        }, 300);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, [pdfDoc, totalPages, scale]);
 
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
@@ -125,7 +161,7 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors flex-shrink-0"
+            className="p-2 rounded-lg bg-primary/60 text-content hover:bg-primary/70 active:bg-primary/80 transition-colors flex-shrink-0 touch-manipulation min-w-[40px] min-h-[40px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
             aria-label="Close PDF viewer"
           >
             <X size={18} weight="bold" />
@@ -136,26 +172,12 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-          {/* Page navigation */}
+          {/* Total pages indicator */}
           {totalPages > 0 && (
-            <div className="flex items-center gap-1 bg-primary/40 rounded-lg px-2 py-1 sm:px-3 sm:py-2">
-              <button
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage <= 1}
-                className="p-1 rounded text-content hover:bg-primary/60 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ArrowLeft size={14} weight="bold" />
-              </button>
-              <span className="text-xs sm:text-sm text-content min-w-[60px] sm:min-w-[80px] text-center">
-                {currentPage} of {totalPages}
+            <div className="bg-primary/40 rounded-lg px-2 py-1 sm:px-3 sm:py-2">
+              <span className="text-xs sm:text-sm text-content">
+                {totalPages} pages
               </span>
-              <button
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-                className="p-1 rounded text-content hover:bg-primary/60 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ArrowRight size={14} weight="bold" />
-              </button>
             </div>
           )}
 
@@ -163,20 +185,20 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
           <div className="flex items-center gap-0.5 sm:gap-1 bg-primary/40 rounded-lg p-1">
             <button
               onClick={zoomOut}
-              className="p-1.5 sm:p-2 rounded text-content hover:bg-primary/60"
+              className="p-2 sm:p-2 rounded text-content hover:bg-primary/60 active:bg-primary/70 touch-manipulation min-w-[40px] min-h-[40px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
               aria-label="Zoom out"
             >
-              <MagnifyingGlassMinus size={14} weight="bold" />
+              <MagnifyingGlassMinus size={16} weight="bold" />
             </button>
-            <span className="text-xs sm:text-sm text-content px-1 sm:px-2 min-w-[35px] sm:min-w-[50px] text-center">
+            <span className="text-xs sm:text-sm text-content px-2 sm:px-2 min-w-[45px] sm:min-w-[50px] text-center">
               {Math.round(scale * 100)}%
             </span>
             <button
               onClick={zoomIn}
-              className="p-1.5 sm:p-2 rounded text-content hover:bg-primary/60"
+              className="p-2 sm:p-2 rounded text-content hover:bg-primary/60 active:bg-primary/70 touch-manipulation min-w-[40px] min-h-[40px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
               aria-label="Zoom in"
             >
-              <MagnifyingGlassPlus size={14} weight="bold" />
+              <MagnifyingGlassPlus size={16} weight="bold" />
             </button>
           </div>
 
@@ -184,7 +206,7 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
           {onDownload && (
             <button
               onClick={onDownload}
-              className="p-1.5 sm:p-2 rounded-lg bg-accent text-content hover:bg-accent/90 transition-colors"
+              className="p-2 sm:p-2 rounded-lg bg-accent text-content hover:bg-accent/90 active:bg-accent/80 transition-colors touch-manipulation min-w-[40px] min-h-[40px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
               aria-label="Download PDF"
             >
               <Download size={16} weight="bold" />
@@ -194,7 +216,7 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
       </div>
 
       {/* PDF Content */}
-      <div className="flex-1 overflow-auto bg-gray-100 p-4">
+      <div className="flex-1 overflow-auto bg-gray-100">
         {loading && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -203,7 +225,7 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
             </div>
           </div>
         )}
-        
+
         {error && (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -217,15 +239,12 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
             </div>
           </div>
         )}
-        
+
         {!loading && !error && (
-          <div className="flex justify-center">
-            <canvas
-              ref={canvasRef}
-              className="shadow-lg border border-gray-300 bg-white"
-              style={{ maxWidth: '100%', height: 'auto' }}
-            />
-          </div>
+          <div
+            ref={containerRef}
+            className="w-full min-h-full py-4"
+          />
         )}
       </div>
     </div>
