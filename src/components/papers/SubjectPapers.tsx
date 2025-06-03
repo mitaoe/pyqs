@@ -58,11 +58,13 @@ const SubjectPapersView = () => {
     pdfUrl: string;
     fileName: string;
     currentIndex: number;
+    isDownloading: boolean;
   }>({
     isOpen: false,
     pdfUrl: '',
     fileName: '',
-    currentIndex: 0
+    currentIndex: 0,
+    isDownloading: false
   });
   const previousSubjectRef = useRef<string | null>(null);
 
@@ -261,7 +263,8 @@ const SubjectPapersView = () => {
       isOpen: true,
       pdfUrl: trimmedUrl,
       fileName: paper.fileName,
-      currentIndex: paperIndex >= 0 ? paperIndex : 0
+      currentIndex: paperIndex >= 0 ? paperIndex : 0,
+      isDownloading: false
     });
   };
 
@@ -270,7 +273,8 @@ const SubjectPapersView = () => {
       isOpen: false,
       pdfUrl: '',
       fileName: '',
-      currentIndex: 0
+      currentIndex: 0,
+      isDownloading: false
     });
   };
 
@@ -282,19 +286,35 @@ const SubjectPapersView = () => {
         isOpen: true,
         pdfUrl: trimmedUrl,
         fileName: newPaper.fileName,
-        currentIndex: newIndex
+        currentIndex: newIndex,
+        isDownloading: false
       });
     }
   };
 
-  const handlePdfDownload = () => {
-    if (pdfViewerState.pdfUrl) {
-      const paper = filteredPapers.find(p =>
-        trimRedundantUrlPath(p.url) === pdfViewerState.pdfUrl
-      );
-      if (paper) {
-        handleDownload(paper);
+  const handlePdfDownload = async () => {
+    // Set loading state
+    setPdfViewerState(prev => ({ ...prev, isDownloading: true }));
+
+    try {
+      // Use the current index to get the correct paper
+      if (pdfViewerState.currentIndex >= 0 && pdfViewerState.currentIndex < filteredPapers.length) {
+        const paper = filteredPapers[pdfViewerState.currentIndex];
+        if (paper) {
+          await handleDownload(paper);
+        }
+      } else if (pdfViewerState.pdfUrl) {
+        // Fallback to URL matching if index is not available
+        const paper = filteredPapers.find(p =>
+          trimRedundantUrlPath(p.url) === pdfViewerState.pdfUrl
+        );
+        if (paper) {
+          await handleDownload(paper);
+        }
       }
+    } finally {
+      // Reset loading state
+      setPdfViewerState(prev => ({ ...prev, isDownloading: false }));
     }
   };
 
@@ -1056,6 +1076,7 @@ const SubjectPapersView = () => {
           papers={filteredPapers}
           currentIndex={pdfViewerState.currentIndex}
           onNavigate={handlePdfNavigation}
+          isDownloading={pdfViewerState.isDownloading}
         />
       )}
     </div>

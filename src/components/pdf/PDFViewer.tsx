@@ -19,6 +19,8 @@ interface PDFViewerProps {
   papers?: Paper[];
   currentIndex?: number;
   onNavigate?: (index: number) => void;
+  // Download loading state
+  isDownloading?: boolean;
 }
 
 export default function PDFViewer({
@@ -28,7 +30,8 @@ export default function PDFViewer({
   onDownload,
   papers,
   currentIndex,
-  onNavigate
+  onNavigate,
+  isDownloading = false
 }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
@@ -337,13 +340,22 @@ export default function PDFViewer({
 
           {/* Download button */}
           {onDownload && (
-            <button
-              onClick={onDownload}
-              className="p-2 sm:p-2 rounded-lg bg-accent text-content hover:bg-accent/90 active:bg-accent/80 transition-colors touch-manipulation min-w-[40px] min-h-[40px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
-              aria-label="Download PDF"
-            >
-              <Download size={16} weight="bold" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={onDownload}
+                disabled={isDownloading}
+                className="p-2 sm:p-2 rounded-lg bg-accent text-content hover:bg-accent/90 active:bg-accent/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation min-w-[40px] min-h-[40px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
+                aria-label={isDownloading ? "Downloading..." : "Download PDF"}
+              >
+                <Download size={16} weight="bold" className={isDownloading ? 'animate-spin' : ''} />
+              </button>
+              {/* Download status text for mobile */}
+              {isDownloading && isMobile && (
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                  Downloading...
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
