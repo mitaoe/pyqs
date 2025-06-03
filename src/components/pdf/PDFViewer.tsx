@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, MagnifyingGlassPlus, MagnifyingGlassMinus, Download } from '@phosphor-icons/react';
+import { X, MagnifyingGlassPlus, MagnifyingGlassMinus, Download, Plus, Minus } from '@phosphor-icons/react';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Set up PDF.js worker
@@ -20,10 +20,11 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
-  const [scale, setScale] = useState(1.3);
+  const [scale, setScale] = useState(1.0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [renderedPages, setRenderedPages] = useState<Set<number>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     loadPDF();
@@ -34,6 +35,22 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
       renderAllPages();
     }
   }, [pdfDoc, scale]);
+
+  // Set better initial scale for desktop and detect mobile
+  useEffect(() => {
+    if (containerRef.current && pdfDoc) {
+      const containerWidth = containerRef.current.clientWidth;
+      const isDesktop = containerWidth >= 768;
+      const mobileDetected = containerWidth < 768;
+
+      setIsMobile(mobileDetected);
+
+      // Only adjust scale once when PDF loads, and only for desktop
+      if (isDesktop && scale === 1.0) {
+        setScale(1.3); // Better initial scale for desktop
+      }
+    }
+  }, [pdfDoc]);
 
   const loadPDF = async () => {
     try {
@@ -71,8 +88,23 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
       try {
         const page = await pdfDoc.getPage(pageNum);
 
-        // Use the user's selected scale directly - no width constraints
-        const viewport = page.getViewport({ scale });
+        // Check if mobile and adjust scale for mobile-first approach
+        const containerWidth = containerRef.current.clientWidth;
+        const isMobile = containerWidth < 768; // Tailwind's sm breakpoint
+
+        let finalScale = scale;
+
+        if (isMobile) {
+          // For mobile: calculate base scale that makes PDF width = container width at 100% zoom
+          const originalViewport = page.getViewport({ scale: 1 });
+          const mobileBaseScale = (containerWidth - 32) / originalViewport.width; // 16px padding each side
+
+          // Apply user's zoom level relative to this base scale
+          // scale 1.0 = perfect fit, scale 1.5 = 150% zoom, scale 0.8 = 80% zoom
+          finalScale = mobileBaseScale * scale;
+        }
+
+        const viewport = page.getViewport({ scale: finalScale });
 
         // Create canvas for this page
         const canvas = document.createElement('canvas');
@@ -84,12 +116,18 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
-        // Apply CSS classes - allow natural PDF dimensions
-        canvas.className = 'shadow-lg border border-gray-300 bg-white mb-6 mx-auto block';
+        // Apply CSS classes - responsive for mobile, natural for desktop
+        if (isMobile) {
+          canvas.className = 'shadow-lg border border-gray-300 bg-white mb-6 w-full max-w-full h-auto mx-auto block';
+        } else {
+          canvas.className = 'shadow-lg border border-gray-300 bg-white mb-6 mx-auto block';
+        }
 
         // Create page container
         const pageContainer = document.createElement('div');
-        pageContainer.className = 'flex justify-center px-4';
+        pageContainer.className = isMobile
+          ? 'flex justify-center px-4'
+          : 'flex justify-center px-4';
         pageContainer.appendChild(canvas);
 
         containerRef.current.appendChild(pageContainer);
@@ -126,6 +164,34 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Handle window resize for mobile orientation changes
+  useEffect(() => {
+    const handleResize = () => {
+      if (pdfDoc && totalPages > 0 && containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const mobileDetected = containerWidth < 768;
+
+        // Update mobile state
+        setIsMobile(mobileDetected);
+
+        // Only re-render on mobile for orientation changes
+        if (mobileDetected) {
+          setTimeout(() => {
+            renderAllPages();
+          }, 300);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, [pdfDoc, totalPages, scale]);
+
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
       {/* Header */}
@@ -153,14 +219,18 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
             </div>
           )}
 
-          {/* Zoom controls */}
+          {/* Quality/Zoom controls */}
           <div className="flex items-center gap-0.5 sm:gap-1 bg-primary/40 rounded-lg p-1">
             <button
               onClick={zoomOut}
               className="p-2 sm:p-2 rounded text-content hover:bg-primary/60 active:bg-primary/70 touch-manipulation min-w-[40px] min-h-[40px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
-              aria-label="Zoom out"
+              aria-label={isMobile ? "Reduce quality" : "Zoom out"}
             >
-              <MagnifyingGlassMinus size={16} weight="bold" />
+              {isMobile ? (
+                <Minus size={16} weight="bold" />
+              ) : (
+                <MagnifyingGlassMinus size={16} weight="bold" />
+              )}
             </button>
             <span className="text-xs sm:text-sm text-content px-2 sm:px-2 min-w-[45px] sm:min-w-[50px] text-center">
               {Math.round(scale * 100)}%
@@ -168,9 +238,13 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
             <button
               onClick={zoomIn}
               className="p-2 sm:p-2 rounded text-content hover:bg-primary/60 active:bg-primary/70 touch-manipulation min-w-[40px] min-h-[40px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center"
-              aria-label="Zoom in"
+              aria-label={isMobile ? "Improve quality" : "Zoom in"}
             >
-              <MagnifyingGlassPlus size={16} weight="bold" />
+              {isMobile ? (
+                <Plus size={16} weight="bold" />
+              ) : (
+                <MagnifyingGlassPlus size={16} weight="bold" />
+              )}
             </button>
           </div>
 
