@@ -185,8 +185,8 @@ export default function PDFViewer({
     if (e.key === 'Escape') {
       onClose();
     }
-    // Navigation with arrow keys (desktop only)
-    if (!isMobile && papers && currentIndex !== undefined && onNavigate) {
+    // Navigation with arrow keys (both mobile and desktop)
+    if (papers && currentIndex !== undefined && onNavigate) {
       if (e.key === 'ArrowLeft' && currentIndex > 0) {
         onNavigate(currentIndex - 1);
       } else if (e.key === 'ArrowRight' && currentIndex < papers.length - 1) {
@@ -281,12 +281,28 @@ export default function PDFViewer({
             </div>
           )}
 
-          {/* Total pages indicator */}
-          {totalPages > 0 && (
-            <div className="bg-primary/40 rounded-lg px-2 py-1 sm:px-3 sm:py-2">
-              <span className="text-xs sm:text-sm text-content">
-                {totalPages} pages
+          {/* Mobile Navigation buttons (replaces page count) */}
+          {isMobile && papers && currentIndex !== undefined && onNavigate && (
+            <div className="flex items-center gap-1 bg-primary/40 rounded-lg p-1">
+              <button
+                onClick={goToPrevious}
+                disabled={currentIndex === 0}
+                className="p-2 rounded text-content hover:bg-primary/60 active:bg-primary/70 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+                aria-label="Previous PDF"
+              >
+                <CaretLeft size={16} weight="bold" />
+              </button>
+              <span className="text-xs text-content px-2 min-w-[50px] text-center">
+                {currentIndex + 1} of {papers.length}
               </span>
+              <button
+                onClick={goToNext}
+                disabled={currentIndex === papers.length - 1}
+                className="p-2 rounded text-content hover:bg-primary/60 active:bg-primary/70 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+                aria-label="Next PDF"
+              >
+                <CaretRight size={16} weight="bold" />
+              </button>
             </div>
           )}
 
