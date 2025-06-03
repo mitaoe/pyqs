@@ -20,7 +20,7 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
-  const [scale, setScale] = useState(1.0);
+  const [scale, setScale] = useState(1.3);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [renderedPages, setRenderedPages] = useState<Set<number>>(new Set());
@@ -71,14 +71,8 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
       try {
         const page = await pdfDoc.getPage(pageNum);
 
-        // Get container width for responsive scaling
-        const containerWidth = containerRef.current.clientWidth;
-        const maxWidth = Math.min(containerWidth - 32, 800); // 16px padding on each side, max 800px
-
-        // Calculate scale based on container width
-        const originalViewport = page.getViewport({ scale: 1 });
-        const responsiveScale = Math.min(scale, maxWidth / originalViewport.width);
-        const viewport = page.getViewport({ scale: responsiveScale });
+        // Use the user's selected scale directly - no width constraints
+        const viewport = page.getViewport({ scale });
 
         // Create canvas for this page
         const canvas = document.createElement('canvas');
@@ -90,14 +84,12 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
-        // Apply responsive CSS classes
-        canvas.className = 'shadow-lg border border-gray-300 bg-white mb-4 w-full max-w-full h-auto mx-auto block';
-        canvas.style.maxWidth = '100%';
-        canvas.style.height = 'auto';
+        // Apply CSS classes - allow natural PDF dimensions
+        canvas.className = 'shadow-lg border border-gray-300 bg-white mb-6 mx-auto block';
 
-        // Create page container with proper responsive classes
+        // Create page container
         const pageContainer = document.createElement('div');
-        pageContainer.className = 'flex justify-center px-2 sm:px-4';
+        pageContainer.className = 'flex justify-center px-4';
         pageContainer.appendChild(canvas);
 
         containerRef.current.appendChild(pageContainer);
@@ -133,26 +125,6 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
-
-  // Handle window resize for responsive scaling
-  useEffect(() => {
-    const handleResize = () => {
-      if (pdfDoc && totalPages > 0) {
-        // Debounce resize to avoid too many re-renders
-        setTimeout(() => {
-          renderAllPages();
-        }, 300);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
-    };
-  }, [pdfDoc, totalPages, scale]);
 
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
@@ -243,7 +215,8 @@ export default function PDFViewer({ pdfUrl, fileName, onClose, onDownload }: PDF
         {!loading && !error && (
           <div
             ref={containerRef}
-            className="w-full min-h-full py-4"
+            className="min-h-full py-6"
+            style={{ minWidth: 'fit-content' }}
           />
         )}
       </div>
