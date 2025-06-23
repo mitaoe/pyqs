@@ -103,7 +103,6 @@ export default function PDFViewer({
       const canvas = document.createElement('canvas');
       canvas.className = 'shadow-lg border border-gray-300 bg-white mx-auto block';
       canvas.style.display = 'block';
-      canvas.style.maxWidth = '100%';
       canvas.style.height = 'auto';
       
       canvasRefs.current.push(canvas);
@@ -154,10 +153,13 @@ export default function PDFViewer({
         let finalScale = scale;
         const containerWidth = containerRef.current?.clientWidth || 800;
         
+        // For mobile, apply a base scale to start with a reasonable size, then scale freely
         if (isMobile && containerWidth > 0) {
-          // For mobile, calculate base scale to fit width, then apply user zoom
-          const baseScale = (containerWidth - 64) / defaultViewport.width;
+          // Calculate what scale would fit the width at initial load
+          const baseScale = Math.min((containerWidth - 64) / defaultViewport.width, 1.5);
+          // Apply this base scale, then multiply by user's zoom
           finalScale = baseScale * scale;
+          console.log(`Mobile scaling - baseScale: ${baseScale}, userScale: ${scale}, finalScale: ${finalScale}`);
         }
 
         // Get the scaled viewport with proper rotation handling
@@ -489,11 +491,13 @@ export default function PDFViewer({
         ref={containerRef}
         style={{
           WebkitOverflowScrolling: 'touch',
-          touchAction: touchState.current.isZooming ? 'none' : 'pan-x pan-y',
+          touchAction: touchState.current.isZooming ? 'none' : 'auto',
           userSelect: 'none',
           WebkitUserSelect: 'none',
           msUserSelect: 'none',
           MozUserSelect: 'none',
+          overflowX: 'auto',
+          overflowY: 'auto',
         }}
       >
         {loading && (
