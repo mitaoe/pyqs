@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+
+implemation.txt
+TEST_PREVIEW_FUNCTIONALITY.md
+USAGE_EXAMPLE.md

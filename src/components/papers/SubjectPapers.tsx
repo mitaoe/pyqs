@@ -4,22 +4,24 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { usePapers } from '@/contexts/PaperContext';
 import Image from 'next/image';
-import { 
-  GridFour, 
-  List, 
-  Download, 
-  ArrowLeft, 
-  FileText, 
-  CheckSquare, 
+import {
+  GridFour,
+  List,
+  Download,
+  ArrowLeft,
+  FileText,
+  CheckSquare,
   Square,
   X,
   Funnel,
-  FileZip
+  FileZip,
+  Eye
 } from '@phosphor-icons/react';
 import { downloadFile, batchDownloadPapers, BatchDownloadProgress } from '@/utils/download';
 import { Paper } from '@/types/paper';
 import FadeIn from '@/components/animations/FadeIn';
 import { toast } from 'sonner';
+import PDFViewer from '@/components/pdf/PDFViewer';
 
 // Utility function to trim redundant URL paths
 const trimRedundantUrlPath = (url: string): string => {
@@ -51,7 +53,21 @@ const SubjectPapersView = () => {
     examTypes: [] as string[]
   });
   const [batchDownloadProgress, setBatchDownloadProgress] = useState<BatchDownloadProgress | null>(null);
+  const [pdfViewerState, setPdfViewerState] = useState<{
+    isOpen: boolean;
+    pdfUrl: string;
+    fileName: string;
+    currentIndex: number;
+    isDownloading: boolean;
+  }>({
+    isOpen: false,
+    pdfUrl: '',
+    fileName: '',
+    currentIndex: 0,
+    isDownloading: false
+  });
   const previousSubjectRef = useRef<string | null>(null);
+  const manuallyClosedRef = useRef<boolean>(false);
 
   const scrollToTop = () => {
     window.scrollTo(0, 0);
@@ -192,6 +208,35 @@ const SubjectPapersView = () => {
     return filteredPapers.filter(paper => selectedPapers[paper.fileName]);
   }, [filteredPapers, selectedPapers]);
 
+  // Check for PDF parameter in URL to recover preview state on refresh
+  useEffect(() => {
+    if (dataReady && filteredPapers.length > 0 && !manuallyClosedRef.current) {
+      const pdfParam = searchParams.get('pdf');
+      if (pdfParam && !pdfViewerState.isOpen) {
+        const decodedFileName = decodeURIComponent(pdfParam);
+        const paper = filteredPapers.find(p => p.fileName === decodedFileName);
+
+        if (paper) {
+          const trimmedUrl = trimRedundantUrlPath(paper.url);
+          const paperIndex = filteredPapers.findIndex(p => p.fileName === paper.fileName);
+
+          setPdfViewerState({
+            isOpen: true,
+            pdfUrl: trimmedUrl,
+            fileName: paper.fileName,
+            currentIndex: paperIndex >= 0 ? paperIndex : 0,
+            isDownloading: false
+          });
+        } else {
+          // PDF not found in current subject, remove the parameter
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.delete('pdf');
+          window.history.replaceState({}, '', currentUrl.toString());
+        }
+      }
+    }
+  }, [dataReady, filteredPapers, searchParams, pdfViewerState.isOpen]);
+
   const toggleViewMode = () => {
     setViewMode(prev => (prev === 'grid' ? 'list' : 'grid'));
   };
@@ -235,6 +280,96 @@ const SubjectPapersView = () => {
       console.error('Download failed:', error);
     } finally {
       setDownloadingFile(null);
+    }
+  };
+
+  const handlePreview = (paper: Paper) => {
+    // Trim the redundant URL path before previewing
+    const trimmedUrl = trimRedundantUrlPath(paper.url);
+    // Find the index of this paper in the filtered papers
+    const paperIndex = filteredPapers.findIndex(p => p.fileName === paper.fileName);
+
+    // Update URL to include PDF parameter for recovery on refresh
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('pdf', encodeURIComponent(paper.fileName));
+    window.history.pushState({}, '', currentUrl.toString());
+
+    // Open PDF viewer with the paper
+    setPdfViewerState({
+      isOpen: true,
+      pdfUrl: trimmedUrl,
+      fileName: paper.fileName,
+      currentIndex: paperIndex >= 0 ? paperIndex : 0,
+      isDownloading: false
+    });
+  };
+
+  const closePdfViewer = () => {
+    // Mark as manually closed to prevent auto-reopening
+    manuallyClosedRef.current = true;
+
+    // Remove PDF parameter from URL
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete('pdf');
+    window.history.pushState({}, '', currentUrl.toString());
+
+    setPdfViewerState({
+      isOpen: false,
+      pdfUrl: '',
+      fileName: '',
+      currentIndex: 0,
+      isDownloading: false
+    });
+
+    // Reset the flag after a short delay
+    setTimeout(() => {
+      manuallyClosedRef.current = false;
+    }, 100);
+  };
+
+  const handlePdfNavigation = (newIndex: number) => {
+    if (newIndex >= 0 && newIndex < filteredPapers.length) {
+      const newPaper = filteredPapers[newIndex];
+      const trimmedUrl = trimRedundantUrlPath(newPaper.url);
+
+      // Update URL to reflect the new PDF
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('pdf', encodeURIComponent(newPaper.fileName));
+      window.history.pushState({}, '', currentUrl.toString());
+
+      setPdfViewerState({
+        isOpen: true,
+        pdfUrl: trimmedUrl,
+        fileName: newPaper.fileName,
+        currentIndex: newIndex,
+        isDownloading: false
+      });
+    }
+  };
+
+  const handlePdfDownload = async () => {
+    // Set loading state
+    setPdfViewerState(prev => ({ ...prev, isDownloading: true }));
+
+    try {
+      // Use the current index to get the correct paper
+      if (pdfViewerState.currentIndex >= 0 && pdfViewerState.currentIndex < filteredPapers.length) {
+        const paper = filteredPapers[pdfViewerState.currentIndex];
+        if (paper) {
+          await handleDownload(paper);
+        }
+      } else if (pdfViewerState.pdfUrl) {
+        // Fallback to URL matching if index is not available
+        const paper = filteredPapers.find(p =>
+          trimRedundantUrlPath(p.url) === pdfViewerState.pdfUrl
+        );
+        if (paper) {
+          await handleDownload(paper);
+        }
+      }
+    } finally {
+      // Reset loading state
+      setPdfViewerState(prev => ({ ...prev, isDownloading: false }));
     }
   };
 
@@ -339,17 +474,29 @@ const SubjectPapersView = () => {
               </h3>
             </div>
             {!isSelectMode ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload(paper);
-                }}
-                disabled={downloadingFile === paper.fileName}
-                className="mt-auto w-full flex items-center justify-center gap-2 bg-accent rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50"
-              >
-                <Download size={18} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
-                <span>{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
-              </button>
+              <div className="mt-auto flex gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePreview(paper);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 bg-primary/60 rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-content transition-colors duration-200 hover:bg-primary/70 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <Eye size={18} weight="duotone" />
+                  <span className="hidden sm:inline">Preview</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(paper);
+                  }}
+                  disabled={downloadingFile === paper.fileName}
+                  className="flex-1 flex items-center justify-center gap-2 bg-accent rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50"
+                >
+                  <Download size={18} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
+                  <span className="hidden sm:inline">{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
+                </button>
+              </div>
             ) : null}
           </div>
         </FadeIn>
@@ -409,17 +556,29 @@ const SubjectPapersView = () => {
               </div>
             </div>
             {!isSelectMode ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload(paper);
-                }}
-                disabled={downloadingFile === paper.fileName}
-                className="flex items-center gap-1 sm:gap-2 bg-accent rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50 ml-2 sm:ml-4"
-              >
-                <Download size={18} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
-                <span className="hidden sm:inline">{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
-              </button>
+              <div className="flex items-center gap-2 ml-2 sm:ml-4">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePreview(paper);
+                  }}
+                  className="flex items-center gap-1 sm:gap-2 bg-primary/60 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-content transition-colors duration-200 hover:bg-primary/70 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  <Eye size={16} weight="duotone" />
+                  <span className="hidden sm:inline">Preview</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(paper);
+                  }}
+                  disabled={downloadingFile === paper.fileName}
+                  className="flex items-center gap-1 sm:gap-2 bg-accent rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-content transition-colors duration-200 hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent/40 disabled:opacity-50"
+                >
+                  <Download size={16} weight="duotone" className={downloadingFile === paper.fileName ? 'animate-spin' : ''} />
+                  <span className="hidden sm:inline">{downloadingFile === paper.fileName ? 'Downloading...' : 'Download'}</span>
+                </button>
+              </div>
             ) : null}
           </div>
         </FadeIn>
@@ -961,6 +1120,20 @@ const SubjectPapersView = () => {
 
       {/* Batch download progress overlay */}
       {batchDownloadProgress && renderBatchDownloadProgress()}
+
+      {/* PDF Viewer */}
+      {pdfViewerState.isOpen && (
+        <PDFViewer
+          pdfUrl={pdfViewerState.pdfUrl}
+          fileName={pdfViewerState.fileName}
+          onClose={closePdfViewer}
+          onDownload={handlePdfDownload}
+          papers={filteredPapers}
+          currentIndex={pdfViewerState.currentIndex}
+          onNavigate={handlePdfNavigation}
+          isDownloading={pdfViewerState.isDownloading}
+        />
+      )}
     </div>
   );
 };

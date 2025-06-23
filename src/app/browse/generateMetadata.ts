@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export async function generateMetadata(
-  props: { searchParams: { path?: string } }
+  props: { searchParams: Promise<{ path?: string }> }
 ): Promise<Metadata> {
 
     const baseMetadata: Metadata = {
@@ -14,7 +14,7 @@ export async function generateMetadata(
     }
   };
   
-  const searchParams = await Promise.resolve(props.searchParams);
+  const searchParams = await props.searchParams;
   const path = searchParams.path;
   
   if (path) {
