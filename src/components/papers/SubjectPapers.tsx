@@ -235,7 +235,7 @@ const SubjectPapersView = () => {
         }
       }
     }
-  }, [dataReady, filteredPapers, searchParams]);
+  }, [dataReady, filteredPapers, searchParams, pdfViewerState.isOpen]);
 
   const toggleViewMode = () => {
     setViewMode(prev => (prev === 'grid' ? 'list' : 'grid'));
@@ -427,7 +427,7 @@ const SubjectPapersView = () => {
         }
       }
     }
-  }, [filters, isSelectMode, filteredPapers, ]);
+  }, [filters, isSelectMode, filteredPapers, selectedPapers]);
 
   // Grid view
   const renderGridView = () => (
