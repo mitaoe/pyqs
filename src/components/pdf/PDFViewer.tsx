@@ -39,14 +39,6 @@ export default function PDFViewer({
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Touch zoom state - simplified and more reliable
-  const touchState = useRef({
-    isZooming: false,
-    startDistance: 0,
-    startScale: 1,
-    lastScale: 1
-  });
-
   // Load PDF document
   const loadPDF = useCallback(async () => {
     try {
@@ -115,6 +107,7 @@ export default function PDFViewer({
     if (pdfDoc) {
       setTimeout(() => renderAllPages(), 10);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalPages, pdfDoc]);
 
   // Render all pages - fixed version with proper PDF.js usage
@@ -230,69 +223,13 @@ export default function PDFViewer({
     // Immediate re-render after scale change
     setTimeout(() => {
       console.log('Triggering immediate re-render for scale:', newScale);
-      renderAllPages();
-    }, 10);
-  }, [scale, renderAllPages]);
-
-  // Touch distance calculation
-  const getDistance = (touch1: Touch, touch2: Touch): number => {
-    const dx = touch1.clientX - touch2.clientX;
-    const dy = touch1.clientY - touch2.clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  // Touch event handlers
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    if (e.touches.length === 2) {
-      e.preventDefault();
-      
-      const distance = getDistance(e.touches[0], e.touches[1]);
-      touchState.current = {
-        isZooming: true,
-        startDistance: distance,
-        startScale: scale,
-        lastScale: scale
-      };
-      
-      console.log('Pinch started - distance:', distance, 'scale:', scale);
-    }
-  }, [scale]);
-
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (e.touches.length === 2 && touchState.current.isZooming) {
-      e.preventDefault();
-      
-      const currentDistance = getDistance(e.touches[0], e.touches[1]);
-      
-      if (touchState.current.startDistance > 0) {
-        const ratio = currentDistance / touchState.current.startDistance;
-        const newScale = Math.max(0.5, Math.min(4.0, touchState.current.startScale * ratio));
-        
-        if (Math.abs(newScale - touchState.current.lastScale) > 0.05) {
-          console.log('Pinch zoom - new scale:', newScale);
-          handleScaleChange(newScale);
-          touchState.current.lastScale = newScale;
-        }
+      // Call renderAllPages directly instead of through dependency
+      if (pdfDoc && totalPages > 0 && canvasRefs.current.length === totalPages) {
+        renderAllPages();
       }
-    }
-  }, [handleScaleChange]);
-
-  const handleTouchEnd = useCallback((e: TouchEvent) => {    
-    if (e.touches.length < 2) {
-      touchState.current.isZooming = false;
-      console.log('Pinch ended');
-    }
-  }, []);
-
-  // Handle wheel zoom (desktop)
-  const handleWheel = useCallback((e: WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      const newScale = Math.max(0.5, Math.min(4.0, scale + delta));
-      handleScaleChange(newScale);
-    }
-  }, [scale, handleScaleChange]);
+    }, 10);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scale, pdfDoc, totalPages]); // Removed renderAllPages dependency
 
   // Navigation functions
   const goToPrevious = () => {
@@ -362,42 +299,7 @@ export default function PDFViewer({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Touch events
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const options = { passive: false, capture: true };
-    
-    container.addEventListener('touchstart', handleTouchStart, options);
-    container.addEventListener('touchmove', handleTouchMove, options);
-    container.addEventListener('touchend', handleTouchEnd, options);
-    container.addEventListener('wheel', handleWheel, { passive: false });
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-      container.removeEventListener('wheel', handleWheel);
-    };
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd, handleWheel]);
-
-  // Prevent default zoom behaviors
-  useEffect(() => {
-    const preventGestures = (e: Event) => e.preventDefault();
-
-    document.addEventListener('gesturestart', preventGestures, { passive: false });
-    document.addEventListener('gesturechange', preventGestures, { passive: false });
-    document.addEventListener('gestureend', preventGestures, { passive: false });
-
-    return () => {
-      document.removeEventListener('gesturestart', preventGestures);
-      document.removeEventListener('gesturechange', preventGestures);
-      document.removeEventListener('gestureend', preventGestures);
-    };
-  }, []);
-
-  // Prevent body scroll
+  // Prevent body scroll when viewer is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -491,7 +393,7 @@ export default function PDFViewer({
         ref={containerRef}
         style={{
           WebkitOverflowScrolling: 'touch',
-          touchAction: touchState.current.isZooming ? 'none' : 'auto',
+          touchAction: 'auto',
           userSelect: 'none',
           WebkitUserSelect: 'none',
           msUserSelect: 'none',
@@ -527,10 +429,7 @@ export default function PDFViewer({
       {/* Help text */}
       <div className="bg-gray-800 border-t border-gray-700 p-2 text-center">
         <p className="text-xs text-gray-400">
-          {isMobile 
-            ? 'Pinch to zoom • Use +/- buttons • Arrow keys for documents • ESC to close'
-            : 'Ctrl + scroll to zoom • Use +/- buttons • Arrow keys for documents • +/- keys • ESC to close'
-          }
+          Use +/- buttons to zoom • Arrow keys for documents • +/- keys for zoom • ESC to close
         </p>
       </div>
     </div>
