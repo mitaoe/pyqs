@@ -466,7 +466,7 @@ const SubjectPapersView = () => {
                                         {paper.examType}
                                     </span>
                                 </div>
-                                <h3 className="text-sm sm:text-base font-medium text-content truncate sm:text-lg">
+                                <h3 className="text-sm sm:text-lg font-medium text-content truncate">
                                     {paper.fileName}
                                 </h3>
                             </div>
