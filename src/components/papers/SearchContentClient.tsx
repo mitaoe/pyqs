@@ -84,14 +84,14 @@ export default function SearchContentClient() {
                 {!selectedSubject ? (
                     <>
                         {/* Alphabet Navigation */}
-                        <div className="w-full bg-primary px-4 py-6">
-                            <div className="container mx-auto">
+                        <div className="w-full bg-primary px-8 py-8">
+                            <div className="container mx-auto max-w-7xl">
                                 <AlphabetBar />
                             </div>
                         </div>
 
                         {/* Top sticky container: search bar and arrow button side by side */}
-                        <div className="flex items-center gap-3 justify-center px-4 py-3 sticky top-0 z-30">
+                        <div className="flex items-center gap-4 justify-center px-8 py-4 sticky top-0 z-30">
                             <div className="w-full max-w-xl">
                                 <SubjectSearchBox
                                     onSelect={handleSelectSubject}
@@ -101,10 +101,10 @@ export default function SearchContentClient() {
                                 <button
                                     onClick={handleGoUp}
                                     aria-label="Go to top"
-                                    className="p-2 rounded-full bg-secondary shadow-md transition-transform duration-200 hover:scale-105 focus:outline-none"
+                                    className="p-2.5 rounded-full bg-secondary shadow-md transition-transform duration-200 hover:scale-105 focus:outline-none"
                                 >
                                     <ArrowUp
-                                        size={24}
+                                        size={20}
                                         weight="bold"
                                         className="text-content"
                                     />
@@ -113,7 +113,7 @@ export default function SearchContentClient() {
                         </div>
 
                         {/* A-Z Subject listing */}
-                        <div className="container mx-auto px-4 py-6">
+                        <div className="container mx-auto max-w-7xl px-8 py-8">
                             <SubjectAlphabetList />
                         </div>
                     </>

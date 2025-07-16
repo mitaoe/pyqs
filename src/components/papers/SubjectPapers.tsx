@@ -321,7 +321,7 @@ const SubjectPapersView = () => {
 
     // Grid view
     const renderGridView = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
             {filteredPapers.map((paper, index) => (
                 <FadeIn
                     key={`${paper.fileName}-${index}`}
@@ -344,16 +344,16 @@ const SubjectPapersView = () => {
                         <div className="mb-4">
                             <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-start gap-2 flex-wrap">
-                                    <span className="px-2 py-1 bg-accent/20 rounded-lg text-xs font-medium">
+                                    <span className="px-2 py-1 bg-accent/20 rounded-md text-xs font-medium">
                                         {paper.year}
                                     </span>
-                                    <span className="px-2 py-1 bg-primary/60 rounded-lg text-xs font-medium">
+                                    <span className="px-2 py-1 bg-primary/60 rounded-md text-xs font-medium">
                                         {paper.examType}
                                     </span>
                                 </div>
                                 {isSelectMode && (
                                     <div
-                                        className={`w-6 h-6 rounded flex items-center justify-center transition-colors duration-200 ${
+                                        className={`w-5 h-5 rounded flex items-center justify-center transition-colors duration-200 ${
                                             selectedPapers[paper.fileName]
                                                 ? "bg-blue-600 text-white"
                                                 : "bg-primary/40 text-content/80"
@@ -361,19 +361,19 @@ const SubjectPapersView = () => {
                                     >
                                         {selectedPapers[paper.fileName] ? (
                                             <CheckSquare
-                                                size={18}
+                                                size={14}
                                                 weight="fill"
                                             />
                                         ) : (
                                             <Square
-                                                size={18}
+                                                size={14}
                                                 weight="regular"
                                             />
                                         )}
                                     </div>
                                 )}
                             </div>
-                            <h3 className="text-base sm:text-lg font-semibold text-content mb-2 line-clamp-2">
+                            <h3 className="text-sm sm:text-base font-medium text-content mb-2 line-clamp-2 leading-tight">
                                 {paper.fileName}
                             </h3>
                         </div>
@@ -384,10 +384,10 @@ const SubjectPapersView = () => {
                                     handleDownload(paper)
                                 }}
                                 disabled={downloadingFile === paper.fileName}
-                                className="mt-auto w-full flex items-center justify-center gap-2 bg-blue-600/70 text-white rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-sm font-medium transition-colors duration-200 hover:bg-blue-500/80 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:opacity-50"
+                                className="mt-auto w-full flex items-center justify-center gap-2 bg-blue-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:opacity-50"
                             >
                                 <Download
-                                    size={18}
+                                    size={16}
                                     weight="duotone"
                                     className={
                                         downloadingFile === paper.fileName
@@ -429,10 +429,10 @@ const SubjectPapersView = () => {
                         }
                         onContextMenu={(e) => e.preventDefault()}
                     >
-                        <div className="flex items-start gap-2 sm:gap-4 max-w-[70%]">
+                        <div className="flex items-center gap-3 sm:gap-4 max-w-[70%]">
                             {isSelectMode ? (
                                 <div
-                                    className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-colors duration-200 ${
+                                    className={`w-5 h-5 flex-shrink-0 rounded flex items-center justify-center transition-colors duration-200 ${
                                         selectedPapers[paper.fileName]
                                             ? "bg-blue-600 text-white"
                                             : "bg-primary/40 text-content/80"
@@ -443,30 +443,30 @@ const SubjectPapersView = () => {
                                     }}
                                 >
                                     {selectedPapers[paper.fileName] ? (
-                                        <CheckSquare size={16} weight="fill" />
+                                        <CheckSquare size={14} weight="fill" />
                                     ) : (
-                                        <Square size={16} weight="regular" />
+                                        <Square size={14} weight="regular" />
                                     )}
                                 </div>
                             ) : (
-                                <div className="hidden sm:flex h-10 w-10 sm:h-12 sm:w-12 min-w-10 sm:min-w-12 items-center justify-center rounded-xl bg-primary/60">
+                                <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-lg bg-primary/60 flex-shrink-0">
                                     <FileText
-                                        size={24}
+                                        size={20}
                                         weight="duotone"
                                         className="text-content/80"
                                     />
                                 </div>
                             )}
-                            <div className="flex flex-col overflow-hidden">
-                                <div className="flex flex-wrap gap-1 sm:gap-2 mb-1">
-                                    <span className="px-1.5 sm:px-2 py-0.5 bg-accent/20 rounded-lg text-xs font-medium whitespace-nowrap">
+                            <div className="flex flex-col overflow-hidden min-w-0">
+                                <div className="flex flex-wrap gap-2 mb-1">
+                                    <span className="px-2 py-0.5 bg-accent/20 rounded-md text-xs font-medium whitespace-nowrap">
                                         {paper.year}
                                     </span>
-                                    <span className="px-1.5 sm:px-2 py-0.5 bg-primary/60 rounded-lg text-xs font-medium whitespace-nowrap">
+                                    <span className="px-2 py-0.5 bg-primary/60 rounded-md text-xs font-medium whitespace-nowrap">
                                         {paper.examType}
                                     </span>
                                 </div>
-                                <h3 className="text-sm sm:text-lg font-medium text-content truncate">
+                                <h3 className="text-sm sm:text-base font-medium text-content truncate">
                                     {paper.fileName}
                                 </h3>
                             </div>
@@ -478,10 +478,10 @@ const SubjectPapersView = () => {
                                     handleDownload(paper)
                                 }}
                                 disabled={downloadingFile === paper.fileName}
-                                className="flex items-center gap-1 sm:gap-2 bg-blue-600/70 text-white rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors duration-200 hover:bg-blue-500/80 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:opacity-50 ml-2 sm:ml-4"
+                                className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:opacity-50 flex-shrink-0"
                             >
                                 <Download
-                                    size={18}
+                                    size={16}
                                     weight="duotone"
                                     className={
                                         downloadingFile === paper.fileName
@@ -943,12 +943,12 @@ const SubjectPapersView = () => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-6 sm:py-8 relative">
+        <div className="container mx-auto max-w-7xl px-8 py-6 sm:py-8 relative">
             {/* Sticky header with Back button, subject title, and action buttons */}
-            <div className="sticky top-0 z-20 bg-secondary/60 backdrop-blur-2xl backdrop-saturate-150 px-3 sm:px-4 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-lg supports-[backdrop-filter]:bg-secondary/30">
+            <div className="sticky top-0 z-20 bg-secondary/60 backdrop-blur-2xl backdrop-saturate-150 px-4 sm:px-5 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-lg supports-[backdrop-filter]:bg-secondary/30">
                 {/* Top row: Back button, subject title, selection toggle, filter toggle */}
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
-                    <div className="flex items-center gap-2 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
+                    <div className="flex items-center gap-3 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
                         <button
                             onClick={() => router.push("/papers")}
                             className="p-2 sm:p-2.5 rounded-lg bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
@@ -962,7 +962,7 @@ const SubjectPapersView = () => {
 
                         {/* Selected count badge - moved up to the main title area for better visibility */}
                         {isSelectMode && selectedPapersCount > 0 && (
-                            <span className="ml-1 text-sm bg-blue-600/70 text-white font-medium rounded-full px-2.5 py-1 shadow-sm">
+                            <span className="ml-2 text-xs bg-blue-600/70 text-white font-medium rounded-full px-2.5 py-1 shadow-sm">
                                 {selectedPapersCount}
                             </span>
                         )}
@@ -982,9 +982,9 @@ const SubjectPapersView = () => {
                             }
                         >
                             {isSelectMode ? (
-                                <X size={18} weight="bold" />
+                                <X size={16} weight="bold" />
                             ) : (
-                                <CheckSquare size={18} weight="bold" />
+                                <CheckSquare size={16} weight="bold" />
                             )}
                         </button>
 
@@ -999,7 +999,7 @@ const SubjectPapersView = () => {
                                 aria-label="Show filters"
                             >
                                 <Funnel
-                                    size={18}
+                                    size={16}
                                     weight={isAnyFilterActive ? "fill" : "bold"}
                                 />
                             </button>
