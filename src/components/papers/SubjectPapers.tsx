@@ -943,7 +943,7 @@ const SubjectPapersView = () => {
     }
 
     return (
-        <div className="container mx-auto max-w-7xl px-8 py-6 sm:py-8 relative">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative">
             {/* Sticky header with Back button, subject title, and action buttons */}
             <div className="sticky top-0 z-20 bg-secondary/60 backdrop-blur-2xl backdrop-saturate-150 px-4 sm:px-5 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-lg supports-[backdrop-filter]:bg-secondary/30">
                 {/* Top row: Back button, subject title, selection toggle, filter toggle */}
@@ -1091,7 +1091,7 @@ const SubjectPapersView = () => {
                     </div>
 
                     {/* View toggle slider for desktop */}
-                    <div className="hidden md:flex items-center p-1 bg-primary/40 rounded-lg">
+                    <div className="hidden md:flex items-center p-1 bg-primary/40 rounded-lg space-x-1">
                         <button
                             onClick={() => setViewMode("grid")}
                             className={`p-1.5 rounded-md transition-colors ${

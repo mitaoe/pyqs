@@ -47,7 +47,7 @@ export const AlphabetBar = () => {
     }
 
     return (
-        <div className="w-full mx-auto max-w-6xl">
+        <div className="w-full mx-auto">
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                 {ALPHABET.map((letter) => (
                     <button
@@ -60,10 +60,10 @@ export const AlphabetBar = () => {
                         onMouseLeave={() => setHoverLetter(null)}
                         className={`
               flex items-center justify-center rounded-lg font-medium transition-all duration-300 ease-out
-              h-9 w-9 text-sm
-              sm:h-10 sm:w-10 sm:text-base
-              md:h-10 md:w-10 md:text-base
-              lg:h-10 lg:w-10 lg:text-base
+              h-10 w-10 text-base
+              sm:h-11 sm:w-11 sm:text-lg
+              md:h-11 md:w-11 md:text-lg
+              lg:h-11 lg:w-11 lg:text-lg
               ${
                   availableLetters.has(letter)
                       ? activeSection === letter
@@ -119,9 +119,9 @@ const SubjectAlphabetList = () => {
     }
 
     return (
-        <div className="w-full max-w-6xl mx-auto">
+        <div className="w-full mx-auto">
             {/* Subject Sections */}
-            <div className="space-y-20">
+            <div className="space-y-16">
                 {ALPHABET.map((letter) => {
                     if (!subjectsByLetter[letter]?.length) return null
 
@@ -135,13 +135,13 @@ const SubjectAlphabetList = () => {
                             transition={{ duration: 0.3 }}
                         >
                             <div className="flex items-center mb-6">
-                                <h2 className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-blue-600/70 text-lg sm:text-xl font-bold text-white shadow-md">
+                                <h2 className="flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-lg bg-blue-600/70 text-xl sm:text-2xl font-bold text-white shadow-md">
                                     {letter}
                                 </h2>
                                 <div className="h-px flex-1 bg-blue-400/40 ml-4"></div>
                             </div>
 
-                            <div className="grid gap-x-6 gap-y-4 sm:gap-x-8 sm:gap-y-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            <div className="grid gap-x-6 gap-y-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                 {subjectsByLetter[letter]?.map(
                                     (subject, index) => (
                                         <motion.div
@@ -161,7 +161,7 @@ const SubjectAlphabetList = () => {
                                                             subject
                                                         )
                                                     }
-                                                    className="text-left py-2 px-2 text-content group-hover:text-content/80 transition-colors duration-200 w-full text-sm sm:text-base font-medium"
+                                                    className="text-left py-2.5 px-2.5 text-content group-hover:text-content/80 transition-colors duration-200 w-full text-base sm:text-lg font-medium"
                                                 >
                                                     {subject}
                                                 </button>

@@ -84,15 +84,15 @@ export default function SearchContentClient() {
                 {!selectedSubject ? (
                     <>
                         {/* Alphabet Navigation */}
-                        <div className="w-full bg-primary px-8 py-8">
-                            <div className="container mx-auto max-w-7xl">
+                        <div className="w-full bg-primary py-6 sm:py-8">
+                            <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                                 <AlphabetBar />
                             </div>
                         </div>
 
                         {/* Top sticky container: search bar and arrow button side by side */}
-                        <div className="flex items-center gap-4 justify-center px-8 py-4 sticky top-0 z-30">
-                            <div className="w-full max-w-xl">
+                        <div className="flex items-center gap-4 justify-center px-4 sm:px-6 lg:px-8 py-4 sticky top-0 z-30">
+                            <div className="w-full max-w-2xl">
                                 <SubjectSearchBox
                                     onSelect={handleSelectSubject}
                                 />
@@ -113,7 +113,7 @@ export default function SearchContentClient() {
                         </div>
 
                         {/* A-Z Subject listing */}
-                        <div className="container mx-auto max-w-7xl px-8 py-8">
+                        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                             <SubjectAlphabetList />
                         </div>
                     </>

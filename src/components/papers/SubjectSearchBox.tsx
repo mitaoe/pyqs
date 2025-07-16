@@ -111,13 +111,13 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={handleKeyDown}
                     placeholder="Search for subjects..."
-                    className="w-full h-12 rounded-full border border-accent bg-secondary py-3 pl-12 pr-11 text-content placeholder:text-content/60 focus:border-content/40 focus:ring-1 focus:ring-content/40 focus:outline-none transition-all shadow-sm text-base"
+                    className="w-full h-13 rounded-full border border-accent bg-secondary py-3 pl-12 pr-11 text-content placeholder:text-content/60 focus:border-content/40 focus:ring-1 focus:ring-content/40 focus:outline-none transition-all shadow-sm text-lg"
                     aria-label="Search for subjects"
                 />
                 <MagnifyingGlass
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-content/60"
                     weight="bold"
-                    size={20}
+                    size={22}
                 />
                 {searchQuery && (
                     <button
@@ -125,7 +125,7 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-400 focus:outline-none"
                         aria-label="Clear search"
                     >
-                        <XCircle size={20} weight="fill" />
+                        <XCircle size={22} weight="fill" />
                     </button>
                 )}
             </div>
