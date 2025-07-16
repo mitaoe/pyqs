@@ -58,7 +58,29 @@ const SubjectPapersView = () => {
     })
     const [batchDownloadProgress, setBatchDownloadProgress] =
         useState<BatchDownloadProgress | null>(null)
+    const [showSelectTuto, setShowSelectTuto] = useState(false)
     const previousSubjectRef = useRef<string | null>(null)
+
+    useEffect(() => {
+        const hasSeenTuto = sessionStorage.getItem("hasSeenSelectMultipleTuto")
+        if (!hasSeenTuto) {
+            const timer = setTimeout(() => {
+                setShowSelectTuto(true)
+            }, 1500) // Show after 1.5 seconds
+            return () => clearTimeout(timer)
+        }
+    }, [])
+
+    const handleDismissTuto = () => {
+        setShowSelectTuto(false)
+        sessionStorage.setItem("hasSeenSelectMultipleTuto", "true")
+    }
+
+    // Temporary debug function to test notification
+    const forceShowTuto = () => {
+        sessionStorage.removeItem("hasSeenSelectMultipleTuto")
+        setShowSelectTuto(true)
+    }
 
     const scrollToTop = () => {
         window.scrollTo(0, 0)
@@ -967,7 +989,7 @@ const SubjectPapersView = () => {
                             </span>
                         )}
                     </div>
-                    <div className="hidden sm:flex items-center gap-2 sm:gap-3">
+                    <div className="hidden sm:flex items-center gap-2 sm:gap-3 relative">
                         <button
                             onClick={toggleSelectMode}
                             className={`p-2 sm:p-2.5 rounded-lg transition-colors ${
@@ -987,7 +1009,43 @@ const SubjectPapersView = () => {
                                 <CheckSquare size={16} weight="bold" />
                             )}
                         </button>
+                        {showSelectTuto && (
+                            <FadeIn
+                                duration={0.3}
+                                className="absolute top-full right-0 mt-2 w-72 z-50"
+                            >
+                                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-2xl border-2 border-brand/20 relative">
+                                    {/* Pointer arrow */}
+                                    <div className="absolute -top-2 right-4 w-4 h-4 bg-white dark:bg-gray-800 border-l-2 border-t-2 border-brand/20 transform rotate-45"></div>
 
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 w-8 h-8 bg-brand/10 rounded-full flex items-center justify-center">
+                                            <CheckSquare
+                                                size={16}
+                                                weight="bold"
+                                                className="text-brand"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-content mb-3 leading-relaxed">
+                                                <span className="text-brand font-semibold">
+                                                    Pro Tip:
+                                                </span>{" "}
+                                                Select multiple papers and
+                                                download them all at once for
+                                                convenience!
+                                            </p>
+                                            <button
+                                                onClick={handleDismissTuto}
+                                                className="w-full bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand/90 transition-colors duration-200 shadow-sm"
+                                            >
+                                                Got it!
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </FadeIn>
+                        )}
                         <div className="relative">
                             <button
                                 onClick={() => setShowFilters((prev) => !prev)}
@@ -1038,7 +1096,7 @@ const SubjectPapersView = () => {
                     </div>
 
                     {/* Mobile only action buttons in second row */}
-                    <div className="flex sm:hidden items-center gap-2">
+                    <div className="flex sm:hidden items-center gap-2 relative">
                         <button
                             onClick={toggleSelectMode}
                             className={`p-2 rounded-lg transition-colors ${
@@ -1058,7 +1116,43 @@ const SubjectPapersView = () => {
                                 <CheckSquare size={16} weight="bold" />
                             )}
                         </button>
+                        {showSelectTuto && (
+                            <FadeIn
+                                duration={0.3}
+                                className="absolute top-full right-0 mt-2 w-72 z-50"
+                            >
+                                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-2xl border-2 border-brand/20 relative">
+                                    {/* Pointer arrow */}
+                                    <div className="absolute -top-2 right-4 w-4 h-4 bg-white dark:bg-gray-800 border-l-2 border-t-2 border-brand/20 transform rotate-45"></div>
 
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 w-8 h-8 bg-brand/10 rounded-full flex items-center justify-center">
+                                            <CheckSquare
+                                                size={16}
+                                                weight="bold"
+                                                className="text-brand"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-content mb-3 leading-relaxed">
+                                                <span className="text-brand font-semibold">
+                                                    Pro Tip:
+                                                </span>{" "}
+                                                Select multiple papers and
+                                                download them all at once for
+                                                convenience!
+                                            </p>
+                                            <button
+                                                onClick={handleDismissTuto}
+                                                className="w-full bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand/90 transition-colors duration-200 shadow-sm"
+                                            >
+                                                Got it!
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </FadeIn>
+                        )}
                         <div className="relative">
                             <button
                                 onClick={() => setShowFilters((prev) => !prev)}
