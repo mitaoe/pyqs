@@ -331,7 +331,7 @@ const SubjectPapersView = () => {
                     <div
                         className={`bg-secondary border-2 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-lg h-full ${
                             selectedPapers[paper.fileName]
-                                ? "border-accent shadow-md shadow-accent/20"
+                                ? "border-brand shadow-md shadow-brand/20"
                                 : "border-accent/30 hover:border-accent/50"
                         } ${isSelectMode ? "cursor-pointer" : ""}`}
                         onClick={
@@ -384,7 +384,7 @@ const SubjectPapersView = () => {
                                     handleDownload(paper)
                                 }}
                                 disabled={downloadingFile === paper.fileName}
-                                className="mt-auto w-full flex items-center justify-center gap-2 bg-blue-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:opacity-50"
+                                className="mt-auto w-full flex items-center justify-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50"
                             >
                                 <Download
                                     size={16}
@@ -419,7 +419,7 @@ const SubjectPapersView = () => {
                     <div
                         className={`flex items-center justify-between bg-secondary border-2 rounded-xl p-3 sm:p-4 transition-all duration-300 hover:shadow-md ${
                             selectedPapers[paper.fileName]
-                                ? "border-accent shadow-sm shadow-accent/20"
+                                ? "border-brand shadow-sm shadow-brand/20"
                                 : "border-accent/30 hover:border-accent/50"
                         } ${isSelectMode ? "cursor-pointer" : ""}`}
                         onClick={
@@ -434,7 +434,7 @@ const SubjectPapersView = () => {
                                 <div
                                     className={`w-5 h-5 flex-shrink-0 rounded flex items-center justify-center transition-colors duration-200 ${
                                         selectedPapers[paper.fileName]
-                                            ? "bg-blue-600 text-white"
+                                            ? "bg-brand text-white"
                                             : "bg-primary/40 text-content/80"
                                     }`}
                                     onClick={(e) => {
@@ -478,7 +478,7 @@ const SubjectPapersView = () => {
                                     handleDownload(paper)
                                 }}
                                 disabled={downloadingFile === paper.fileName}
-                                className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:opacity-50 flex-shrink-0"
+                                className="flex items-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 flex-shrink-0"
                             >
                                 <Download
                                     size={16}
@@ -527,14 +527,14 @@ const SubjectPapersView = () => {
         if (!showFilters) return null
 
         return (
-            <div className="absolute right-0 top-full mt-2 bg-secondary border border-accent/30 rounded-xl shadow-lg p-4 z-30 w-64">
+            <div className="absolute right-0 top-full mt-2 bg-secondary border border-accent/50 rounded-xl shadow-lg p-4 z-30 w-64">
                 <div className="flex justify-between items-center mb-3">
                     <h3 className="text-sm font-medium text-content">
                         Filters
                     </h3>
                     <button
                         onClick={() => setShowFilters(false)}
-                        className="text-content/60 hover:text-content p-1"
+                        className="text-content/60 hover:text-brand p-1"
                         aria-label="Close filters"
                     >
                         <X size={16} weight="bold" />
@@ -551,10 +551,10 @@ const SubjectPapersView = () => {
                             <button
                                 key={year}
                                 onClick={() => toggleFilterItem("years", year)}
-                                className={`px-2 py-1 text-xs rounded-lg ${
+                                className={`px-2 py-1 text-xs rounded-md ${
                                     filters.years.includes(year)
-                                        ? "bg-blue-600/70 text-white"
-                                        : "bg-blue-400/30 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white"
+                                        ? "bg-brand text-white"
+                                        : "bg-secondary hover:bg-brand/10 hover:text-brand"
                                 }`}
                             >
                                 {year}
@@ -575,10 +575,10 @@ const SubjectPapersView = () => {
                                 onClick={() =>
                                     toggleFilterItem("examTypes", examType)
                                 }
-                                className={`px-2 py-1 text-xs rounded-lg ${
+                                className={`px-2 py-1 text-xs rounded-md ${
                                     filters.examTypes.includes(examType)
-                                        ? "bg-blue-600/70 text-white"
-                                        : "bg-blue-400/30 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white"
+                                        ? "bg-brand text-white"
+                                        : "bg-secondary hover:bg-brand/10 hover:text-brand"
                                 }`}
                             >
                                 {examType}
@@ -590,7 +590,7 @@ const SubjectPapersView = () => {
                 {isAnyFilterActive && (
                     <button
                         onClick={clearFilters}
-                        className="w-full text-xs bg-blue-400/40 hover:bg-blue-500/60 hover:text-white text-blue-900 dark:text-blue-100 py-1.5 rounded-lg transition-colors"
+                        className="w-full text-xs bg-secondary hover:bg-brand/10 hover:text-brand py-1.5 rounded-md transition-colors"
                     >
                         Clear All Filters
                     </button>
@@ -602,15 +602,15 @@ const SubjectPapersView = () => {
     // Fallback if no papers match the subject
     if (!filteredPapers.length) {
         return (
-            <div className="container mx-auto px-4 py-6 sm:py-8 relative">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative">
                 {/* Sticky header with Back button, subject title, and action buttons */}
-                <div className="sticky top-0 z-20 bg-secondary/60 backdrop-blur-2xl backdrop-saturate-150 px-3 sm:px-4 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-lg supports-[backdrop-filter]:bg-secondary/30">
+                <div className="sticky top-0 z-20 bg-primary/80 backdrop-blur-md px-4 sm:px-5 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-sm border border-accent/50">
                     {/* Top row: Back button, subject title, selection toggle, filter toggle */}
                     <div className="flex items-center justify-between mb-2 sm:mb-3">
-                        <div className="flex items-center gap-2 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
+                        <div className="flex items-center gap-3 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
                             <button
                                 onClick={() => router.push("/papers")}
-                                className="p-2 sm:p-2.5 rounded-lg bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+                                className="p-2 sm:p-2.5 rounded-lg bg-secondary text-content/80 transition-colors hover:text-brand"
                                 aria-label="Back to Subjects"
                             >
                                 <ArrowLeft size={18} weight="bold" />
@@ -625,15 +625,15 @@ const SubjectPapersView = () => {
                                     onClick={() =>
                                         setShowFilters((prev) => !prev)
                                     }
-                                    className={`p-2 sm:p-2.5 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                                    className={`p-2 sm:p-2.5 rounded-lg transition-colors ${
                                         isAnyFilterActive || showFilters
-                                            ? "bg-blue-600/70 text-white hover:bg-blue-500/80 focus:ring-blue-400/40"
-                                            : "bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white focus:ring-blue-400/40"
+                                            ? "bg-brand text-white"
+                                            : "bg-secondary text-content/80 hover:text-brand"
                                     }`}
                                     aria-label="Show filters"
                                 >
                                     <Funnel
-                                        size={18}
+                                        size={16}
                                         weight={
                                             isAnyFilterActive ? "fill" : "bold"
                                         }
@@ -659,10 +659,10 @@ const SubjectPapersView = () => {
                                     onClick={() =>
                                         setShowFilters((prev) => !prev)
                                     }
-                                    className={`p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                                    className={`p-2 rounded-lg transition-colors ${
                                         isAnyFilterActive || showFilters
-                                            ? "bg-blue-600/70 text-white hover:bg-blue-500/80 focus:ring-blue-400/40"
-                                            : "bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white focus:ring-blue-400/40"
+                                            ? "bg-brand text-white"
+                                            : "bg-secondary text-content/80 hover:text-brand"
                                     }`}
                                     aria-label="Show filters"
                                 >
@@ -802,7 +802,7 @@ const SubjectPapersView = () => {
                                 className={`h-full ${
                                     batchDownloadProgress.status === "error"
                                         ? "bg-red-500"
-                                        : "bg-accent"
+                                        : "bg-brand"
                                 } transition-all duration-300`}
                                 style={{ width: `${getProgressPercentage()}%` }}
                             ></div>
@@ -870,7 +870,7 @@ const SubjectPapersView = () => {
                                         )
                                     }, 300)
                                 }}
-                                className="bg-accent text-content px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-accent/90 focus:outline-none"
+                                className="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none"
                             >
                                 Try Again
                             </button>
@@ -945,13 +945,13 @@ const SubjectPapersView = () => {
     return (
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative">
             {/* Sticky header with Back button, subject title, and action buttons */}
-            <div className="sticky top-0 z-20 bg-secondary/60 backdrop-blur-2xl backdrop-saturate-150 px-4 sm:px-5 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-lg supports-[backdrop-filter]:bg-secondary/30">
+            <div className="sticky top-0 z-20 bg-primary/80 backdrop-blur-md px-4 sm:px-5 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-sm border border-accent/50">
                 {/* Top row: Back button, subject title, selection toggle, filter toggle */}
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                     <div className="flex items-center gap-3 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
                         <button
                             onClick={() => router.push("/papers")}
-                            className="p-2 sm:p-2.5 rounded-lg bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+                            className="p-2 sm:p-2.5 rounded-lg bg-secondary text-content/80 transition-colors hover:text-brand"
                             aria-label="Back to Subjects"
                         >
                             <ArrowLeft size={18} weight="bold" />
@@ -962,7 +962,7 @@ const SubjectPapersView = () => {
 
                         {/* Selected count badge - moved up to the main title area for better visibility */}
                         {isSelectMode && selectedPapersCount > 0 && (
-                            <span className="ml-2 text-xs bg-blue-600/70 text-white font-medium rounded-full px-2.5 py-1 shadow-sm">
+                            <span className="ml-2 text-xs bg-brand text-white font-medium rounded-full px-2.5 py-1 shadow-sm">
                                 {selectedPapersCount}
                             </span>
                         )}
@@ -970,10 +970,10 @@ const SubjectPapersView = () => {
                     <div className="hidden sm:flex items-center gap-2 sm:gap-3">
                         <button
                             onClick={toggleSelectMode}
-                            className={`p-2 sm:p-2.5 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                            className={`p-2 sm:p-2.5 rounded-lg transition-colors ${
                                 isSelectMode
-                                    ? "bg-blue-600/70 text-white hover:bg-blue-500/80 focus:ring-blue-400/40"
-                                    : "bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white focus:ring-blue-400/40"
+                                    ? "bg-brand text-white"
+                                    : "bg-secondary text-content/80 hover:text-brand"
                             }`}
                             aria-label={
                                 isSelectMode
@@ -991,10 +991,10 @@ const SubjectPapersView = () => {
                         <div className="relative">
                             <button
                                 onClick={() => setShowFilters((prev) => !prev)}
-                                className={`p-2 sm:p-2.5 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                                className={`p-2 sm:p-2.5 rounded-lg transition-colors ${
                                     isAnyFilterActive || showFilters
-                                        ? "bg-blue-600/70 text-white hover:bg-blue-500/80 focus:ring-blue-400/40"
-                                        : "bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white focus:ring-blue-400/40"
+                                        ? "bg-brand text-white"
+                                        : "bg-secondary text-content/80 hover:text-brand"
                                 }`}
                                 aria-label="Show filters"
                             >
@@ -1014,7 +1014,7 @@ const SubjectPapersView = () => {
                         {isSelectMode ? (
                             <button
                                 onClick={toggleAllPapers}
-                                className="text-sm text-content/80 hover:text-content flex items-center gap-1.5 py-1"
+                                className="text-sm text-content/80 hover:text-brand flex items-center gap-1.5 py-1"
                             >
                                 {selectedPapersCount ===
                                     filteredPapers.length &&
@@ -1041,10 +1041,10 @@ const SubjectPapersView = () => {
                     <div className="flex sm:hidden items-center gap-2">
                         <button
                             onClick={toggleSelectMode}
-                            className={`p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                            className={`p-2 rounded-lg transition-colors ${
                                 isSelectMode
-                                    ? "bg-blue-600/70 text-white hover:bg-blue-500/80 focus:ring-blue-400/40"
-                                    : "bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white focus:ring-blue-400/40"
+                                    ? "bg-brand text-white"
+                                    : "bg-secondary text-content/80 hover:text-brand"
                             }`}
                             aria-label={
                                 isSelectMode
@@ -1062,10 +1062,10 @@ const SubjectPapersView = () => {
                         <div className="relative">
                             <button
                                 onClick={() => setShowFilters((prev) => !prev)}
-                                className={`p-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+                                className={`p-2 rounded-lg transition-colors ${
                                     isAnyFilterActive || showFilters
-                                        ? "bg-blue-600/70 text-white hover:bg-blue-500/80 focus:ring-blue-400/40"
-                                        : "bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white focus:ring-blue-400/40"
+                                        ? "bg-brand text-white"
+                                        : "bg-secondary text-content/80 hover:text-brand"
                                 }`}
                                 aria-label="Show filters"
                             >
@@ -1079,7 +1079,7 @@ const SubjectPapersView = () => {
 
                         <button
                             onClick={toggleViewMode}
-                            className="p-2 rounded-lg bg-primary/60 text-content hover:bg-primary/70 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                            className="p-2 rounded-lg bg-secondary text-content/80 transition-colors hover:text-brand"
                             aria-label="Toggle view mode"
                         >
                             {viewMode === "grid" ? (
@@ -1091,13 +1091,13 @@ const SubjectPapersView = () => {
                     </div>
 
                     {/* View toggle slider for desktop */}
-                    <div className="hidden md:flex items-center p-1 bg-primary/40 rounded-lg space-x-1">
+                    <div className="hidden md:flex items-center p-1 bg-secondary rounded-lg space-x-1">
                         <button
                             onClick={() => setViewMode("grid")}
                             className={`p-1.5 rounded-md transition-colors ${
                                 viewMode === "grid"
-                                    ? "bg-blue-600/70 text-white"
-                                    : "text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white"
+                                    ? "bg-brand text-white"
+                                    : "text-content/80 hover:text-brand"
                             }`}
                             aria-label="Grid view"
                         >
@@ -1112,8 +1112,8 @@ const SubjectPapersView = () => {
                             onClick={() => setViewMode("list")}
                             className={`p-1.5 rounded-md transition-colors ${
                                 viewMode === "list"
-                                    ? "bg-blue-600/70 text-white"
-                                    : "text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white"
+                                    ? "bg-brand text-white"
+                                    : "text-content/80 hover:text-brand"
                             }`}
                             aria-label="List view"
                         >
@@ -1138,7 +1138,7 @@ const SubjectPapersView = () => {
                 <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
                     <button
                         onClick={handleBatchDownload}
-                        className="bg-blue-600 text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-xl backdrop-blur-sm transition-colors duration-200 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/40 flex items-center gap-2 border border-blue-500/30"
+                        className="bg-brand text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-xl backdrop-blur-sm transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 flex items-center gap-2 border border-brand/30"
                     >
                         {selectedPapersCount === 1 ? (
                             <Download size={20} weight="duotone" />

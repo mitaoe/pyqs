@@ -83,6 +83,15 @@ export default function SearchContentClient() {
             <div className="min-h-screen bg-primary text-content">
                 {!selectedSubject ? (
                     <>
+                        <div className="text-center py-12">
+                            <h1 className="text-4xl font-bold tracking-tight text-content sm:text-5xl">
+                                Find Your Papers
+                            </h1>
+                            <p className="mt-4 text-lg text-content/70">
+                                Your one-stop destination for all previous year
+                                question papers.
+                            </p>
+                        </div>
                         {/* Alphabet Navigation */}
                         <div className="w-full bg-primary py-6 sm:py-8">
                             <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

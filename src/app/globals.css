@@ -5,40 +5,43 @@
 @layer base {
     :root {
         --primary: 0 0% 100%;
-        --secondary: 0 0% 96.1%;
-        --accent: 0 0% 87.8%;
-        --content: 0 0% 12.9%;
+        --secondary: 0 0% 98%;
+        --accent: 0 0% 90%;
+        --content: 0 0% 15%;
+        --brand: 217 91% 60%;
     }
 
     .dark {
-        --primary: 0 0% 7.1%;
-        --secondary: 0 0% 11.8%;
-        --accent: 240 2.3% 26.3%;
-        --content: 0 0% 87.8%;
+        --primary: 0 0% 8%;
+        --secondary: 0 0% 12%;
+        --accent: 0 0% 20%;
+        --content: 0 0% 90%;
+        --brand: 217 91% 65%;
     }
 }
 
 body {
     color: hsl(var(--content));
     background-color: hsl(var(--primary));
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: "Inter", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 ::-webkit-scrollbar {
-    width: 10px;
+    width: 12px;
 }
 
 ::-webkit-scrollbar-track {
-    background: theme("colors.primary");
+    background: hsl(var(--secondary));
 }
 
 ::-webkit-scrollbar-thumb {
-    background: theme("colors.accent");
-    border-radius: 5px;
+    background: hsl(var(--accent));
+    border-radius: 6px;
+    border: 3px solid hsl(var(--secondary));
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: theme("colors.content");
+    background: hsl(var(--brand));
 }

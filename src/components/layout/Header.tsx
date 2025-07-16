@@ -28,11 +28,11 @@ export default function Header() {
     }, [popupRef])
 
     return (
-        <header className="sticky top-0 z-50 border-b border-accent bg-primary">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <header className="sticky top-0 z-50 border-b border-accent/50 bg-primary/80 backdrop-blur-md">
+            <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
                 <Link
                     href="/"
-                    className="text-xl font-bold tracking-tight text-content hover:text-content/80"
+                    className="text-xl font-bold tracking-tight text-content transition-colors hover:text-brand"
                 >
                     <span className="ml-1 text-content">MITAoE PYQs</span>
                 </Link>
@@ -41,7 +41,7 @@ export default function Header() {
                     <div className="relative" ref={popupRef}>
                         <motion.button
                             onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                            className="text-content/80 transition-colors hover:text-content flex items-center justify-center"
+                            className="text-content/80 transition-colors hover:text-brand flex items-center justify-center"
                             aria-label="Open settings"
                             animate={{ rotate: isSettingsOpen ? 90 : 0 }}
                             transition={{ duration: 0.2 }}
@@ -54,7 +54,7 @@ export default function Header() {
                         href="https://github.com/mitaoe/pyqs"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-content/80 transition-colors hover:text-content flex items-center justify-center"
+                        className="text-content/80 transition-colors hover:text-brand flex items-center justify-center"
                         aria-label="View source on GitHub"
                     >
                         <FaGithub className="h-6 w-6" />

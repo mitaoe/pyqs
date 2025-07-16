@@ -67,11 +67,11 @@ export const AlphabetBar = () => {
               ${
                   availableLetters.has(letter)
                       ? activeSection === letter
-                          ? "bg-blue-600/70 text-white shadow-md ring-2 ring-blue-500/50"
+                          ? "bg-brand text-white shadow-md ring-2 ring-brand/50"
                           : hoverLetter === letter
-                          ? "bg-blue-500/60 text-white border border-blue-400/60 shadow-sm"
-                          : "bg-blue-400/40 text-blue-900 dark:text-blue-100 hover:bg-blue-500/60 hover:text-white hover:border hover:border-blue-400/60 hover:shadow-sm"
-                      : "cursor-default opacity-40 bg-secondary/30"
+                          ? "bg-brand/10 text-brand border border-brand/20 shadow-sm"
+                          : "bg-secondary text-content/80 hover:bg-brand/10 hover:text-brand"
+                      : "cursor-default opacity-40 bg-secondary/80"
               }
             `}
                         disabled={!availableLetters.has(letter)}
@@ -135,10 +135,10 @@ const SubjectAlphabetList = () => {
                             transition={{ duration: 0.3 }}
                         >
                             <div className="flex items-center mb-6">
-                                <h2 className="flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-lg bg-blue-600/70 text-xl sm:text-2xl font-bold text-white shadow-md">
+                                <h2 className="flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-lg bg-brand text-xl sm:text-2xl font-bold text-white shadow-md">
                                     {letter}
                                 </h2>
-                                <div className="h-px flex-1 bg-blue-400/40 ml-4"></div>
+                                <div className="h-px flex-1 bg-accent/50 ml-4"></div>
                             </div>
 
                             <div className="grid gap-x-6 gap-y-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -161,13 +161,13 @@ const SubjectAlphabetList = () => {
                                                             subject
                                                         )
                                                     }
-                                                    className="text-left py-2.5 px-2.5 text-content group-hover:text-content/80 transition-colors duration-200 w-full text-base sm:text-lg font-medium"
+                                                    className="text-left py-2.5 px-2.5 text-content transition-colors duration-200 w-full text-base sm:text-lg font-medium group-hover:text-brand"
                                                 >
                                                     {subject}
                                                 </button>
                                                 {/* Animated underline limited to text width */}
-                                                <div className="absolute bottom-0 left-0 w-full h-[1px] overflow-hidden">
-                                                    <div className="w-full h-full bg-content/60 transform translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
+                                                <div className="absolute bottom-0 left-0 w-full h-[1.5px] overflow-hidden">
+                                                    <div className="w-full h-full bg-brand transform translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
                                                 </div>
                                             </div>
                                         </motion.div>

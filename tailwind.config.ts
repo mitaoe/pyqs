@@ -14,6 +14,7 @@ const config: Config = {
                 secondary: "hsl(var(--secondary))",
                 accent: "hsl(var(--accent))",
                 content: "hsl(var(--content))",
+                brand: "hsl(var(--brand))",
             },
         },
     },
