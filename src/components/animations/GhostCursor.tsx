@@ -9,9 +9,30 @@ interface GhostCursorProps {
     enabled?: boolean
 }
 
+// Type definitions for Lottie animation data
+interface LottieColorProperty {
+    a: number
+    k: number[]
+    ix: number
+}
+
+interface LottieJSON {
+    v: string
+    fr: number
+    ip: number
+    op: number
+    w: number
+    h: number
+    nm: string
+    ddd: number
+    assets: unknown[]
+    layers: unknown[]
+    [key: string]: unknown
+}
+
 export default function GhostCursor({ enabled = true }: GhostCursorProps) {
     const [isClient, setIsClient] = useState(false)
-    const [animationData, setAnimationData] = useState(null)
+    const [animationData, setAnimationData] = useState<LottieJSON | null>(null)
     const cursorRef = useRef<HTMLDivElement>(null)
     const { theme, resolvedTheme } = useTheme()
 
@@ -31,11 +52,16 @@ export default function GhostCursor({ enabled = true }: GhostCursorProps) {
     })
 
     // Function to modify animation colors based on theme
-    const modifyAnimationColors = (originalData: any, isDarkMode: boolean) => {
+    const modifyAnimationColors = (
+        originalData: LottieJSON,
+        isDarkMode: boolean
+    ): LottieJSON | null => {
         if (!originalData) return null
 
         // Create a deep copy of the animation data
-        const modifiedData = JSON.parse(JSON.stringify(originalData))
+        const modifiedData = JSON.parse(
+            JSON.stringify(originalData)
+        ) as LottieJSON
 
         // Define colors based on theme
         const ghostBodyColor = isDarkMode ? [1, 1, 1, 1] : [0.25, 0.25, 0.25, 1] // white for dark mode, darker gray for light mode
@@ -50,7 +76,7 @@ export default function GhostCursor({ enabled = true }: GhostCursorProps) {
             : [0.4, 0.4, 0.4, 1] // light gray for dark mode, darker gray for light mode
 
         // Function to recursively find and update colors
-        const updateColors = (obj: any) => {
+        const updateColors = (obj: unknown): void => {
             if (typeof obj !== "object" || obj === null) return
 
             if (Array.isArray(obj)) {
@@ -58,47 +84,58 @@ export default function GhostCursor({ enabled = true }: GhostCursorProps) {
                 return
             }
 
+            const item = obj as Record<string, unknown>
+
             // Update fill colors
-            if (obj.ty === "fl" && obj.c && obj.c.k) {
-                // Check if this is the main ghost body (white fill)
-                if (JSON.stringify(obj.c.k) === JSON.stringify([1, 1, 1, 1])) {
-                    obj.c.k = ghostBodyColor
-                }
-                // Check if this is the eyes fill (light gray)
-                else if (
-                    JSON.stringify(obj.c.k) ===
-                    JSON.stringify([
-                        0.945098099054, 0.949019667682, 0.949019667682, 1,
-                    ])
-                ) {
-                    obj.c.k = eyesFillColor
-                }
-                // Check if this is the shadow fill
-                else if (
-                    JSON.stringify(obj.c.k) ===
-                    JSON.stringify([
-                        0.862745157878, 0.866666726505, 0.870588295133, 1,
-                    ])
-                ) {
-                    obj.c.k = shadowColor
+            if (item.ty === "fl" && item.c && typeof item.c === "object") {
+                const colorProp = item.c as LottieColorProperty
+                if (colorProp.k && Array.isArray(colorProp.k)) {
+                    // Check if this is the main ghost body (white fill)
+                    if (
+                        JSON.stringify(colorProp.k) ===
+                        JSON.stringify([1, 1, 1, 1])
+                    ) {
+                        colorProp.k = ghostBodyColor
+                    }
+                    // Check if this is the eyes fill (light gray)
+                    else if (
+                        JSON.stringify(colorProp.k) ===
+                        JSON.stringify([
+                            0.945098099054, 0.949019667682, 0.949019667682, 1,
+                        ])
+                    ) {
+                        colorProp.k = eyesFillColor
+                    }
+                    // Check if this is the shadow fill
+                    else if (
+                        JSON.stringify(colorProp.k) ===
+                        JSON.stringify([
+                            0.862745157878, 0.866666726505, 0.870588295133, 1,
+                        ])
+                    ) {
+                        colorProp.k = shadowColor
+                    }
                 }
             }
 
             // Update stroke colors
-            if (obj.ty === "st" && obj.c && obj.c.k) {
-                if (
-                    JSON.stringify(obj.c.k) ===
-                    JSON.stringify([
-                        0.43529411764705883, 0.43529411764705883,
-                        0.43529411764705883, 1,
-                    ])
-                ) {
-                    obj.c.k = strokeColor
+            if (item.ty === "st" && item.c && typeof item.c === "object") {
+                const colorProp = item.c as LottieColorProperty
+                if (colorProp.k && Array.isArray(colorProp.k)) {
+                    if (
+                        JSON.stringify(colorProp.k) ===
+                        JSON.stringify([
+                            0.43529411764705883, 0.43529411764705883,
+                            0.43529411764705883, 1,
+                        ])
+                    ) {
+                        colorProp.k = strokeColor
+                    }
                 }
             }
 
             // Recursively process all properties
-            Object.values(obj).forEach(updateColors)
+            Object.values(item).forEach(updateColors)
         }
 
         updateColors(modifiedData)
@@ -129,7 +166,7 @@ export default function GhostCursor({ enabled = true }: GhostCursorProps) {
 
             try {
                 const response = await fetch("/animations/cursor.json")
-                const originalData = await response.json()
+                const originalData = (await response.json()) as LottieJSON
 
                 // Use resolvedTheme to get the actual current theme
                 const isDarkMode = resolvedTheme === "dark"
