@@ -76,12 +76,6 @@ const SubjectPapersView = () => {
         sessionStorage.setItem("hasSeenSelectMultipleTuto", "true")
     }
 
-    // Temporary debug function to test notification
-    const forceShowTuto = () => {
-        sessionStorage.removeItem("hasSeenSelectMultipleTuto")
-        setShowSelectTuto(true)
-    }
-
     const scrollToTop = () => {
         window.scrollTo(0, 0)
 
