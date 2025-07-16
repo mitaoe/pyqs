@@ -57,7 +57,6 @@ export default function Header() {
                         className="text-content/80 transition-colors hover:text-content flex items-center justify-center"
                         aria-label="View source on GitHub"
                     >
-                        {/* ahh so i have deleted the svg file and replaced it with the react-icons/fa */}
                         <FaGithub className="h-6 w-6" />
                     </a>
                 </div>

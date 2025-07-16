@@ -353,9 +353,9 @@ const SubjectPapersView = () => {
                                 </div>
                                 {isSelectMode && (
                                     <div
-                                        className={`w-6 h-6 rounded flex items-center justify-center ${
+                                        className={`w-6 h-6 rounded flex items-center justify-center transition-colors duration-200 ${
                                             selectedPapers[paper.fileName]
-                                                ? "bg-accent text-primary"
+                                                ? "bg-blue-600 text-white"
                                                 : "bg-primary/40 text-content/80"
                                         }`}
                                     >
@@ -432,9 +432,9 @@ const SubjectPapersView = () => {
                         <div className="flex items-start gap-2 sm:gap-4 max-w-[70%]">
                             {isSelectMode ? (
                                 <div
-                                    className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center ${
+                                    className={`w-6 h-6 flex-shrink-0 rounded flex items-center justify-center transition-colors duration-200 ${
                                         selectedPapers[paper.fileName]
-                                            ? "bg-accent text-primary"
+                                            ? "bg-blue-600 text-white"
                                             : "bg-primary/40 text-content/80"
                                     }`}
                                     onClick={(e) => {
@@ -1138,7 +1138,7 @@ const SubjectPapersView = () => {
                 <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
                     <button
                         onClick={handleBatchDownload}
-                        className="bg-blue-600/70 text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-lg transition-colors duration-200 hover:bg-blue-500/80 focus:outline-none focus:ring-2 focus:ring-blue-400/40 flex items-center gap-2"
+                        className="bg-blue-600 text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-xl backdrop-blur-sm transition-colors duration-200 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/40 flex items-center gap-2 border border-blue-500/30"
                     >
                         {selectedPapersCount === 1 ? (
                             <Download size={20} weight="duotone" />

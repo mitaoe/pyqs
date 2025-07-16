@@ -16,10 +16,6 @@ const nextConfig: NextConfig = {
             fullUrl: true,
         },
     },
-    experimental: {
-        // Suppress hydration warnings in development
-        suppressHydrationWarning: true,
-    },
 }
 
 export default nextConfig
