@@ -1,29 +1,44 @@
-'use client';
+"use client"
 
-import { useEffect, useState, ReactNode } from 'react';
-import GhostCursor from './animations/GhostCursor';
+import { useEffect, useState, ReactNode } from "react"
+import { ThemeProvider } from "next-themes"
+import { SettingsProvider, useSettings } from "@/contexts/SettingsContext"
+import GhostCursor from "./animations/GhostCursor"
 
 interface ClientProviderProps {
-  children: ReactNode;
-  fallback?: ReactNode;
-  enableGhost?: boolean;
+    children: ReactNode
+    fallback?: ReactNode
 }
 
-export default function ClientProvider({ 
-  children, 
-  fallback = null,
-  enableGhost = true
+function App({ children }: { children: ReactNode }) {
+    const { cursorStyle } = useSettings()
+    return (
+        <>
+            {children}
+            {cursorStyle === "ghost" && <GhostCursor />}
+        </>
+    )
+}
+
+export default function ClientProvider({
+    children,
+    fallback = null,
 }: ClientProviderProps) {
-  const [isClient, setIsClient] = useState(false);
-  
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-  
-  return (
-    <>
-      {isClient ? children : fallback}
-      {enableGhost && <GhostCursor />}
-    </>
-  );
-} 
+    const [isClient, setIsClient] = useState(false)
+
+    useEffect(() => {
+        setIsClient(true)
+    }, [])
+
+    if (!isClient) {
+        return <>{fallback}</>
+    }
+
+    return (
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+            <SettingsProvider>
+                <App>{children}</App>
+            </SettingsProvider>
+        </ThemeProvider>
+    )
+}
