@@ -62,18 +62,34 @@ const SubjectPapersView = () => {
     const previousSubjectRef = useRef<string | null>(null)
 
     useEffect(() => {
-        const hasSeenTuto = sessionStorage.getItem("hasSeenSelectMultipleTuto")
-        if (!hasSeenTuto) {
+        try {
+            const hasSeenTuto = localStorage.getItem(
+                "papers_select_tutorial_seen"
+            )
+            if (!hasSeenTuto) {
+                const timer = setTimeout(() => {
+                    setShowSelectTuto(true)
+                }, 1500) // Show after 1.5 seconds
+                return () => clearTimeout(timer)
+            }
+        } catch (error) {
+            console.warn("Failed to read from localStorage:", error)
+            // Fallback: show tutorial if localStorage fails
             const timer = setTimeout(() => {
                 setShowSelectTuto(true)
-            }, 1500) // Show after 1.5 seconds
+            }, 1500)
             return () => clearTimeout(timer)
         }
     }, [])
 
     const handleDismissTuto = () => {
         setShowSelectTuto(false)
-        sessionStorage.setItem("hasSeenSelectMultipleTuto", "true")
+        try {
+            localStorage.setItem("papers_select_tutorial_seen", "true")
+        } catch (error) {
+            console.warn("Failed to save to localStorage:", error)
+            // Continue without saving - tutorial will show again next time
+        }
     }
 
     const scrollToTop = () => {
@@ -1006,22 +1022,22 @@ const SubjectPapersView = () => {
                         {showSelectTuto && (
                             <FadeIn
                                 duration={0.3}
-                                className="absolute top-full right-0 mt-2 w-72 z-50"
+                                className="absolute top-full right-7 mt-2 w-60 z-50"
                             >
-                                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-2xl border-2 border-brand/20 relative">
+                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border-2 border-brand/20 relative">
                                     {/* Pointer arrow */}
-                                    <div className="absolute -top-2 right-4 w-4 h-4 bg-white dark:bg-gray-800 border-l-2 border-t-2 border-brand/20 transform rotate-45"></div>
+                                    <div className="absolute -top-2 right-7 w-4 h-4 bg-white dark:bg-gray-800 border-l-2 border-t-2 border-brand/20 transform rotate-45"></div>
 
-                                    <div className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-8 h-8 bg-brand/10 rounded-full flex items-center justify-center">
+                                    <div className="flex items-start gap-2">
+                                        <div className="flex-shrink-0 w-6 h-6 bg-brand/10 rounded-full flex items-center justify-center">
                                             <CheckSquare
-                                                size={16}
+                                                size={14}
                                                 weight="bold"
                                                 className="text-brand"
                                             />
                                         </div>
                                         <div className="flex-1">
-                                            <p className="text-sm font-medium text-content mb-3 leading-relaxed">
+                                            <p className="text-xs font-medium text-content mb-2 leading-relaxed">
                                                 <span className="text-brand font-semibold">
                                                     Pro Tip:
                                                 </span>{" "}
@@ -1031,7 +1047,7 @@ const SubjectPapersView = () => {
                                             </p>
                                             <button
                                                 onClick={handleDismissTuto}
-                                                className="w-full bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand/90 transition-colors duration-200 shadow-sm"
+                                                className="w-full bg-brand text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-brand/90 transition-colors duration-200 shadow-sm"
                                             >
                                                 Got it!
                                             </button>
@@ -1113,22 +1129,22 @@ const SubjectPapersView = () => {
                         {showSelectTuto && (
                             <FadeIn
                                 duration={0.3}
-                                className="absolute top-full right-0 mt-2 w-72 z-50"
+                                className="absolute top-full right-12 mt-2 w-60 z-50"
                             >
-                                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-2xl border-2 border-brand/20 relative">
+                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border-2 border-brand/20 relative">
                                     {/* Pointer arrow */}
-                                    <div className="absolute -top-2 right-4 w-4 h-4 bg-white dark:bg-gray-800 border-l-2 border-t-2 border-brand/20 transform rotate-45"></div>
+                                    <div className="absolute -top-2 right-10 w-4 h-4 bg-white dark:bg-gray-800 border-l-2 border-t-2 border-brand/20 transform rotate-45"></div>
 
-                                    <div className="flex items-start gap-3">
-                                        <div className="flex-shrink-0 w-8 h-8 bg-brand/10 rounded-full flex items-center justify-center">
+                                    <div className="flex items-start gap-2">
+                                        <div className="flex-shrink-0 w-6 h-6 bg-brand/10 rounded-full flex items-center justify-center">
                                             <CheckSquare
-                                                size={16}
+                                                size={14}
                                                 weight="bold"
                                                 className="text-brand"
                                             />
                                         </div>
                                         <div className="flex-1">
-                                            <p className="text-sm font-medium text-content mb-3 leading-relaxed">
+                                            <p className="text-xs font-medium text-content mb-2 leading-relaxed">
                                                 <span className="text-brand font-semibold">
                                                     Pro Tip:
                                                 </span>{" "}
@@ -1138,7 +1154,7 @@ const SubjectPapersView = () => {
                                             </p>
                                             <button
                                                 onClick={handleDismissTuto}
-                                                className="w-full bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand/90 transition-colors duration-200 shadow-sm"
+                                                className="w-full bg-brand text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-brand/90 transition-colors duration-200 shadow-sm"
                                             >
                                                 Got it!
                                             </button>
