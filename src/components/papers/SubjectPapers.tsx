@@ -25,20 +25,6 @@ import { Paper } from "@/types/paper"
 import FadeIn from "@/components/animations/FadeIn"
 import { toast } from "sonner"
 
-// Utility function to trim redundant URL paths
-const trimRedundantUrlPath = (url: string): string => {
-    try {
-        const urlParts = url.split("/")
-        const uniqueParts = urlParts.filter(
-            (part, index, arr) => index === arr.indexOf(part)
-        )
-        return uniqueParts.join("/")
-    } catch (error) {
-        console.error("URL trimming failed:", error)
-        return url
-    }
-}
-
 const SubjectPapersView = () => {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -282,9 +268,7 @@ const SubjectPapersView = () => {
         if (downloadingFile) return
         setDownloadingFile(paper.fileName)
         try {
-            // Trim the redundant URL path before downloading
-            const trimmedUrl = trimRedundantUrlPath(paper.url)
-            await downloadFile(trimmedUrl, paper.fileName)
+            await downloadFile(paper.url, paper.fileName)
         } catch (error) {
             console.error("Download failed:", error)
         } finally {
@@ -927,9 +911,7 @@ const SubjectPapersView = () => {
                     `Downloading ${paper.fileName}...`
                 )
 
-                // Trim the redundant URL path before downloading
-                const trimmedUrl = trimRedundantUrlPath(paper.url)
-                const success = await downloadFile(trimmedUrl, paper.fileName)
+                const success = await downloadFile(paper.url, paper.fileName)
 
                 // Dismiss the loading toast
                 toast.dismiss(toastId)

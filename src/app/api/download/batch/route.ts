@@ -3,20 +3,6 @@ import JSZip from 'jszip';
 import { Paper } from '@/types/paper';
 import mime from 'mime-types';
 
-// Utility to trim redundant URL paths
-const trimRedundantUrlPath = (url: string): string => {
-  try {
-    const urlParts = url.split('/');
-    const uniqueParts = urlParts.filter((part, index, arr) => 
-      index === arr.indexOf(part)
-    );
-    return uniqueParts.join('/');
-  } catch (error) {
-    console.error('URL trimming failed:', error);
-    return url;
-  }
-};
-
 async function fetchPaperContent(url: string): Promise<ArrayBuffer | null> {
   try {
     const response = await fetch(url, {
@@ -96,11 +82,8 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < papers.length; i++) {
       const paper = papers[i];
       try {
-        // Trim URL if needed
-        const trimmedUrl = trimRedundantUrlPath(paper.url);
-        
         // Fetch the paper content
-        const arrayBuffer = await fetchPaperContent(trimmedUrl);
+        const arrayBuffer = await fetchPaperContent(paper.url);
         
         if (!arrayBuffer) {
           errorCount++;
@@ -189,4 +172,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

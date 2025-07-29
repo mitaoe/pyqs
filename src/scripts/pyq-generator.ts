@@ -128,7 +128,7 @@ async function fetchDirectory(urlStr: string): Promise<DirectoryItem[]> {
 
         if (response.ok) {
             const html = await response.text();
-            return parseDirectoryListing(html, urlStr);
+            return parseDirectoryListing(html, fullUrl);
         } else {
             log(
                 "ERROR",
@@ -1047,7 +1047,7 @@ async function extractMetadata(
 
         const metadata: Paper = {
             fileName,
-            url: BASE_URL + filePath,
+            url: filePath,
             year,
             semester,
             branch,
@@ -1075,10 +1075,9 @@ async function extractMetadata(
             filePath,
             error: error instanceof Error ? error.message : "Unknown error",
         });
-
         return {
             fileName,
-            url: BASE_URL + filePath,
+            url: filePath,
             year: "Unknown",
             semester: "Unknown",
             branch: "Unknown",

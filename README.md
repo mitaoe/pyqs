@@ -64,6 +64,11 @@ cp .env.example .env
 # Generate question papers data for local development
 pnpm pyq-gen
 
+# Note: During data generation, you may see 400 errors for E&TC directories in the terminal.
+# These specific errors are normal and can be safely ignored. If you encounter other errors,
+# please create an issue on GitHub. After completion, check your MongoDB database to
+# confirm that the data has been generated.
+
 # Run development server
 pnpm dev
 
