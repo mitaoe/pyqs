@@ -158,7 +158,7 @@ export default function PDFPreviewModal({
     }
   }, [tool]);
 
-  // Touch event handlers for mobile
+  // Optimized touch event handlers for mobile performance
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
       if (tool === "hand" && e.touches.length === 1) {
@@ -171,7 +171,7 @@ export default function PDFPreviewModal({
             y: containerRef.current.scrollTop,
           });
         }
-        e.preventDefault();
+        // Don't prevent default to allow native scrolling optimization
       }
     },
     [tool]
@@ -189,9 +189,13 @@ export default function PDFPreviewModal({
         const deltaX = touch.clientX - dragStart.x;
         const deltaY = touch.clientY - dragStart.y;
 
-        containerRef.current.scrollLeft = scrollStart.x - deltaX;
-        containerRef.current.scrollTop = scrollStart.y - deltaY;
-        e.preventDefault();
+        // Use requestAnimationFrame for smoother scrolling
+        requestAnimationFrame(() => {
+          if (containerRef.current) {
+            containerRef.current.scrollLeft = scrollStart.x - deltaX;
+            containerRef.current.scrollTop = scrollStart.y - deltaY;
+          }
+        });
       }
     },
     [isDragging, tool, dragStart, scrollStart]
@@ -234,17 +238,6 @@ export default function PDFPreviewModal({
     });
     renderTasks.current.clear();
     renderingPages.current.clear();
-  }, []);
-
-  // Throttled render function for performance
-  const throttledRenderPage = useCallback((pageNum: number) => {
-    if (scrollTimeout.current) {
-      clearTimeout(scrollTimeout.current);
-    }
-
-    scrollTimeout.current = setTimeout(() => {
-      renderPage(pageNum);
-    }, 100); // 100ms delay to avoid excessive renders during scroll
   }, []);
 
   // Render a specific PDF page
@@ -332,40 +325,34 @@ export default function PDFPreviewModal({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        // Throttle intersection observer updates for performance
-        if (isScrolling.current) return;
+        // Simplified intersection observer for reliable page loading
+        const newVisiblePages = new Set<number>();
 
-        isScrolling.current = true;
+        entries.forEach((entry) => {
+          const pageNum = parseInt(
+            entry.target.getAttribute("data-page") || "0"
+          );
 
-        requestAnimationFrame(() => {
-          const newVisiblePages = new Set<number>();
-
-          entries.forEach((entry) => {
-            const pageNum = parseInt(
-              entry.target.getAttribute("data-page") || "0"
-            );
-            if (entry.isIntersecting) {
-              newVisiblePages.add(pageNum);
-              // Render page immediately for responsive zoom
-              renderPage(pageNum);
-            }
-          });
-
-          setVisiblePages(newVisiblePages);
-
-          // Update current page number based on first visible page
-          if (newVisiblePages.size > 0) {
-            const firstVisible = Math.min(...Array.from(newVisiblePages));
-            setPageNumber(firstVisible);
+          if (entry.isIntersecting) {
+            newVisiblePages.add(pageNum);
+            // Render page when it becomes visible
+            renderPage(pageNum);
           }
-
-          isScrolling.current = false;
         });
+
+        // Update state
+        setVisiblePages(newVisiblePages);
+
+        // Update current page number based on first visible page
+        if (newVisiblePages.size > 0) {
+          const firstVisible = Math.min(...Array.from(newVisiblePages));
+          setPageNumber(firstVisible);
+        }
       },
       {
         root: containerRef.current,
-        rootMargin: "200px 0px", // Increased for better mobile performance
-        threshold: [0.1, 0.5], // Multiple thresholds for smoother updates
+        rootMargin: "200px 0px", // Preload pages before they're visible
+        threshold: 0.1,
       }
     );
 
@@ -442,6 +429,7 @@ export default function PDFPreviewModal({
     if (pdfDoc && numPages > 0 && renderedPages.size === 0) {
       // Render first 3 pages initially for better UX
       const initialPages = Math.min(3, numPages);
+
       for (let i = 1; i <= initialPages; i++) {
         setTimeout(() => renderPage(i), i * 100); // Stagger rendering
       }
@@ -746,11 +734,12 @@ export default function PDFPreviewModal({
           onTouchEnd={handleTouchEnd}
           style={{
             WebkitOverflowScrolling: "touch",
-            touchAction: "pan-x pan-y",
-            scrollBehavior: "smooth",
+            touchAction: "pan-y", // Only allow vertical scrolling for better performance
+            scrollBehavior: "auto", // Remove smooth scrolling for better mobile performance
             willChange: "scroll-position",
-            transform: "translateZ(0)", // Force hardware acceleration
+            transform: "translate3d(0, 0, 0)", // Force hardware acceleration
             backfaceVisibility: "hidden",
+            contain: "layout style paint", // CSS containment for better performance
           }}
         >
           <div
@@ -837,11 +826,12 @@ export default function PDFPreviewModal({
                 </div>
               )}
 
-              {/* Render all pages */}
+              {/* Render all pages - simplified approach */}
               {!loading && !error && numPages > 0 && (
                 <div className="space-y-4">
                   {Array.from({ length: numPages }, (_, index) => {
                     const pageNum = index + 1;
+
                     return (
                       <div
                         key={pageNum}
@@ -855,6 +845,7 @@ export default function PDFPreviewModal({
                         style={{
                           minHeight: "400px", // Placeholder height before rendering
                           minWidth: "fit-content",
+                          contain: "layout style paint", // CSS containment for performance
                         }}
                       >
                         <canvas
@@ -869,8 +860,7 @@ export default function PDFPreviewModal({
                             width: "auto",
                             height: "auto",
                             display: "block",
-                            willChange: "transform",
-                            transform: "translateZ(0)",
+                            transform: "translate3d(0, 0, 0)",
                             backfaceVisibility: "hidden",
                           }}
                         />
