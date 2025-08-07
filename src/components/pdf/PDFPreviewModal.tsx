@@ -60,6 +60,7 @@ export default function PDFPreviewModal({
   const [renderedPages, setRenderedPages] = useState<Set<number>>(new Set());
   const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set());
   const [currentScale, setCurrentScale] = useState<number>(1.0);
+  const [internalScale, setInternalScale] = useState<number>(scale || 1.0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -76,6 +77,7 @@ export default function PDFPreviewModal({
   const lastPinchDistance = useRef<number>(0);
   const isZooming = useRef<boolean>(false);
   const zoomCenter = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const currentScaleRef = useRef<number>(scale || 1.0);
 
   // Load PDF.js library
   useEffect(() => {
@@ -90,6 +92,27 @@ export default function PDFPreviewModal({
       document.head.appendChild(script);
     }
   }, []);
+
+  // Sync internal scale with external scale prop
+  useEffect(() => {
+    if (scale && Math.abs(scale - internalScale) > 0.01) {
+      setInternalScale(scale);
+    }
+  }, [scale, internalScale]);
+
+  // Keep currentScaleRef updated with the latest scale value
+  useEffect(() => {
+    const latestScale = internalScale || scale || currentScale || 1.0;
+    currentScaleRef.current = latestScale;
+  }, [internalScale, scale, currentScale]);
+
+  // Initialize scale state when component mounts
+  useEffect(() => {
+    if (!scale && currentScale) {
+      setScale(currentScale);
+      setInternalScale(currentScale);
+    }
+  }, [scale, currentScale, setScale]);
 
   // Hand tool functionality
   const handleMouseDown = useCallback(
@@ -160,14 +183,26 @@ export default function PDFPreviewModal({
       // Clamp scale to reasonable bounds
       const clampedScale = Math.max(0.25, Math.min(5.0, newScale));
 
-      if (clampedScale !== scale) {
+      if (Math.abs(clampedScale - internalScale) > 0.01) {
+        // Use small threshold for comparison
         // Store zoom center for potential scroll adjustment
         if (centerX !== undefined && centerY !== undefined) {
           zoomCenter.current = { x: centerX, y: centerY };
         }
 
-        // Update scale state
+        // Cancel all ongoing renders before starting new ones to prevent canvas conflicts
+        // Cancel renders for all pages to prevent canvas conflicts
+        renderTasks.current.forEach((task) => {
+          task.cancel();
+        });
+        renderTasks.current.clear();
+        renderingPages.current.clear();
+
+        // Update both internal and external scale states
+        setInternalScale(clampedScale);
         setScale(clampedScale);
+        // Update ref immediately for pinch zoom
+        currentScaleRef.current = clampedScale;
 
         // Throttle zoom updates for performance
         if (zoomTimeout.current) {
@@ -181,19 +216,19 @@ export default function PDFPreviewModal({
         isZooming.current = true;
       }
     },
-    [scale, setScale]
+    [internalScale, setScale]
   );
 
   // Zoom functions - updated to use native zoom system
   const handleZoomIn = useCallback(() => {
-    const newScale = Math.min(scale * 1.2, 5.0); // Max 500% (matching native zoom bounds)
+    const newScale = Math.min(internalScale * 1.2, 5.0); // Max 500% (matching native zoom bounds)
     updateZoomScale(newScale);
-  }, [scale, updateZoomScale]);
+  }, [internalScale, updateZoomScale]);
 
   const handleZoomOut = useCallback(() => {
-    const newScale = Math.max(scale / 1.2, 0.25); // Min 25% (matching native zoom bounds)
+    const newScale = Math.max(internalScale / 1.2, 0.25); // Min 25% (matching native zoom bounds)
     updateZoomScale(newScale);
-  }, [scale, updateZoomScale]);
+  }, [internalScale, updateZoomScale]);
 
   const handleZoomActual = useCallback(() => {
     updateZoomScale(1.0);
@@ -264,18 +299,26 @@ export default function PDFPreviewModal({
 
         if (lastPinchDistance.current > 0) {
           const scaleChange = currentDistance / lastPinchDistance.current;
-          const newScale = scale * scaleChange;
+          // Use ref to get the most current scale value (avoids stale closure)
+          const newScale = currentScaleRef.current * scaleChange;
 
-          // Get current pinch center
-          const center = getTouchCenter(e.touches);
-          const rect = containerRef.current?.getBoundingClientRect();
-          if (rect) {
-            const centerX = center.x - rect.left;
-            const centerY = center.y - rect.top;
-            updateZoomScale(newScale, centerX, centerY);
-          } else {
-            updateZoomScale(newScale);
+          // Throttle pinch zoom updates to prevent canvas conflicts on mobile
+          if (zoomTimeout.current) {
+            clearTimeout(zoomTimeout.current);
           }
+
+          zoomTimeout.current = setTimeout(() => {
+            // Get current pinch center
+            const center = getTouchCenter(e.touches);
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (rect) {
+              const centerX = center.x - rect.left;
+              const centerY = center.y - rect.top;
+              updateZoomScale(newScale, centerX, centerY);
+            } else {
+              updateZoomScale(newScale);
+            }
+          }, 16); // ~60fps throttling for smooth mobile performance
         }
 
         lastPinchDistance.current = currentDistance;
@@ -306,7 +349,6 @@ export default function PDFPreviewModal({
       tool,
       dragStart,
       scrollStart,
-      scale,
       getTouchDistance,
       getTouchCenter,
       updateZoomScale,
@@ -327,20 +369,6 @@ export default function PDFPreviewModal({
     },
     [tool]
   );
-
-  // Handle wheel zoom
-  const handleWheel = useCallback((e: WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      setScale((prev) => {
-        const newScale = Math.max(0.1, Math.min(5.0, prev * delta));
-        return Math.round(newScale * 100) / 100; // Round to 2 decimal places
-      });
-    }
-  }, []);
 
   // Cancel rendering for a specific page
   const cancelPageRender = useCallback((pageNum: number) => {
@@ -369,21 +397,27 @@ export default function PDFPreviewModal({
       const canvas = pageRefs.current.get(pageNum);
       if (!canvas) return;
 
+      // Get current scale value (prioritize internalScale for immediate response)
+      const currentScaleValue = internalScale || scale || 1.0;
+
       // Always re-render if scale has changed to prevent zoom reversion
       const lastRenderedScale = pageScales.current.get(pageNum);
       if (
         !forceRender &&
-        lastRenderedScale === scale &&
+        lastRenderedScale === currentScaleValue &&
         renderedPages.has(pageNum)
       ) {
         return; // Already rendered at current scale
       }
 
-      // Cancel any existing render for this page
+      // Cancel any existing render for this page to prevent canvas conflicts
       cancelPageRender(pageNum);
 
-      // Check if already rendering this page
-      if (renderingPages.current.has(pageNum)) return;
+      // Double-check if already rendering this page (race condition protection)
+      if (renderingPages.current.has(pageNum)) {
+        console.warn(`Page ${pageNum} is already being rendered, skipping...`);
+        return;
+      }
 
       // Mark as rendering
       renderingPages.current.add(pageNum);
@@ -397,8 +431,8 @@ export default function PDFPreviewModal({
           return;
         }
 
-        // Use scale directly in viewport for proper canvas sizing
-        const viewport = page.getViewport({ scale });
+        // Use current scale value in viewport for proper canvas sizing
+        const viewport = page.getViewport({ scale: currentScaleValue });
 
         // Set canvas size directly without device pixel ratio complications
         canvas.height = viewport.height;
@@ -424,20 +458,35 @@ export default function PDFPreviewModal({
         // Clean up and mark as rendered
         renderTasks.current.delete(pageNum);
         renderingPages.current.delete(pageNum);
-        pageScales.current.set(pageNum, scale); // Track the scale this page was rendered at
+        pageScales.current.set(pageNum, currentScaleValue); // Track the scale this page was rendered at
         setRenderedPages((prev) => new Set([...prev, pageNum]));
       } catch (err) {
         // Clean up on error
         renderTasks.current.delete(pageNum);
         renderingPages.current.delete(pageNum);
 
-        if ((err as any)?.name !== "RenderingCancelledException") {
-          console.error(`Error rendering page ${pageNum}:`, err);
-          setError(`Failed to render PDF page ${pageNum}`);
+        const errorMessage = (err as any)?.message || "";
+        const errorName = (err as any)?.name || "";
+
+        if (errorName !== "RenderingCancelledException") {
+          // Handle canvas conflicts specifically
+          if (
+            errorMessage.includes("canvas") &&
+            errorMessage.includes("render")
+          ) {
+            console.warn(`Canvas conflict for page ${pageNum}, will retry...`);
+            // Retry after a short delay
+            setTimeout(() => {
+              renderPage(pageNum, true);
+            }, 100);
+          } else {
+            console.error(`Error rendering page ${pageNum}:`, err);
+            setError(`Failed to render PDF page ${pageNum}`);
+          }
         }
       }
     },
-    [pdfDoc, scale, cancelPageRender, renderedPages]
+    [pdfDoc, internalScale, scale, cancelPageRender, renderedPages]
   );
 
   // Intersection Observer for lazy loading
@@ -487,15 +536,19 @@ export default function PDFPreviewModal({
 
   // Immediate scale change handler - no debouncing to prevent zoom reversion
   useEffect(() => {
-    if (scale && visiblePages.size > 0 && currentScale !== scale) {
-      setCurrentScale(scale);
+    const currentScaleValue = internalScale || scale || 1.0;
+    if (
+      visiblePages.size > 0 &&
+      Math.abs(currentScale - currentScaleValue) > 0.01
+    ) {
+      setCurrentScale(currentScaleValue);
 
       // Re-render visible pages at new scale immediately
       visiblePages.forEach((pageNum) => {
         renderPage(pageNum);
       });
     }
-  }, [scale, visiblePages, renderPage, currentScale]);
+  }, [internalScale, scale, visiblePages, renderPage, currentScale]);
 
   // Add wheel event listener for native zoom control
   useEffect(() => {
@@ -509,7 +562,7 @@ export default function PDFPreviewModal({
 
         // Calculate zoom delta
         const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        const newScale = scale + delta;
+        const newScale = internalScale + delta;
 
         // Get mouse position relative to container for zoom center
         const rect = container.getBoundingClientRect();
@@ -526,7 +579,7 @@ export default function PDFPreviewModal({
     return () => {
       container.removeEventListener("wheel", handleWheel);
     };
-  }, [scale, updateZoomScale]);
+  }, [internalScale, updateZoomScale]);
 
   // Load PDF document
   useEffect(() => {
@@ -588,17 +641,6 @@ export default function PDFPreviewModal({
       }
     }
   }, [pdfDoc, numPages, renderedPages, renderPage]);
-
-  // Add wheel event listener for zoom
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener("wheel", handleWheel, { passive: false });
-      return () => {
-        container.removeEventListener("wheel", handleWheel);
-      };
-    }
-  }, [handleWheel]);
 
   // Add keyboard shortcuts
   useEffect(() => {
