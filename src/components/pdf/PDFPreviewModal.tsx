@@ -79,7 +79,7 @@ export default function PDFPreviewModal({
   // Zoom functions
   const handleZoomIn = useCallback(() => {
     setScale((prev) => {
-      const newScale = Math.min(prev * 1.2, 5.0);
+      const newScale = Math.min(prev * 1.2, 3.0); // Max 300%
       return Math.round(newScale * 100) / 100; // Round to 2 decimal places
     });
   }, []);
@@ -92,18 +92,21 @@ export default function PDFPreviewModal({
   }, []);
 
   const handleZoomFit = useCallback(() => {
-    if (canvasRef.current && containerRef.current) {
-      const canvas = canvasRef.current;
+    if (canvasRef.current && containerRef.current && pdfDoc) {
       const container = containerRef.current;
       const containerWidth = container.clientWidth - 80; // padding + margins
       const containerHeight = container.clientHeight - 80;
 
-      const scaleX = containerWidth / canvas.width;
-      const scaleY = containerHeight / canvas.height;
-      const newScale = Math.min(scaleX, scaleY, 2.0);
-      setScale(Math.round(newScale * 100) / 100);
+      // Get the original page dimensions at scale 1.0
+      pdfDoc.getPage(pageNumber).then((page: any) => {
+        const viewport = page.getViewport({ scale: 1.0 });
+        const scaleX = containerWidth / viewport.width;
+        const scaleY = containerHeight / viewport.height;
+        const newScale = Math.min(scaleX, scaleY, 3.0);
+        setScale(Math.round(newScale * 100) / 100);
+      });
     }
-  }, []);
+  }, [pdfDoc, pageNumber]);
 
   const handleZoomActual = useCallback(() => {
     setScale(1.0);
@@ -170,9 +173,15 @@ export default function PDFPreviewModal({
         const canvas = canvasRef.current;
         const context = canvas.getContext("2d");
 
+        if (!context) return;
+
+        // Use scale directly in viewport for proper canvas sizing
         const viewport = page.getViewport({ scale });
         canvas.height = viewport.height;
         canvas.width = viewport.width;
+
+        // Clear canvas before rendering
+        context.clearRect(0, 0, canvas.width, canvas.height);
 
         const renderContext = {
           canvasContext: context,
@@ -374,7 +383,7 @@ export default function PDFPreviewModal({
             <select
               value={Math.round(scale * 100)}
               onChange={(e) => {
-                const newScale = parseInt(e.target.value) / 100;
+                const newScale = Math.min(parseInt(e.target.value) / 100, 3.0);
                 setScale(newScale);
               }}
               className="bg-transparent border-none outline-none px-1 hover:bg-gray-500 appearance-none"
@@ -391,8 +400,6 @@ export default function PDFPreviewModal({
               <option value={150}>150%</option>
               <option value={200}>200%</option>
               <option value={300}>300%</option>
-              <option value={400}>400%</option>
-              <option value={500}>500%</option>
             </select>
           </div>
 
@@ -473,8 +480,6 @@ export default function PDFPreviewModal({
               style={{
                 cursor:
                   tool === "hand" ? (isDragging ? "grabbing" : "grab") : "text",
-                transform: `scale(${scale})`,
-                transformOrigin: "top center",
                 margin: "20px auto",
               }}
             >
