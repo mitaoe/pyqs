@@ -57,10 +57,17 @@ export default function PDFPreviewModal({
     x: 0,
     y: 0,
   });
+  const [renderedPages, setRenderedPages] = useState<Set<number>>(new Set());
+  const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set());
+  const [currentScale, setCurrentScale] = useState<number>(1.0);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
+  const pageRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const pageContainerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const renderTasks = useRef<Map<number, any>>(new Map());
+  const renderingPages = useRef<Set<number>>(new Set());
+  const pageScales = useRef<Map<number, number>>(new Map());
 
   // Load PDF.js library
   useEffect(() => {
@@ -92,7 +99,7 @@ export default function PDFPreviewModal({
   }, []);
 
   const handleZoomFit = useCallback(() => {
-    if (canvasRef.current && containerRef.current && pdfDoc) {
+    if (containerRef.current && pdfDoc) {
       const container = containerRef.current;
       const containerWidth = container.clientWidth - 80; // padding + margins
       const containerHeight = container.clientHeight - 80;
@@ -208,17 +215,60 @@ export default function PDFPreviewModal({
     }
   }, []);
 
-  // Render PDF page
+  // Cancel rendering for a specific page
+  const cancelPageRender = useCallback((pageNum: number) => {
+    const renderTask = renderTasks.current.get(pageNum);
+    if (renderTask) {
+      renderTask.cancel();
+      renderTasks.current.delete(pageNum);
+    }
+    renderingPages.current.delete(pageNum);
+  }, []);
+
+  // Cancel all ongoing renders
+  const cancelAllRenders = useCallback(() => {
+    renderTasks.current.forEach((task, pageNum) => {
+      task.cancel();
+    });
+    renderTasks.current.clear();
+    renderingPages.current.clear();
+  }, []);
+
+  // Render a specific PDF page
   const renderPage = useCallback(
-    async (pageNum: number) => {
-      if (!pdfDoc || !canvasRef.current) return;
+    async (pageNum: number, forceRender: boolean = false) => {
+      if (!pdfDoc) return;
+
+      const canvas = pageRefs.current.get(pageNum);
+      if (!canvas) return;
+
+      // Check if page is already rendered at current scale
+      const lastRenderedScale = pageScales.current.get(pageNum);
+      if (
+        !forceRender &&
+        lastRenderedScale === scale &&
+        renderedPages.has(pageNum)
+      ) {
+        return; // Already rendered at current scale
+      }
+
+      // Cancel any existing render for this page
+      cancelPageRender(pageNum);
+
+      // Check if already rendering this page
+      if (renderingPages.current.has(pageNum)) return;
+
+      // Mark as rendering
+      renderingPages.current.add(pageNum);
 
       try {
         const page = await pdfDoc.getPage(pageNum);
-        const canvas = canvasRef.current;
         const context = canvas.getContext("2d");
 
-        if (!context) return;
+        if (!context) {
+          renderingPages.current.delete(pageNum);
+          return;
+        }
 
         // Use scale directly in viewport for proper canvas sizing
         const viewport = page.getViewport({ scale });
@@ -233,14 +283,84 @@ export default function PDFPreviewModal({
           viewport: viewport,
         };
 
-        await page.render(renderContext).promise;
+        // Start render and store the task
+        const renderTask = page.render(renderContext);
+        renderTasks.current.set(pageNum, renderTask);
+
+        await renderTask.promise;
+
+        // Clean up and mark as rendered
+        renderTasks.current.delete(pageNum);
+        renderingPages.current.delete(pageNum);
+        pageScales.current.set(pageNum, scale); // Track the scale this page was rendered at
+        setRenderedPages((prev) => new Set([...prev, pageNum]));
       } catch (err) {
-        console.error("Error rendering page:", err);
-        setError("Failed to render PDF page");
+        // Clean up on error
+        renderTasks.current.delete(pageNum);
+        renderingPages.current.delete(pageNum);
+
+        if ((err as any)?.name !== "RenderingCancelledException") {
+          console.error(`Error rendering page ${pageNum}:`, err);
+          setError(`Failed to render PDF page ${pageNum}`);
+        }
       }
     },
-    [pdfDoc, scale]
+    [pdfDoc, scale, cancelPageRender, renderedPages]
   );
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (!containerRef.current || numPages === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const newVisiblePages = new Set<number>();
+
+        entries.forEach((entry) => {
+          const pageNum = parseInt(
+            entry.target.getAttribute("data-page") || "0"
+          );
+          if (entry.isIntersecting) {
+            newVisiblePages.add(pageNum);
+            // Render page (renderPage will check if it needs re-rendering)
+            renderPage(pageNum);
+          }
+        });
+
+        setVisiblePages(newVisiblePages);
+
+        // Update current page number based on first visible page
+        if (newVisiblePages.size > 0) {
+          const firstVisible = Math.min(...Array.from(newVisiblePages));
+          setPageNumber(firstVisible);
+        }
+      },
+      {
+        root: containerRef.current,
+        rootMargin: "100px 0px", // Start loading pages 100px before they come into view
+        threshold: 0.1,
+      }
+    );
+
+    // Observe all page containers
+    pageContainerRefs.current.forEach((container) => {
+      if (container) observer.observe(container);
+    });
+
+    return () => observer.disconnect();
+  }, [numPages, renderPage, renderedPages]);
+
+  // Re-render visible pages when scale changes (without clearing state)
+  useEffect(() => {
+    if (scale && visiblePages.size > 0 && currentScale !== scale) {
+      setCurrentScale(scale);
+
+      // Re-render visible pages at new scale (renderPage will check if re-render is needed)
+      visiblePages.forEach((pageNum) => {
+        renderPage(pageNum);
+      });
+    }
+  }, [scale, visiblePages, renderPage, currentScale]);
 
   // Load PDF document
   useEffect(() => {
@@ -261,6 +381,19 @@ export default function PDFPreviewModal({
         setNumPages(pdf.numPages);
         setPageNumber(1);
         setLoading(false);
+
+        // Cancel any ongoing renders
+        cancelAllRenders();
+
+        // Reset state for new document
+        setRenderedPages(new Set());
+        setVisiblePages(new Set());
+        setCurrentScale(scale);
+
+        // Clear existing refs
+        pageRefs.current.clear();
+        pageContainerRefs.current.clear();
+        pageScales.current.clear();
       } catch (err) {
         console.error("Error loading PDF:", err);
         setError("Failed to load PDF");
@@ -269,14 +402,23 @@ export default function PDFPreviewModal({
     };
 
     loadPDF();
-  }, [isOpen, paper]);
 
-  // Render page when page number or scale changes
+    // Cleanup on unmount
+    return () => {
+      cancelAllRenders();
+    };
+  }, [isOpen, paper, cancelAllRenders]);
+
+  // Initial render of first few pages when PDF loads
   useEffect(() => {
-    if (pdfDoc && pageNumber) {
-      renderPage(pageNumber);
+    if (pdfDoc && numPages > 0 && renderedPages.size === 0) {
+      // Render first 3 pages initially for better UX
+      const initialPages = Math.min(3, numPages);
+      for (let i = 1; i <= initialPages; i++) {
+        setTimeout(() => renderPage(i), i * 100); // Stagger rendering
+      }
     }
-  }, [pdfDoc, pageNumber, renderPage]);
+  }, [pdfDoc, numPages, renderedPages, renderPage]);
 
   // Add wheel event listener for zoom
   useEffect(() => {
@@ -321,11 +463,23 @@ export default function PDFPreviewModal({
 
   // Navigation functions
   const goToPrevPage = () => {
-    setPageNumber((prev) => Math.max(prev - 1, 1));
+    const targetPage = Math.max(pageNumber - 1, 1);
+    scrollToPage(targetPage);
   };
 
   const goToNextPage = () => {
-    setPageNumber((prev) => Math.min(prev + 1, numPages));
+    const targetPage = Math.min(pageNumber + 1, numPages);
+    scrollToPage(targetPage);
+  };
+
+  const scrollToPage = (pageNum: number) => {
+    const pageContainer = pageContainerRefs.current.get(pageNum);
+    if (pageContainer && containerRef.current) {
+      pageContainer.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
   };
 
   // Helper functions to check if navigation is possible
@@ -565,27 +719,26 @@ export default function PDFPreviewModal({
           style={{
             WebkitOverflowScrolling: "touch",
             touchAction: "pan-x pan-y",
+            scrollBehavior: "smooth",
           }}
         >
           <div
-            className="inline-block"
+            className="w-full min-h-full flex justify-center"
             style={{
-              minWidth: "100%",
-              minHeight: "100%",
-              padding: "20px",
-              textAlign: "center",
+              padding: "50px",
             }}
           >
             <div
               ref={viewerRef}
-              className="bg-white shadow-lg inline-block"
+              className="flex flex-col items-center"
               style={{
                 cursor:
                   tool === "hand" ? (isDragging ? "grabbing" : "grab") : "text",
+                minWidth: "fit-content",
               }}
             >
               {loading && (
-                <div className="flex flex-col items-center justify-center p-12 min-h-[400px]">
+                <div className="flex flex-col items-center justify-center p-12 min-h-[400px] bg-white shadow-lg rounded-lg">
                   {/* Animated PDF Icon */}
                   <div className="relative mb-6">
                     <div className="w-16 h-20 bg-white rounded-lg shadow-lg border-2 border-gray-200 flex items-center justify-center relative overflow-hidden">
@@ -644,20 +797,50 @@ export default function PDFPreviewModal({
               )}
 
               {error && (
-                <div className="flex items-center justify-center p-8">
+                <div className="flex items-center justify-center p-8 bg-white shadow-lg rounded-lg">
                   <div className="text-red-600">{error}</div>
                 </div>
               )}
 
-              <canvas
-                ref={canvasRef}
-                className="block"
-                style={{
-                  display: loading || error ? "none" : "block",
-                  maxWidth: "none",
-                  height: "auto",
-                }}
-              />
+              {/* Render all pages */}
+              {!loading && !error && numPages > 0 && (
+                <div className="space-y-4">
+                  {Array.from({ length: numPages }, (_, index) => {
+                    const pageNum = index + 1;
+                    return (
+                      <div
+                        key={pageNum}
+                        ref={(el) => {
+                          if (el) {
+                            pageContainerRefs.current.set(pageNum, el);
+                          }
+                        }}
+                        data-page={pageNum}
+                        className="bg-white shadow-lg rounded-lg overflow-hidden"
+                        style={{
+                          minHeight: "400px", // Placeholder height before rendering
+                          minWidth: "fit-content",
+                        }}
+                      >
+                        <canvas
+                          ref={(el) => {
+                            if (el) {
+                              pageRefs.current.set(pageNum, el);
+                            }
+                          }}
+                          className="block"
+                          style={{
+                            maxWidth: "none",
+                            width: "auto",
+                            height: "auto",
+                            display: "block",
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
