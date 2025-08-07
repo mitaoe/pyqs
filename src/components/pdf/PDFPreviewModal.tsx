@@ -190,28 +190,29 @@ export default function PDFPreviewModal({
           zoomCenter.current = { x: centerX, y: centerY };
         }
 
-        // Cancel all ongoing renders before starting new ones to prevent canvas conflicts
-        // Cancel renders for all pages to prevent canvas conflicts
-        renderTasks.current.forEach((task) => {
-          task.cancel();
-        });
-        renderTasks.current.clear();
-        renderingPages.current.clear();
-
-        // Update both internal and external scale states
+        // Update scale states immediately for responsive UI
         setInternalScale(clampedScale);
         setScale(clampedScale);
         // Update ref immediately for pinch zoom
         currentScaleRef.current = clampedScale;
 
-        // Throttle zoom updates for performance
+        // Cancel ongoing renders and throttle re-rendering for performance
         if (zoomTimeout.current) {
           clearTimeout(zoomTimeout.current);
         }
 
+        // Cancel renders only when zoom gesture is active
+        if (isZooming.current) {
+          renderTasks.current.forEach((task) => {
+            task.cancel();
+          });
+          renderTasks.current.clear();
+          renderingPages.current.clear();
+        }
+
         zoomTimeout.current = setTimeout(() => {
           isZooming.current = false;
-        }, 150);
+        }, 100); // Reduced timeout for faster response
 
         isZooming.current = true;
       }
@@ -302,23 +303,16 @@ export default function PDFPreviewModal({
           // Use ref to get the most current scale value (avoids stale closure)
           const newScale = currentScaleRef.current * scaleChange;
 
-          // Throttle pinch zoom updates to prevent canvas conflicts on mobile
-          if (zoomTimeout.current) {
-            clearTimeout(zoomTimeout.current);
+          // Get current pinch center
+          const center = getTouchCenter(e.touches);
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (rect) {
+            const centerX = center.x - rect.left;
+            const centerY = center.y - rect.top;
+            updateZoomScale(newScale, centerX, centerY);
+          } else {
+            updateZoomScale(newScale);
           }
-
-          zoomTimeout.current = setTimeout(() => {
-            // Get current pinch center
-            const center = getTouchCenter(e.touches);
-            const rect = containerRef.current?.getBoundingClientRect();
-            if (rect) {
-              const centerX = center.x - rect.left;
-              const centerY = center.y - rect.top;
-              updateZoomScale(newScale, centerX, centerY);
-            } else {
-              updateZoomScale(newScale);
-            }
-          }, 16); // ~60fps throttling for smooth mobile performance
         }
 
         lastPinchDistance.current = currentDistance;
@@ -434,9 +428,15 @@ export default function PDFPreviewModal({
         // Use current scale value in viewport for proper canvas sizing
         const viewport = page.getViewport({ scale: currentScaleValue });
 
-        // Set canvas size directly without device pixel ratio complications
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        // Optimize canvas size for mobile performance
+        const scaledWidth = viewport.width;
+        const scaledHeight = viewport.height;
+
+        // Set canvas size with optimized scaling for mobile
+        canvas.width = scaledWidth;
+        canvas.height = scaledHeight;
+        canvas.style.width = scaledWidth + "px";
+        canvas.style.height = scaledHeight + "px";
 
         // Reset any previous transforms
         context.setTransform(1, 0, 0, 1, 0, 0);
@@ -475,10 +475,10 @@ export default function PDFPreviewModal({
             errorMessage.includes("render")
           ) {
             console.warn(`Canvas conflict for page ${pageNum}, will retry...`);
-            // Retry after a short delay
-            setTimeout(() => {
+            // Retry immediately with requestAnimationFrame for better mobile performance
+            requestAnimationFrame(() => {
               renderPage(pageNum, true);
-            }, 100);
+            });
           } else {
             console.error(`Error rendering page ${pageNum}:`, err);
             setError(`Failed to render PDF page ${pageNum}`);
@@ -534,7 +534,7 @@ export default function PDFPreviewModal({
     return () => observer.disconnect();
   }, [numPages, renderPage, renderedPages]);
 
-  // Immediate scale change handler - no debouncing to prevent zoom reversion
+  // Optimized scale change handler for mobile performance
   useEffect(() => {
     const currentScaleValue = internalScale || scale || 1.0;
     if (
@@ -543,9 +543,16 @@ export default function PDFPreviewModal({
     ) {
       setCurrentScale(currentScaleValue);
 
-      // Re-render visible pages at new scale immediately
-      visiblePages.forEach((pageNum) => {
-        renderPage(pageNum);
+      // Use requestAnimationFrame for smoother rendering on mobile
+      requestAnimationFrame(() => {
+        // Optimize for mobile: render fewer pages during zoom
+        const isMobile = window.innerWidth <= 768;
+        const maxPages = isMobile ? 2 : 3; // Render fewer pages on mobile
+        const pagesToRender = Array.from(visiblePages).slice(0, maxPages);
+
+        pagesToRender.forEach((pageNum) => {
+          renderPage(pageNum);
+        });
       });
     }
   }, [internalScale, scale, visiblePages, renderPage, currentScale]);
