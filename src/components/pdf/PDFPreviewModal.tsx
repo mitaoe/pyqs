@@ -149,6 +149,51 @@ export default function PDFPreviewModal({
     }
   }, [tool]);
 
+  // Touch event handlers for mobile
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (tool === "hand" && e.touches.length === 1) {
+        const touch = e.touches[0];
+        setIsDragging(true);
+        setDragStart({ x: touch.clientX, y: touch.clientY });
+        if (containerRef.current) {
+          setScrollStart({
+            x: containerRef.current.scrollLeft,
+            y: containerRef.current.scrollTop,
+          });
+        }
+        e.preventDefault();
+      }
+    },
+    [tool]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (
+        isDragging &&
+        tool === "hand" &&
+        containerRef.current &&
+        e.touches.length === 1
+      ) {
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - dragStart.x;
+        const deltaY = touch.clientY - dragStart.y;
+
+        containerRef.current.scrollLeft = scrollStart.x - deltaX;
+        containerRef.current.scrollTop = scrollStart.y - deltaY;
+        e.preventDefault();
+      }
+    },
+    [isDragging, tool, dragStart, scrollStart]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    if (tool === "hand") {
+      setIsDragging(false);
+    }
+  }, [tool]);
+
   // Handle wheel zoom
   const handleWheel = useCallback((e: WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
@@ -327,38 +372,38 @@ export default function PDFPreviewModal({
   return (
     <div className="fixed inset-0 z-50 bg-gray-800" data-pdf-modal>
       {/* PDF.js Toolbar */}
-      <div className="flex h-8 bg-gray-700 text-white text-xs">
+      <div className="flex h-10 sm:h-8 bg-gray-700 text-white text-xs overflow-x-auto whitespace-nowrap">
         {/* Left section */}
-        <div className="flex items-center">
+        <div className="flex items-center flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="px-2 h-full hover:bg-gray-500 flex items-center"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
             title="Toggle Sidebar"
           >
-            <Sidebar size={14} />
+            <Sidebar size={16} className="sm:w-3.5 sm:h-3.5" />
           </button>
 
-          <div className="w-px h-4 bg-gray-500 mx-1" />
+          <div className="w-px h-4 bg-gray-500 mx-1 hidden sm:block" />
 
           <button
             onClick={goToPrevPage}
             disabled={pageNumber <= 1}
-            className="px-2 h-full hover:bg-gray-500 disabled:opacity-50 flex items-center"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 disabled:opacity-50 flex items-center"
             title="Previous Page"
           >
-            <CaretLeft size={14} />
+            <CaretLeft size={16} className="sm:w-3.5 sm:h-3.5" />
           </button>
 
           <button
             onClick={goToNextPage}
             disabled={pageNumber >= numPages}
-            className="px-2 h-full hover:bg-gray-500 disabled:opacity-50 flex items-center"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 disabled:opacity-50 flex items-center"
             title="Next Page"
           >
-            <CaretRight size={14} />
+            <CaretRight size={16} className="sm:w-3.5 sm:h-3.5" />
           </button>
 
-          <div className="flex items-center px-2">
+          <div className="flex items-center px-1 sm:px-2 whitespace-nowrap">
             <input
               type="number"
               value={pageNumber}
@@ -368,30 +413,30 @@ export default function PDFPreviewModal({
                   setPageNumber(page);
                 }
               }}
-              className="w-8 bg-transparent text-center border-none outline-none"
+              className="w-6 sm:w-8 bg-transparent text-center border-none outline-none text-xs"
               min={1}
               max={numPages}
             />
-            <span className="mx-1">of {numPages}</span>
+            <span className="mx-1 text-xs">of {numPages}</span>
           </div>
         </div>
 
         {/* Center section */}
-        <div className="flex items-center flex-1 justify-center">
+        <div className="flex items-center flex-1 justify-center min-w-0">
           <button
             onClick={handleZoomOut}
-            className="px-2 h-full hover:bg-gray-500 flex items-center"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
             title="Zoom Out"
           >
-            <MagnifyingGlassMinus size={14} />
+            <MagnifyingGlassMinus size={16} className="sm:w-3.5 sm:h-3.5" />
           </button>
 
           <button
             onClick={handleZoomIn}
-            className="px-2 h-full hover:bg-gray-500 flex items-center"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
             title="Zoom In"
           >
-            <MagnifyingGlassPlus size={14} />
+            <MagnifyingGlassPlus size={16} className="sm:w-3.5 sm:h-3.5" />
           </button>
 
           <div className="relative">
@@ -401,7 +446,7 @@ export default function PDFPreviewModal({
                 const newScale = Math.min(parseInt(e.target.value) / 100, 3.0);
                 setScale(newScale);
               }}
-              className="bg-transparent border-none outline-none px-1 hover:bg-gray-500 appearance-none"
+              className="bg-transparent border-none outline-none px-1 hover:bg-gray-500 appearance-none text-xs w-12 sm:w-auto"
             >
               <option value={Math.round(scale * 100)}>
                 {Math.round(scale * 100)}%
@@ -418,76 +463,78 @@ export default function PDFPreviewModal({
             </select>
           </div>
 
-          <div className="w-px h-4 bg-gray-500 mx-1" />
+          <div className="w-px h-4 bg-gray-500 mx-1 hidden sm:block" />
 
           <button
             onClick={handleZoomFit}
-            className="px-2 h-full hover:bg-gray-500 text-xs"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 text-xs hidden sm:flex items-center"
             title="Fit to Page"
           >
-            Fit
+            <span className="hidden md:inline">Fit</span>
+            <ArrowsIn size={16} className="md:hidden sm:w-3.5 sm:h-3.5" />
           </button>
 
           <button
             onClick={handleZoomActual}
-            className="px-2 h-full hover:bg-gray-500 text-xs"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 text-xs hidden sm:flex items-center"
             title="Actual Size"
           >
-            Actual
+            <span className="hidden md:inline">Actual</span>
+            <ArrowsOut size={16} className="md:hidden sm:w-3.5 sm:h-3.5" />
           </button>
         </div>
 
         {/* Right section */}
-        <div className="flex items-center">
+        <div className="flex items-center flex-shrink-0">
           {/* PDF Navigation - only show if there are multiple papers */}
           {papers.length > 1 && (
             <>
               <button
                 onClick={goToPrevPaper}
                 disabled={!canGoPrevPaper()}
-                className="px-2 h-full hover:bg-gray-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                 title="Previous PDF"
               >
-                <CaretLeft size={14} />
+                <CaretLeft size={16} className="sm:w-3.5 sm:h-3.5" />
               </button>
 
               <button
                 onClick={goToNextPaper}
                 disabled={!canGoNextPaper()}
-                className="px-2 h-full hover:bg-gray-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                 title="Next PDF"
               >
-                <CaretRight size={14} />
+                <CaretRight size={16} className="sm:w-3.5 sm:h-3.5" />
               </button>
 
-              <div className="w-px h-4 bg-gray-500 mx-1" />
+              <div className="w-px h-4 bg-gray-500 mx-1 hidden sm:block" />
             </>
           )}
 
           <button
             onClick={handleDownload}
-            className="px-2 h-full hover:bg-gray-500 flex items-center"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
             title="Download"
           >
-            <Download size={14} />
+            <Download size={16} className="sm:w-3.5 sm:h-3.5" />
           </button>
 
           <button
             onClick={() => window.print()}
-            className="px-2 h-full hover:bg-gray-500 flex items-center"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 hidden sm:flex items-center"
             title="Print"
           >
-            <Printer size={14} />
+            <Printer size={16} className="sm:w-3.5 sm:h-3.5" />
           </button>
 
           <div className="w-px h-4 bg-gray-500 mx-1" />
 
           <button
             onClick={onClose}
-            className="px-2 h-full hover:bg-gray-500 flex items-center"
+            className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
             title="Close"
           >
-            <X size={14} />
+            <X size={16} className="sm:w-3.5 sm:h-3.5" />
           </button>
         </div>
       </div>
@@ -512,13 +559,20 @@ export default function PDFPreviewModal({
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-x pan-y",
+          }}
         >
           <div
             className="inline-block"
             style={{
               minWidth: "100%",
               minHeight: "100%",
-              padding: "50px",
+              padding: "20px",
               textAlign: "center",
             }}
           >
