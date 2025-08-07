@@ -467,20 +467,27 @@ export default function PDFPreviewModal({
         {/* PDF Viewer */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-auto bg-gray-800 p-4"
+          className="flex-1 overflow-auto bg-gray-800"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
-          <div className="flex justify-center min-h-full">
+          <div
+            className="inline-block"
+            style={{
+              minWidth: "100%",
+              minHeight: "100%",
+              padding: "50px",
+              textAlign: "center",
+            }}
+          >
             <div
               ref={viewerRef}
-              className="bg-white shadow-lg"
+              className="bg-white shadow-lg inline-block"
               style={{
                 cursor:
                   tool === "hand" ? (isDragging ? "grabbing" : "grab") : "text",
-                margin: "20px auto",
               }}
             >
               {loading && (
@@ -553,7 +560,7 @@ export default function PDFPreviewModal({
                 className="block"
                 style={{
                   display: loading || error ? "none" : "block",
-                  maxWidth: "100%",
+                  maxWidth: "none",
                   height: "auto",
                 }}
               />
