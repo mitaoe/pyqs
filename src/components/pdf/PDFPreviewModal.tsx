@@ -71,6 +71,12 @@ export default function PDFPreviewModal({
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const isScrolling = useRef<boolean>(false);
 
+  // Native zoom control refs and state
+  const zoomTimeout = useRef<NodeJS.Timeout | null>(null);
+  const lastPinchDistance = useRef<number>(0);
+  const isZooming = useRef<boolean>(false);
+  const zoomCenter = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   // Load PDF.js library
   useEffect(() => {
     if (typeof window !== "undefined" && !window.pdfjsLib) {
@@ -83,42 +89,6 @@ export default function PDFPreviewModal({
       };
       document.head.appendChild(script);
     }
-  }, []);
-
-  // Zoom functions
-  const handleZoomIn = useCallback(() => {
-    setScale((prev) => {
-      const newScale = Math.min(prev * 1.2, 3.0); // Max 300%
-      return Math.round(newScale * 100) / 100; // Round to 2 decimal places
-    });
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    setScale((prev) => {
-      const newScale = Math.max(prev / 1.2, 0.1);
-      return Math.round(newScale * 100) / 100; // Round to 2 decimal places
-    });
-  }, []);
-
-  const handleZoomFit = useCallback(() => {
-    if (containerRef.current && pdfDoc) {
-      const container = containerRef.current;
-      const containerWidth = container.clientWidth - 80; // padding + margins
-      const containerHeight = container.clientHeight - 80;
-
-      // Get the original page dimensions at scale 1.0
-      pdfDoc.getPage(pageNumber).then((page: any) => {
-        const viewport = page.getViewport({ scale: 1.0 });
-        const scaleX = containerWidth / viewport.width;
-        const scaleY = containerHeight / viewport.height;
-        const newScale = Math.min(scaleX, scaleY, 3.0);
-        setScale(Math.round(newScale * 100) / 100);
-      });
-    }
-  }, [pdfDoc, pageNumber]);
-
-  const handleZoomActual = useCallback(() => {
-    setScale(1.0);
   }, []);
 
   // Hand tool functionality
@@ -158,10 +128,120 @@ export default function PDFPreviewModal({
     }
   }, [tool]);
 
-  // Optimized touch event handlers for mobile performance
+  // Calculate distance between two touch points (React.TouchList compatible)
+  const getTouchDistance = useCallback((touches: React.TouchList) => {
+    if (touches.length < 2) return 0;
+
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+
+    return Math.sqrt(dx * dx + dy * dy);
+  }, []);
+
+  // Get center point between two touches (React.TouchList compatible)
+  const getTouchCenter = useCallback((touches: React.TouchList) => {
+    if (touches.length < 2) return { x: 0, y: 0 };
+
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2,
+    };
+  }, []);
+
+  // Native zoom control functions
+  const updateZoomScale = useCallback(
+    (newScale: number, centerX?: number, centerY?: number) => {
+      // Clamp scale to reasonable bounds
+      const clampedScale = Math.max(0.25, Math.min(5.0, newScale));
+
+      if (clampedScale !== scale) {
+        // Store zoom center for potential scroll adjustment
+        if (centerX !== undefined && centerY !== undefined) {
+          zoomCenter.current = { x: centerX, y: centerY };
+        }
+
+        // Update scale state
+        setScale(clampedScale);
+
+        // Throttle zoom updates for performance
+        if (zoomTimeout.current) {
+          clearTimeout(zoomTimeout.current);
+        }
+
+        zoomTimeout.current = setTimeout(() => {
+          isZooming.current = false;
+        }, 150);
+
+        isZooming.current = true;
+      }
+    },
+    [scale, setScale]
+  );
+
+  // Zoom functions - updated to use native zoom system
+  const handleZoomIn = useCallback(() => {
+    const newScale = Math.min(scale * 1.2, 5.0); // Max 500% (matching native zoom bounds)
+    updateZoomScale(newScale);
+  }, [scale, updateZoomScale]);
+
+  const handleZoomOut = useCallback(() => {
+    const newScale = Math.max(scale / 1.2, 0.25); // Min 25% (matching native zoom bounds)
+    updateZoomScale(newScale);
+  }, [scale, updateZoomScale]);
+
+  const handleZoomActual = useCallback(() => {
+    updateZoomScale(1.0);
+  }, [updateZoomScale]);
+
+  const handleZoomFit = useCallback(() => {
+    if (containerRef.current && pdfDoc) {
+      const container = containerRef.current;
+      const containerWidth = container.clientWidth - 80; // padding + margins
+      const containerHeight = container.clientHeight - 80;
+
+      // Get the original page dimensions at scale 1.0
+      pdfDoc.getPage(pageNumber).then((page: any) => {
+        const viewport = page.getViewport({ scale: 1.0 });
+        const scaleX = containerWidth / viewport.width;
+        const scaleY = containerHeight / viewport.height;
+        const newScale = Math.min(scaleX, scaleY, 5.0); // Updated max to match native zoom bounds
+        updateZoomScale(Math.round(newScale * 100) / 100);
+      });
+    }
+  }, [pdfDoc, pageNumber, updateZoomScale]);
+
+  // Enhanced touch event handlers with pinch zoom support
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
-      if (tool === "hand" && e.touches.length === 1) {
+      if (e.touches.length === 2) {
+        // Two finger pinch zoom
+        const distance = getTouchDistance(e.touches);
+        lastPinchDistance.current = distance;
+        isZooming.current = true;
+
+        // Get pinch center
+        const center = getTouchCenter(e.touches);
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (rect) {
+          zoomCenter.current = {
+            x: center.x - rect.left,
+            y: center.y - rect.top,
+          };
+        }
+
+        e.preventDefault(); // Prevent default pinch behavior
+      } else if (
+        tool === "hand" &&
+        e.touches.length === 1 &&
+        !isZooming.current
+      ) {
+        // Single finger drag (only if not zooming)
         const touch = e.touches[0];
         setIsDragging(true);
         setDragStart({ x: touch.clientX, y: touch.clientY });
@@ -171,20 +251,43 @@ export default function PDFPreviewModal({
             y: containerRef.current.scrollTop,
           });
         }
-        // Don't prevent default to allow native scrolling optimization
       }
     },
-    [tool]
+    [tool, getTouchDistance, getTouchCenter]
   );
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
-      if (
+      if (e.touches.length === 2 && isZooming.current) {
+        // Handle pinch zoom
+        const currentDistance = getTouchDistance(e.touches);
+
+        if (lastPinchDistance.current > 0) {
+          const scaleChange = currentDistance / lastPinchDistance.current;
+          const newScale = scale * scaleChange;
+
+          // Get current pinch center
+          const center = getTouchCenter(e.touches);
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (rect) {
+            const centerX = center.x - rect.left;
+            const centerY = center.y - rect.top;
+            updateZoomScale(newScale, centerX, centerY);
+          } else {
+            updateZoomScale(newScale);
+          }
+        }
+
+        lastPinchDistance.current = currentDistance;
+        e.preventDefault(); // Prevent default pinch behavior
+      } else if (
         isDragging &&
         tool === "hand" &&
         containerRef.current &&
-        e.touches.length === 1
+        e.touches.length === 1 &&
+        !isZooming.current
       ) {
+        // Handle single finger drag (only if not zooming)
         const touch = e.touches[0];
         const deltaX = touch.clientX - dragStart.x;
         const deltaY = touch.clientY - dragStart.y;
@@ -198,14 +301,32 @@ export default function PDFPreviewModal({
         });
       }
     },
-    [isDragging, tool, dragStart, scrollStart]
+    [
+      isDragging,
+      tool,
+      dragStart,
+      scrollStart,
+      scale,
+      getTouchDistance,
+      getTouchCenter,
+      updateZoomScale,
+    ]
   );
 
-  const handleTouchEnd = useCallback(() => {
-    if (tool === "hand") {
-      setIsDragging(false);
-    }
-  }, [tool]);
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 0) {
+        // All fingers lifted - reset zoom state
+        isZooming.current = false;
+        lastPinchDistance.current = 0;
+      }
+
+      if (tool === "hand") {
+        setIsDragging(false);
+      }
+    },
+    [tool]
+  );
 
   // Handle wheel zoom
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -376,6 +497,37 @@ export default function PDFPreviewModal({
     }
   }, [scale, visiblePages, renderPage, currentScale]);
 
+  // Add wheel event listener for native zoom control
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Calculate zoom delta
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const newScale = scale + delta;
+
+        // Get mouse position relative to container for zoom center
+        const rect = container.getBoundingClientRect();
+        const centerX = e.clientX - rect.left;
+        const centerY = e.clientY - rect.top;
+
+        updateZoomScale(newScale, centerX, centerY);
+      }
+    };
+
+    // Use passive: false to allow preventDefault
+    container.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+    };
+  }, [scale, updateZoomScale]);
+
   // Load PDF document
   useEffect(() => {
     if (!isOpen || !paper || !window.pdfjsLib) return;
@@ -421,6 +573,7 @@ export default function PDFPreviewModal({
     return () => {
       cancelAllRenders();
       if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+      if (zoomTimeout.current) clearTimeout(zoomTimeout.current);
     };
   }, [isOpen, paper, cancelAllRenders]);
 
