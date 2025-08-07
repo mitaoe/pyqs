@@ -68,6 +68,8 @@ export default function PDFPreviewModal({
   const renderTasks = useRef<Map<number, any>>(new Map());
   const renderingPages = useRef<Set<number>>(new Set());
   const pageScales = useRef<Map<number, number>>(new Map());
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isScrolling = useRef<boolean>(false);
 
   // Load PDF.js library
   useEffect(() => {
@@ -234,6 +236,17 @@ export default function PDFPreviewModal({
     renderingPages.current.clear();
   }, []);
 
+  // Throttled render function for performance
+  const throttledRenderPage = useCallback((pageNum: number) => {
+    if (scrollTimeout.current) {
+      clearTimeout(scrollTimeout.current);
+    }
+
+    scrollTimeout.current = setTimeout(() => {
+      renderPage(pageNum);
+    }, 100); // 100ms delay to avoid excessive renders during scroll
+  }, []);
+
   // Render a specific PDF page
   const renderPage = useCallback(
     async (pageNum: number, forceRender: boolean = false) => {
@@ -242,7 +255,7 @@ export default function PDFPreviewModal({
       const canvas = pageRefs.current.get(pageNum);
       if (!canvas) return;
 
-      // Check if page is already rendered at current scale
+      // Always re-render if scale has changed to prevent zoom reversion
       const lastRenderedScale = pageScales.current.get(pageNum);
       if (
         !forceRender &&
@@ -272,8 +285,13 @@ export default function PDFPreviewModal({
 
         // Use scale directly in viewport for proper canvas sizing
         const viewport = page.getViewport({ scale });
+
+        // Set canvas size directly without device pixel ratio complications
         canvas.height = viewport.height;
         canvas.width = viewport.width;
+
+        // Reset any previous transforms
+        context.setTransform(1, 0, 0, 1, 0, 0);
 
         // Clear canvas before rendering
         context.clearRect(0, 0, canvas.width, canvas.height);
@@ -314,31 +332,40 @@ export default function PDFPreviewModal({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const newVisiblePages = new Set<number>();
+        // Throttle intersection observer updates for performance
+        if (isScrolling.current) return;
 
-        entries.forEach((entry) => {
-          const pageNum = parseInt(
-            entry.target.getAttribute("data-page") || "0"
-          );
-          if (entry.isIntersecting) {
-            newVisiblePages.add(pageNum);
-            // Render page (renderPage will check if it needs re-rendering)
-            renderPage(pageNum);
+        isScrolling.current = true;
+
+        requestAnimationFrame(() => {
+          const newVisiblePages = new Set<number>();
+
+          entries.forEach((entry) => {
+            const pageNum = parseInt(
+              entry.target.getAttribute("data-page") || "0"
+            );
+            if (entry.isIntersecting) {
+              newVisiblePages.add(pageNum);
+              // Render page immediately for responsive zoom
+              renderPage(pageNum);
+            }
+          });
+
+          setVisiblePages(newVisiblePages);
+
+          // Update current page number based on first visible page
+          if (newVisiblePages.size > 0) {
+            const firstVisible = Math.min(...Array.from(newVisiblePages));
+            setPageNumber(firstVisible);
           }
+
+          isScrolling.current = false;
         });
-
-        setVisiblePages(newVisiblePages);
-
-        // Update current page number based on first visible page
-        if (newVisiblePages.size > 0) {
-          const firstVisible = Math.min(...Array.from(newVisiblePages));
-          setPageNumber(firstVisible);
-        }
       },
       {
         root: containerRef.current,
-        rootMargin: "100px 0px", // Start loading pages 100px before they come into view
-        threshold: 0.1,
+        rootMargin: "200px 0px", // Increased for better mobile performance
+        threshold: [0.1, 0.5], // Multiple thresholds for smoother updates
       }
     );
 
@@ -350,12 +377,12 @@ export default function PDFPreviewModal({
     return () => observer.disconnect();
   }, [numPages, renderPage, renderedPages]);
 
-  // Re-render visible pages when scale changes (without clearing state)
+  // Immediate scale change handler - no debouncing to prevent zoom reversion
   useEffect(() => {
     if (scale && visiblePages.size > 0 && currentScale !== scale) {
       setCurrentScale(scale);
 
-      // Re-render visible pages at new scale (renderPage will check if re-render is needed)
+      // Re-render visible pages at new scale immediately
       visiblePages.forEach((pageNum) => {
         renderPage(pageNum);
       });
@@ -406,6 +433,7 @@ export default function PDFPreviewModal({
     // Cleanup on unmount
     return () => {
       cancelAllRenders();
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     };
   }, [isOpen, paper, cancelAllRenders]);
 
@@ -720,12 +748,19 @@ export default function PDFPreviewModal({
             WebkitOverflowScrolling: "touch",
             touchAction: "pan-x pan-y",
             scrollBehavior: "smooth",
+            willChange: "scroll-position",
+            transform: "translateZ(0)", // Force hardware acceleration
+            backfaceVisibility: "hidden",
           }}
         >
           <div
-            className="w-full min-h-full flex justify-center"
+            className="w-full min-h-full"
             style={{
               padding: "50px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              minWidth: "max-content",
             }}
           >
             <div
@@ -834,6 +869,9 @@ export default function PDFPreviewModal({
                             width: "auto",
                             height: "auto",
                             display: "block",
+                            willChange: "transform",
+                            transform: "translateZ(0)",
+                            backfaceVisibility: "hidden",
                           }}
                         />
                       </div>
