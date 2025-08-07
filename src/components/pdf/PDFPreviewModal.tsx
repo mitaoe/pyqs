@@ -283,6 +283,21 @@ export default function PDFPreviewModal({
     setPageNumber((prev) => Math.min(prev + 1, numPages));
   };
 
+  // Helper functions to check if navigation is possible
+  const canGoPrevPaper = () => {
+    const currentIndex = papers.findIndex(
+      (p) => p.fileName === paper?.fileName
+    );
+    return currentIndex > 0;
+  };
+
+  const canGoNextPaper = () => {
+    const currentIndex = papers.findIndex(
+      (p) => p.fileName === paper?.fileName
+    );
+    return currentIndex < papers.length - 1;
+  };
+
   const goToPrevPaper = () => {
     const currentIndex = papers.findIndex(
       (p) => p.fileName === paper?.fileName
@@ -424,6 +439,31 @@ export default function PDFPreviewModal({
 
         {/* Right section */}
         <div className="flex items-center">
+          {/* PDF Navigation - only show if there are multiple papers */}
+          {papers.length > 1 && (
+            <>
+              <button
+                onClick={goToPrevPaper}
+                disabled={!canGoPrevPaper()}
+                className="px-2 h-full hover:bg-gray-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                title="Previous PDF"
+              >
+                <CaretLeft size={14} />
+              </button>
+
+              <button
+                onClick={goToNextPaper}
+                disabled={!canGoNextPaper()}
+                className="px-2 h-full hover:bg-gray-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                title="Next PDF"
+              >
+                <CaretRight size={14} />
+              </button>
+
+              <div className="w-px h-4 bg-gray-500 mx-1" />
+            </>
+          )}
+
           <button
             onClick={handleDownload}
             className="px-2 h-full hover:bg-gray-500 flex items-center"
