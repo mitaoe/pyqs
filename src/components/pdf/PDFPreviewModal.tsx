@@ -12,10 +12,7 @@ import {
   ArrowsIn,
   List,
   Sidebar,
-  TextAa,
   MagnifyingGlass,
-  Hand,
-  Selection,
   Printer,
 } from "@phosphor-icons/react";
 import { Paper } from "@/types/paper";
@@ -49,8 +46,17 @@ export default function PDFPreviewModal({
   const [error, setError] = useState<string | null>(null);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [scale, setScale] = useState<number>(1.0);
-  const [tool, setTool] = useState<"hand" | "text">("hand");
+  const tool = "hand"; // Always use hand tool
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+  const [scrollStart, setScrollStart] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,6 +108,43 @@ export default function PDFPreviewModal({
   const handleZoomActual = useCallback(() => {
     setScale(1.0);
   }, []);
+
+  // Hand tool functionality
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (tool === "hand") {
+        setIsDragging(true);
+        setDragStart({ x: e.clientX, y: e.clientY });
+        if (containerRef.current) {
+          setScrollStart({
+            x: containerRef.current.scrollLeft,
+            y: containerRef.current.scrollTop,
+          });
+        }
+        e.preventDefault();
+      }
+    },
+    [tool]
+  );
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (isDragging && tool === "hand" && containerRef.current) {
+        const deltaX = e.clientX - dragStart.x;
+        const deltaY = e.clientY - dragStart.y;
+
+        containerRef.current.scrollLeft = scrollStart.x - deltaX;
+        containerRef.current.scrollTop = scrollStart.y - deltaY;
+      }
+    },
+    [isDragging, tool, dragStart, scrollStart]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    if (tool === "hand") {
+      setIsDragging(false);
+    }
+  }, [tool]);
 
   // Handle wheel zoom
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -375,18 +418,6 @@ export default function PDFPreviewModal({
         {/* Right section */}
         <div className="flex items-center">
           <button
-            onClick={() => setTool(tool === "hand" ? "text" : "hand")}
-            className={`px-2 h-full hover:bg-gray-500 flex items-center ${
-              tool === "hand" ? "bg-gray-500" : ""
-            }`}
-            title={tool === "hand" ? "Text Selection Tool" : "Hand Tool"}
-          >
-            {tool === "hand" ? <Hand size={14} /> : <TextAa size={14} />}
-          </button>
-
-          <div className="w-px h-4 bg-gray-500 mx-1" />
-
-          <button
             onClick={handleDownload}
             className="px-2 h-full hover:bg-gray-500 flex items-center"
             title="Download"
@@ -430,13 +461,18 @@ export default function PDFPreviewModal({
         <div
           ref={containerRef}
           className="flex-1 overflow-auto bg-gray-800 p-4"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
         >
           <div className="flex justify-center min-h-full">
             <div
               ref={viewerRef}
               className="bg-white shadow-lg"
               style={{
-                cursor: tool === "hand" ? "grab" : "text",
+                cursor:
+                  tool === "hand" ? (isDragging ? "grabbing" : "grab") : "text",
                 transform: `scale(${scale})`,
                 transformOrigin: "top center",
                 margin: "20px auto",
