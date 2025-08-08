@@ -783,13 +783,7 @@ export default function PDFPreviewModal({
       <div className="flex h-10 sm:h-8 bg-gray-700 text-white text-xs overflow-x-auto whitespace-nowrap">
         {/* Left section */}
         <div className="flex items-center flex-shrink-0">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
-            title="Toggle Sidebar"
-          >
-            <Sidebar size={16} className="sm:w-3.5 sm:h-3.5" />
-          </button>
+          
 
           <div className="w-px h-4 bg-gray-500 mx-1 hidden sm:block" />
 
