@@ -61,6 +61,7 @@ export default function PDFPreviewModal({
   const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set());
   const [currentScale, setCurrentScale] = useState<number>(1.0);
   const [internalScale, setInternalScale] = useState<number>(scale || 1.0);
+  const [hasAutoZoomed, setHasAutoZoomed] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -219,6 +220,41 @@ export default function PDFPreviewModal({
     },
     [internalScale, setScale]
   );
+  useEffect(() => {
+    // Auto-increment scale once after initial rendering is complete
+    if (
+      !loading &&
+      !error &&
+      pdfDoc &&
+      numPages > 0 &&
+      renderedPages.size > 0 &&
+      !hasAutoZoomed
+    ) {
+      // Wait a bit to ensure rendering is stable
+      const autoZoomTimer = setTimeout(() => {
+        const newScale = Math.min(internalScale * 1.2, 5.0); // Increment by 20%
+        updateZoomScale(newScale);
+        setHasAutoZoomed(true); // Prevent multiple auto-zooms
+      }, 500); // 500ms delay to ensure rendering is complete
+
+      return () => clearTimeout(autoZoomTimer);
+    }
+  }, [
+    loading,
+    error,
+    pdfDoc,
+    numPages,
+    renderedPages.size,
+    hasAutoZoomed,
+    internalScale,
+    updateZoomScale,
+  ]);
+
+  useEffect(() => {
+    if (paper) {
+      setHasAutoZoomed(false);
+    }
+  }, [paper]);
 
   // Zoom functions - updated to use native zoom system
   const handleZoomIn = useCallback(() => {
