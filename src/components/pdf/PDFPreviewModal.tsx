@@ -10,18 +10,48 @@ import {
   CaretRight,
   ArrowsOut,
   ArrowsIn,
-  List,
-  Sidebar,
-  MagnifyingGlass,
   Printer,
 } from "@phosphor-icons/react";
 import { Paper } from "@/types/paper";
 import { downloadFile } from "@/utils/download";
 
 // PDF.js types
+// PDF.js types
+interface PDFPageViewport {
+  width: number;
+  height: number;
+}
+
+interface PDFRenderContext {
+  canvasContext: CanvasRenderingContext2D;
+  viewport: PDFPageViewport;
+}
+
+interface PDFRenderTask {
+  promise: Promise<void>;
+  cancel: () => void;
+}
+
+interface PDFPageProxy {
+  getViewport: (params: { scale: number }) => PDFPageViewport;
+  render: (renderContext: PDFRenderContext) => PDFRenderTask;
+}
+
+interface PDFDocumentProxy {
+  numPages: number;
+  getPage: (pageNumber: number) => Promise<PDFPageProxy>;
+}
+
+interface PDFLibrary {
+  getDocument: (url: string) => { promise: Promise<PDFDocumentProxy> };
+  GlobalWorkerOptions: {
+    workerSrc: string;
+  };
+}
+
 declare global {
   interface Window {
-    pdfjsLib: any;
+    pdfjsLib: PDFLibrary;
   }
 }
 
@@ -44,10 +74,9 @@ export default function PDFPreviewModal({
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [scale, setScale] = useState<number>(1.0);
   const tool = "hand"; // Always use hand tool
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({
     x: 0,
@@ -67,11 +96,10 @@ export default function PDFPreviewModal({
   const viewerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const pageContainerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const renderTasks = useRef<Map<number, any>>(new Map());
+  const renderTasks = useRef<Map<number, PDFRenderTask>>(new Map());
   const renderingPages = useRef<Set<number>>(new Set());
   const pageScales = useRef<Map<number, number>>(new Map());
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
-  const isScrolling = useRef<boolean>(false);
 
   // Native zoom control refs and state
   const zoomTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -278,7 +306,7 @@ export default function PDFPreviewModal({
       const containerHeight = container.clientHeight - 80;
 
       // Get the original page dimensions at scale 1.0
-      pdfDoc.getPage(pageNumber).then((page: any) => {
+      pdfDoc.getPage(pageNumber).then((page: PDFPageProxy) => {
         const viewport = page.getViewport({ scale: 1.0 });
         const scaleX = containerWidth / viewport.width;
         const scaleY = containerHeight / viewport.height;
@@ -412,7 +440,7 @@ export default function PDFPreviewModal({
 
   // Cancel all ongoing renders
   const cancelAllRenders = useCallback(() => {
-    renderTasks.current.forEach((task, pageNum) => {
+    renderTasks.current.forEach((task) => {
       task.cancel();
     });
     renderTasks.current.clear();
@@ -501,8 +529,8 @@ export default function PDFPreviewModal({
         renderTasks.current.delete(pageNum);
         renderingPages.current.delete(pageNum);
 
-        const errorMessage = (err as any)?.message || "";
-        const errorName = (err as any)?.name || "";
+        const errorMessage = (err as Error)?.message || "";
+        const errorName = (err as Error)?.name || "";
 
         if (errorName !== "RenderingCancelledException") {
           // Handle canvas conflicts specifically
@@ -668,8 +696,10 @@ export default function PDFPreviewModal({
     // Cleanup on unmount
     return () => {
       cancelAllRenders();
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-      if (zoomTimeout.current) clearTimeout(zoomTimeout.current);
+      const scrollTimeoutRef = scrollTimeout.current;
+      const zoomTimeoutRef = zoomTimeout.current;
+      if (scrollTimeoutRef) clearTimeout(scrollTimeoutRef);
+      if (zoomTimeoutRef) clearTimeout(zoomTimeoutRef);
     };
   }, [isOpen, paper, cancelAllRenders]);
 
@@ -783,8 +813,6 @@ export default function PDFPreviewModal({
       <div className="flex h-10 sm:h-8 bg-gray-700 text-white text-xs overflow-x-auto whitespace-nowrap">
         {/* Left section */}
         <div className="flex items-center flex-shrink-0">
-          
-
           <div className="w-px h-4 bg-gray-500 mx-1 hidden sm:block" />
 
           <button
@@ -944,14 +972,6 @@ export default function PDFPreviewModal({
       {/* Main content area */}
       <div className="flex h-[calc(100vh-2rem)] bg-gray-800">
         {/* Sidebar */}
-        {sidebarOpen && (
-          <div className="w-64 bg-gray-200 border-r border-gray-300 overflow-y-auto">
-            <div className="p-2">
-              <div className="text-sm font-medium mb-2">Thumbnails</div>
-              {/* Thumbnail navigation would go here */}
-            </div>
-          </div>
-        )}
 
         {/* PDF Viewer */}
         <div
