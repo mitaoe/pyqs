@@ -75,20 +75,21 @@ export async function GET(request: NextRequest) {
       response.headers.get("content-type") ||
       "application/octet-stream";
 
-    // Get the file content
-    const blob = await response.blob();
-
     // Set Content-Disposition based on download parameter
     const contentDispositionValue = download
       ? `attachment; filename="${fileName}"`
       : "inline";
 
-    // Return the file with proper headers
-    return new NextResponse(blob, {
+    // Stream the response body directly without loading into memory
+    return new NextResponse(response.body, {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": contentDispositionValue,
         "Cache-Control": "no-store",
+        // Forward content-length if available for better download progress
+        ...(response.headers.get("content-length") && {
+          "Content-Length": response.headers.get("content-length")!,
+        }),
       },
     });
   } catch (error) {
