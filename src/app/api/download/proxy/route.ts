@@ -57,14 +57,19 @@ export async function GET(request: NextRequest) {
     }
     
     // Determine content type using mime-types package
-    const fileExt = fileName.split('.').pop() || '';
-    const contentType = mime.lookup(fileExt) || response.headers.get('content-type') || 'application/octet-stream';
-    
-    // Get the file content
-    const blob = await response.blob();
-    
-    // Return the file with proper headers
-    return new NextResponse(blob, {
+    const fileExt = fileName.split(".").pop() || "";
+    const contentType =
+      mime.lookup(fileExt) ||
+      response.headers.get("content-type") ||
+      "application/octet-stream";
+
+    // Set Content-Disposition based on download parameter
+    const contentDispositionValue = download
+      ? `attachment; filename="${fileName}"`
+      : "inline";
+
+    // Stream the response body directly without loading into memory
+    return new NextResponse(response.body, {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${fileName}"`,
