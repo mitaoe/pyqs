@@ -91,6 +91,7 @@ export default function PDFPreviewModal({
     renderPage,
     cancelAllRenders,
     setRenderedPages,
+    resetRenderer,
   } = usePDFRenderer(pdfDoc, scale, internalScale);
 
   // Auto-zoom effect
@@ -277,21 +278,10 @@ export default function PDFPreviewModal({
   // Reset state when new document loads
   useEffect(() => {
     if (pdfDoc) {
-      cancelAllRenders();
-      setRenderedPages(new Set());
-      setVisiblePages(new Set());
+      resetRenderer();
       setCurrentScale(scale);
-      pageRefs.current.clear();
-      pageContainerRefs.current.clear();
     }
-  }, [
-    pdfDoc,
-    cancelAllRenders,
-    setRenderedPages,
-    setVisiblePages,
-    setCurrentScale,
-    scale,
-  ]);
+  }, [pdfDoc, resetRenderer, setCurrentScale, scale]);
 
   const handleDownload = async () => {
     if (paper) {

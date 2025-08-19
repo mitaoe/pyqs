@@ -5,6 +5,9 @@ interface PDFRenderTask {
   cancel: () => void;
 }
 
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 100;
+
 export function usePDFRenderer(
   pdfDoc: any,
   scale: number,
@@ -19,7 +22,10 @@ export function usePDFRenderer(
   const renderingPages = useRef<Set<number>>(new Set());
   const pageScales = useRef<Map<number, number>>(new Map());
 
-  // Cancel rendering for a specific page
+  // Track retry attempts per page to prevent infinite loops
+  const retryAttempts = useRef<Map<number, number>>(new Map());
+
+  // Cancel rendering for a specific page and reset retry count
   const cancelPageRender = useCallback((pageNum: number) => {
     const renderTask = renderTasks.current.get(pageNum);
     if (renderTask) {
@@ -27,18 +33,20 @@ export function usePDFRenderer(
       renderTasks.current.delete(pageNum);
     }
     renderingPages.current.delete(pageNum);
+    retryAttempts.current.delete(pageNum); // Reset retry count
   }, []);
 
-  // Cancel all ongoing renders
+  // Cancel all ongoing renders and reset all retry counts
   const cancelAllRenders = useCallback(() => {
     renderTasks.current.forEach((task) => {
       task.cancel();
     });
     renderTasks.current.clear();
     renderingPages.current.clear();
+    retryAttempts.current.clear(); // Reset all retry counts
   }, []);
 
-  // Render a specific PDF page
+  // Render a specific PDF page with retry limit
   const renderPage = useCallback(
     async (pageNum: number, forceRender: boolean = false) => {
       if (!pdfDoc) return;
@@ -48,6 +56,7 @@ export function usePDFRenderer(
 
       const currentScaleValue = internalScale || scale || 1.0;
 
+      // Check if already rendered at current scale (unless forced)
       const lastRenderedScale = pageScales.current.get(pageNum);
       if (
         !forceRender &&
@@ -57,13 +66,15 @@ export function usePDFRenderer(
         return;
       }
 
-      cancelPageRender(pageNum);
-
+      // Prevent concurrent rendering of the same page
       if (renderingPages.current.has(pageNum)) {
-        console.warn(`Page ${pageNum} is already being rendered, skipping...`);
         return;
       }
 
+      // Cancel any existing render task for this page
+      cancelPageRender(pageNum);
+
+      // Mark page as being rendered
       renderingPages.current.add(pageNum);
 
       try {
@@ -77,14 +88,13 @@ export function usePDFRenderer(
 
         const viewport = page.getViewport({ scale: currentScaleValue });
 
-        const scaledWidth = viewport.width;
-        const scaledHeight = viewport.height;
+        // Set canvas dimensions
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.width = viewport.width + "px";
+        canvas.style.height = viewport.height + "px";
 
-        canvas.width = scaledWidth;
-        canvas.height = scaledHeight;
-        canvas.style.width = scaledWidth + "px";
-        canvas.style.height = scaledHeight + "px";
-
+        // Clear and reset canvas
         context.setTransform(1, 0, 0, 1, 0, 0);
         context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -98,34 +108,76 @@ export function usePDFRenderer(
 
         await renderTask.promise;
 
+        // Success - clean up and mark as rendered
         renderTasks.current.delete(pageNum);
         renderingPages.current.delete(pageNum);
+        retryAttempts.current.delete(pageNum); // Reset retry count on success
         pageScales.current.set(pageNum, currentScaleValue);
         setRenderedPages((prev) => new Set([...prev, pageNum]));
       } catch (err) {
+        // Clean up on error
         renderTasks.current.delete(pageNum);
         renderingPages.current.delete(pageNum);
 
         const errorMessage = (err as Error)?.message || "";
         const errorName = (err as Error)?.name || "";
 
-        if (errorName !== "RenderingCancelledException") {
-          if (
-            errorMessage.includes("canvas") &&
-            errorMessage.includes("render")
-          ) {
-            console.warn(`Canvas conflict for page ${pageNum}, will retry...`);
-            requestAnimationFrame(() => {
+        // Don't retry if render was cancelled
+        if (errorName === "RenderingCancelledException") {
+          return;
+        }
+
+        // Handle canvas conflicts with retry limit
+        if (
+          errorMessage.includes("canvas") &&
+          errorMessage.includes("render")
+        ) {
+          const currentRetries = retryAttempts.current.get(pageNum) || 0;
+
+          if (currentRetries < MAX_RETRY_ATTEMPTS) {
+            retryAttempts.current.set(pageNum, currentRetries + 1);
+            console.warn(
+              `Canvas conflict for page ${pageNum}, retry ${
+                currentRetries + 1
+              }/${MAX_RETRY_ATTEMPTS}`
+            );
+
+            // Retry with exponential backoff
+            setTimeout(() => {
               renderPage(pageNum, true);
-            });
+            }, RETRY_DELAY * Math.pow(2, currentRetries));
           } else {
-            console.error(`Error rendering page ${pageNum}:`, err);
+            console.error(
+              `Max retries exceeded for page ${pageNum}, giving up`
+            );
+            retryAttempts.current.delete(pageNum);
           }
+        } else {
+          console.error(`Error rendering page ${pageNum}:`, err);
+          retryAttempts.current.delete(pageNum);
         }
       }
     },
     [pdfDoc, internalScale, scale, cancelPageRender, renderedPages]
   );
+
+  // Reset all state when PDF document changes
+  const resetRenderer = useCallback(() => {
+    cancelAllRenders();
+    setRenderedPages(new Set());
+    setVisiblePages(new Set());
+    pageScales.current.clear();
+    retryAttempts.current.clear();
+    pageRefs.current.clear();
+    pageContainerRefs.current.clear();
+  }, [cancelAllRenders]);
+
+  // Clean up retry attempts when document changes
+  useEffect(() => {
+    if (pdfDoc) {
+      retryAttempts.current.clear();
+    }
+  }, [pdfDoc]);
 
   return {
     renderedPages,
@@ -136,5 +188,6 @@ export function usePDFRenderer(
     renderPage,
     cancelAllRenders,
     setRenderedPages,
+    resetRenderer,
   };
 }
