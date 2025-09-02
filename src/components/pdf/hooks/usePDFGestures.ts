@@ -256,7 +256,7 @@ export function usePDFGestures(
         setIsDragging(false);
       }
     },
-    [currentScaleRef]
+    [currentScaleRef, lastPinchDistance]
   );
 
   return {
