@@ -34,30 +34,28 @@ export function PDFToolbar() {
   } = usePDFContext();
 
   return (
-    <div className="flex h-10 sm:h-8 bg-gray-700 text-white text-xs overflow-x-auto whitespace-nowrap">
+    <div className="flex h-14 bg-slate-700 text-white text-sm overflow-x-auto whitespace-nowrap border-b border-slate-600 shadow-sm">
       {/* Left section */}
-      <div className="flex items-center flex-shrink-0">
-        <div className="w-px h-4 bg-gray-500 mx-1 hidden sm:block" />
-
+      <div className="flex items-center flex-shrink-0 px-4">
         <button
           onClick={() => goToPrevPage(numPages, {} as any, {} as any)}
           disabled={pageNumber <= 1}
-          className="px-1 sm:px-2 h-full hover:bg-gray-500 disabled:opacity-50 flex items-center"
+          className="px-3 py-2 rounded hover:bg-slate-600 disabled:opacity-50 disabled:hover:bg-transparent flex items-center transition-colors"
           title="Previous Page"
         >
-          <CaretLeft size={16} className="sm:w-3.5 sm:h-3.5" />
+          <CaretLeft size={18} />
         </button>
 
         <button
           onClick={() => goToNextPage(numPages, {} as any, {} as any)}
           disabled={pageNumber >= numPages}
-          className="px-1 sm:px-2 h-full hover:bg-gray-500 disabled:opacity-50 flex items-center"
+          className="px-3 py-2 rounded hover:bg-slate-600 disabled:opacity-50 disabled:hover:bg-transparent flex items-center transition-colors"
           title="Next Page"
         >
-          <CaretRight size={16} className="sm:w-3.5 sm:h-3.5" />
+          <CaretRight size={18} />
         </button>
 
-        <div className="flex items-center px-1 sm:px-2 whitespace-nowrap">
+        <div className="flex items-center px-3 whitespace-nowrap">
           <input
             type="number"
             value={pageNumber}
@@ -67,30 +65,22 @@ export function PDFToolbar() {
                 setPageNumber(page);
               }
             }}
-            className="w-6 sm:w-8 bg-transparent text-center border-none outline-none text-xs"
+            className="w-12 bg-slate-600 text-center border border-slate-500 rounded px-2 py-1 outline-none focus:border-blue-400 text-sm"
             min={1}
             max={numPages}
           />
-          <span className="mx-1 text-xs">of {numPages}</span>
+          <span className="mx-2 text-slate-300">of {numPages}</span>
         </div>
       </div>
 
       {/* Center section */}
-      <div className="flex items-center flex-1 justify-center min-w-0">
+      <div className="flex items-center flex-1 justify-center min-w-0 gap-2">
         <button
           onClick={handleZoomOut}
-          className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
+          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
           title="Zoom Out"
         >
-          <MagnifyingGlassMinus size={16} className="sm:w-3.5 sm:h-3.5" />
-        </button>
-
-        <button
-          onClick={handleZoomIn}
-          className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
-          title="Zoom In"
-        >
-          <MagnifyingGlassPlus size={16} className="sm:w-3.5 sm:h-3.5" />
+          <MagnifyingGlassMinus size={18} />
         </button>
 
         <div className="relative">
@@ -101,7 +91,7 @@ export function PDFToolbar() {
               const newScale = Math.min(parseInt(e.target.value) / 100, 3.0);
               // setScale(newScale); // This would be passed from context
             }}
-            className="bg-transparent border-none outline-none px-1 hover:bg-gray-500 appearance-none text-xs w-12 sm:w-auto"
+            className="bg-slate-600 border border-slate-500 rounded px-3 py-1 outline-none focus:border-blue-400 appearance-none text-sm min-w-[80px] cursor-pointer hover:bg-slate-500 transition-colors"
           >
             <option value={Math.round(scale * 100)}>
               {Math.round(scale * 100)}%
@@ -118,78 +108,86 @@ export function PDFToolbar() {
           </select>
         </div>
 
-        <div className="w-px h-4 bg-gray-500 mx-1 hidden sm:block" />
+        <button
+          onClick={handleZoomIn}
+          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
+          title="Zoom In"
+        >
+          <MagnifyingGlassPlus size={18} />
+        </button>
+
+        <div className="w-px h-6 bg-slate-500 mx-2" />
 
         <button
           onClick={handleZoomFit}
-          className="px-1 sm:px-2 h-full hover:bg-gray-500 text-xs hidden sm:flex items-center"
+          className="px-3 py-2 rounded hover:bg-slate-600 text-sm flex items-center transition-colors"
           title="Fit to Page"
         >
-          <span className="hidden md:inline">Fit</span>
-          <ArrowsIn size={16} className="md:hidden sm:w-3.5 sm:h-3.5" />
+          <ArrowsIn size={16} className="mr-1" />
+          <span>Fit</span>
         </button>
 
         <button
           onClick={handleZoomActual}
-          className="px-1 sm:px-2 h-full hover:bg-gray-500 text-xs hidden sm:flex items-center"
+          className="px-3 py-2 rounded hover:bg-slate-600 text-sm flex items-center transition-colors"
           title="Actual Size"
         >
-          <span className="hidden md:inline">Actual</span>
-          <ArrowsOut size={16} className="md:hidden sm:w-3.5 sm:h-3.5" />
+          <ArrowsOut size={16} className="mr-1" />
+          <span>100%</span>
         </button>
       </div>
 
       {/* Right section */}
-      <div className="flex items-center flex-shrink-0">
+      <div className="flex items-center flex-shrink-0 px-4 gap-2">
         {/* PDF Navigation - only show if there are multiple papers */}
         {papers.length > 1 && (
           <>
             <button
               onClick={goToPrevPaper}
               disabled={!canGoPrevPaper()}
-              className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="px-3 py-2 rounded hover:bg-slate-600 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
               title="Previous PDF"
             >
-              <CaretLeft size={16} className="sm:w-3.5 sm:h-3.5" />
+              <CaretLeft size={18} />
             </button>
 
             <button
               onClick={goToNextPaper}
               disabled={!canGoNextPaper()}
-              className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="px-3 py-2 rounded hover:bg-slate-600 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
               title="Next PDF"
             >
-              <CaretRight size={16} className="sm:w-3.5 sm:h-3.5" />
+              <CaretRight size={18} />
             </button>
 
-            <div className="w-px h-4 bg-gray-500 mx-1 hidden sm:block" />
+            <div className="w-px h-6 bg-slate-500 mx-2" />
           </>
         )}
 
         <button
           onClick={handleDownload}
-          className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
+          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
           title="Download"
         >
-          <Download size={16} className="sm:w-3.5 sm:h-3.5" />
+          <Download size={18} />
         </button>
 
         <button
           onClick={() => window.print()}
-          className="px-1 sm:px-2 h-full hover:bg-gray-500 hidden sm:flex items-center"
+          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
           title="Print"
         >
-          <Printer size={16} className="sm:w-3.5 sm:h-3.5" />
+          <Printer size={18} />
         </button>
 
-        <div className="w-px h-4 bg-gray-500 mx-1" />
+        <div className="w-px h-6 bg-slate-500 mx-2" />
 
         <button
           onClick={onClose}
-          className="px-1 sm:px-2 h-full hover:bg-gray-500 flex items-center"
+          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
           title="Close"
         >
-          <X size={16} className="sm:w-3.5 sm:h-3.5" />
+          <X size={18} />
         </button>
       </div>
     </div>

@@ -327,15 +327,15 @@ export default function PDFPreviewModal({
 
   return (
     <PDFProvider value={contextValue}>
-      <div className="fixed inset-0 z-50 bg-gray-800" data-pdf-modal>
+      <div className="fixed inset-0 z-50 bg-slate-50" data-pdf-modal>
         <PDFToolbar />
 
         {/* Main content area */}
-        <div className="flex h-[calc(100vh-2rem)] bg-gray-800">
+        <div className="flex h-[calc(100vh-3.5rem)] bg-slate-50">
           {/* PDF Viewer */}
           <div
             ref={containerRef}
-            className="flex-1 overflow-auto bg-gray-800"
+            className="flex-1 overflow-auto bg-slate-50"
             onMouseDown={contextValue.handleMouseDown}
             onMouseMove={contextValue.handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -356,7 +356,7 @@ export default function PDFPreviewModal({
             <div
               className="w-full min-h-full"
               style={{
-                padding: "50px",
+                padding: "20px",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -382,7 +382,7 @@ export default function PDFPreviewModal({
 
                 {/* Render all pages */}
                 {!loading && !error && numPages > 0 && (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {Array.from({ length: numPages }, (_, index) => {
                       const pageNum = index + 1;
                       return (

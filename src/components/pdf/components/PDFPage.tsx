@@ -20,7 +20,7 @@ export function PDFPage({
         }
       }}
       data-page={pageNum}
-      className="bg-white shadow-lg rounded-lg overflow-hidden"
+      className="bg-white shadow-md border border-gray-200 overflow-hidden"
       style={{
         minHeight: "400px",
         minWidth: "fit-content",
