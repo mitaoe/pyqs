@@ -22,6 +22,10 @@ interface PDFContextType {
   canGoNextPaper: () => boolean;
   goToPrevPaper: () => void;
   goToNextPaper: () => void;
+  
+  // Page navigation functions
+  goToPrevPage: () => void;
+  goToNextPage: () => void;
 
   // Zoom functions
   handleZoomIn: () => void;

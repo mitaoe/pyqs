@@ -12,7 +12,7 @@ export function usePDFNavigation(
     (
       pageNum: number,
       pageContainerRefs: React.MutableRefObject<Map<number, HTMLDivElement>>,
-      containerRef: React.RefObject<HTMLDivElement>
+      containerRef: React.RefObject<HTMLDivElement | null>
     ) => {
       const pageContainer = pageContainerRefs.current.get(pageNum);
       if (pageContainer && containerRef.current) {
@@ -29,7 +29,7 @@ export function usePDFNavigation(
     (
       numPages: number,
       pageContainerRefs: React.MutableRefObject<Map<number, HTMLDivElement>>,
-      containerRef: React.RefObject<HTMLDivElement>
+      containerRef: React.RefObject<HTMLDivElement | null>
     ) => {
       const targetPage = Math.max(pageNumber - 1, 1);
       scrollToPage(targetPage, pageContainerRefs, containerRef);
@@ -41,7 +41,7 @@ export function usePDFNavigation(
     (
       numPages: number,
       pageContainerRefs: React.MutableRefObject<Map<number, HTMLDivElement>>,
-      containerRef: React.RefObject<HTMLDivElement>
+      containerRef: React.RefObject<HTMLDivElement | null>
     ) => {
       const targetPage = Math.min(pageNumber + 1, numPages);
       scrollToPage(targetPage, pageContainerRefs, containerRef);

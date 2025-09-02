@@ -12,7 +12,6 @@ import { usePDFContext } from "../context/PDFContext";
 export function PDFToolbar() {
   const {
     pageNumber,
-    setPageNumber,
     numPages,
     scale,
     papers,
@@ -27,71 +26,14 @@ export function PDFToolbar() {
     updateZoomScale,
     handleDownload,
     onClose,
-    containerRef,
-    setIsNavigating,
   } = usePDFContext();
-
-  const scrollToPage = (targetPage: number) => {
-    // Set navigation flag to prevent Intersection Observer from overriding
-    setIsNavigating?.(true);
-    setPageNumber(targetPage);
-
-    // Use requestAnimationFrame for better timing
-    requestAnimationFrame(() => {
-      const pageElement = document.querySelector(`[data-page="${targetPage}"]`);
-      if (pageElement && containerRef?.current) {
-        const container = containerRef.current;
-
-        // Get the page element's position relative to the container
-        const containerTop = container.getBoundingClientRect().top;
-        const pageTop = pageElement.getBoundingClientRect().top;
-        const currentScrollTop = container.scrollTop;
-
-        // Calculate the target scroll position
-        const targetScrollTop = currentScrollTop + (pageTop - containerTop) - 20;
-
-        container.scrollTo({
-          top: targetScrollTop,
-          behavior: 'smooth'
-        });
-
-        // Reset navigation flag after scroll completes
-        setTimeout(() => {
-          setIsNavigating?.(false);
-        }, 1000); // Give enough time for smooth scroll to complete
-      } else {
-        // Reset flag if scroll fails
-        setIsNavigating?.(false);
-      }
-    });
-  };
 
   return (
     <div className="flex h-12 text-white text-sm overflow-x-auto whitespace-nowrap border-b shadow-sm" style={{ backgroundColor: '#3b3b3b', borderBottomColor: '#2a2a2a' }}>
-      {/* Left section */}
+      {/* Left section - Page Display Only */}
       <div className="flex items-center flex-shrink-0 px-4">
-        <div className="flex items-center px-3 whitespace-nowrap">
-          <input
-            type="number"
-            value={pageNumber}
-            onChange={(e) => {
-              const page = parseInt(e.target.value);
-              if (page >= 1 && page <= numPages) {
-                scrollToPage(page);
-              }
-            }}
-            className="w-12 text-center rounded px-2 py-1 outline-none text-sm"
-            style={{
-              backgroundColor: '#2a2a2a',
-              border: '1px solid #555555',
-              color: 'white'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#0078d4'}
-            onBlur={(e) => e.target.style.borderColor = '#555555'}
-            min={1}
-            max={numPages}
-          />
-          <span className="mx-2" style={{ color: '#cccccc' }}>of {numPages}</span>
+        <div className="flex items-center">
+          <span style={{ color: '#cccccc' }}>Page {pageNumber} of {numPages}</span>
         </div>
       </div>
 

@@ -62,6 +62,8 @@ export default function PDFPreviewModal({
     canGoNextPaper,
     goToPrevPaper,
     goToNextPaper,
+    goToPrevPage: goToPrevPageHook,
+    goToNextPage: goToNextPageHook,
   } = usePDFNavigation(papers, paper, onNavigate);
 
   const {
@@ -298,15 +300,15 @@ export default function PDFPreviewModal({
 
   const handleDownload = async () => {
     if (!paper || !pdfDoc) return;
-    
+
     try {
       // Get the PDF data from the loaded document
       const pdfBytes = await pdfDoc.getData();
-      
+
       // Create a blob from the PDF data
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const objectUrl = URL.createObjectURL(blob);
-      
+
       // Create download link
       const link = document.createElement('a');
       link.href = objectUrl;
@@ -322,6 +324,15 @@ export default function PDFPreviewModal({
     }
   };
 
+  // Wrapper functions for page navigation
+  const goToPrevPage = () => {
+    goToPrevPageHook(numPages, pageContainerRefs, containerRef);
+  };
+
+  const goToNextPage = () => {
+    goToNextPageHook(numPages, pageContainerRefs, containerRef);
+  };
+
   const contextValue = {
     pdfDoc,
     numPages,
@@ -335,6 +346,8 @@ export default function PDFPreviewModal({
     canGoNextPaper,
     goToPrevPaper,
     goToNextPaper,
+    goToPrevPage,
+    goToNextPage,
     handleZoomIn,
     handleZoomOut,
     handleZoomActual,
