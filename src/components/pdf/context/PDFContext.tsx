@@ -17,16 +17,6 @@ interface PDFContextType {
   internalScale: number;
 
   // Navigation functions
-  goToPrevPage: (
-    numPages: number,
-    pageContainerRefs: React.MutableRefObject<Map<number, HTMLDivElement>>,
-    containerRef: React.RefObject<HTMLDivElement>
-  ) => void;
-  goToNextPage: (
-    numPages: number,
-    pageContainerRefs: React.MutableRefObject<Map<number, HTMLDivElement>>,
-    containerRef: React.RefObject<HTMLDivElement>
-  ) => void;
   canGoPrevPaper: () => boolean;
   canGoNextPaper: () => boolean;
   goToPrevPaper: () => void;
@@ -68,6 +58,11 @@ interface PDFContextType {
   // Actions
   onClose: () => void;
   handleDownload: () => Promise<void>;
+  containerRef?: React.RefObject<HTMLDivElement>;
+  
+  // Navigation control
+  isNavigating?: boolean;
+  setIsNavigating?: (navigating: boolean) => void;
 }
 
 const PDFContext = createContext<PDFContextType | undefined>(undefined);

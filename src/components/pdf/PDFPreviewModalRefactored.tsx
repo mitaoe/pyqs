@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Paper } from "@/types/paper";
 import { downloadFile } from "@/utils/download";
 
@@ -33,6 +33,7 @@ export default function PDFPreviewModal({
 }: PDFPreviewModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Custom hooks
   const { pdfDoc, numPages, loading, error } = usePDFDocument(paper, isOpen);
@@ -94,7 +95,7 @@ export default function PDFPreviewModal({
     resetRenderer,
   } = usePDFRenderer(pdfDoc, scale, internalScale);
 
-  // Auto-zoom effect
+  // Auto-zoom effect (negligible zoom just to trigger rendering)
   useEffect(() => {
     if (
       !loading &&
@@ -105,7 +106,8 @@ export default function PDFPreviewModal({
       !hasAutoZoomed
     ) {
       const autoZoomTimer = setTimeout(() => {
-        const newScale = Math.min(internalScale * 1.2, 5.0);
+        // Apply a negligible zoom (1% increase) just to trigger the system
+        const newScale = Math.min(internalScale * 1.01, 5.0);
         updateZoomScale(newScale);
         setHasAutoZoomed(true);
       }, 500);
@@ -152,7 +154,8 @@ export default function PDFPreviewModal({
 
         setVisiblePages(newVisiblePages);
 
-        if (newVisiblePages.size > 0) {
+        // Only update page number if we're not currently navigating programmatically
+        if (newVisiblePages.size > 0 && !isNavigating) {
           const firstVisible = Math.min(...Array.from(newVisiblePages));
           setPageNumber(firstVisible);
         }
@@ -284,7 +287,27 @@ export default function PDFPreviewModal({
   }, [pdfDoc, resetRenderer, setCurrentScale, scale]);
 
   const handleDownload = async () => {
-    if (paper) {
+    if (!paper || !pdfDoc) return;
+    
+    try {
+      // Get the PDF data from the loaded document
+      const pdfBytes = await pdfDoc.getData();
+      
+      // Create a blob from the PDF data
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const objectUrl = URL.createObjectURL(blob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = paper.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback to original download method if PDF data extraction fails
       await downloadFile(paper.url, paper.fileName);
     }
   };
@@ -298,8 +321,6 @@ export default function PDFPreviewModal({
     setPageNumber,
     scale,
     internalScale,
-    goToPrevPage,
-    goToNextPage,
     canGoPrevPaper,
     canGoNextPaper,
     goToPrevPaper,
@@ -322,6 +343,9 @@ export default function PDFPreviewModal({
     papers,
     onClose,
     handleDownload,
+    containerRef,
+    isNavigating,
+    setIsNavigating,
   };
 
   if (!isOpen || !paper) return null;
