@@ -4,4 +4,4 @@ import * as pdfjsLib from "pdfjs-dist";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 export { pdfjsLib };
-export type { PDFDocumentProxy } from "pdfjs-dist";
+export type { PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";

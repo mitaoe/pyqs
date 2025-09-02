@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { type PDFDocumentProxy, type PDFPageProxy } from "@/lib/pdfConfig";
 
 export function usePDFZoom(initialScale: number = 1.0) {
   const [scale, setScale] = useState<number>(initialScale);
@@ -70,14 +71,14 @@ export function usePDFZoom(initialScale: number = 1.0) {
   const handleZoomFit = useCallback(
     (
       containerRef: React.RefObject<HTMLDivElement | null>,
-      pdfDoc: any,
+      pdfDoc: PDFDocumentProxy | null,
       pageNumber: number
     ) => {
       if (containerRef.current && pdfDoc) {
         const container = containerRef.current;
         const containerWidth = container.clientWidth - 80;
 
-        pdfDoc.getPage(pageNumber).then((page: any) => {
+        pdfDoc.getPage(pageNumber).then((page: PDFPageProxy) => {
           const viewport = page.getViewport({ scale: 1.0 });
           // Fit to width like Chrome PDF viewer
           const scaleX = containerWidth / viewport.width;

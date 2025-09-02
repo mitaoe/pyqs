@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { type PDFDocumentProxy, type PDFPageProxy } from "@/lib/pdfConfig";
 
 interface PDFRenderTask {
   promise: Promise<void>;
@@ -9,7 +10,7 @@ const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY = 100;
 
 export function usePDFRenderer(
-  pdfDoc: any,
+  pdfDoc: PDFDocumentProxy | null,
   scale: number,
   internalScale: number
 ) {
@@ -78,7 +79,7 @@ export function usePDFRenderer(
       renderingPages.current.add(pageNum);
 
       try {
-        const page = await pdfDoc.getPage(pageNum);
+        const page: PDFPageProxy = await pdfDoc.getPage(pageNum);
         const context = canvas.getContext("2d");
 
         if (!context) {
@@ -95,7 +96,7 @@ export function usePDFRenderer(
         if (hasExistingContent && lastRenderedScale) {
           try {
             imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-          } catch (e) {
+          } catch {
             // Ignore errors when getting image data
           }
         }
@@ -134,6 +135,7 @@ export function usePDFRenderer(
         const renderContext = {
           canvasContext: context,
           viewport: viewport,
+          canvas: canvas,
         };
 
         const renderTask = page.render(renderContext);

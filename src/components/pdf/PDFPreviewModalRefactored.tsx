@@ -43,7 +43,6 @@ export default function PDFPreviewModal({
     internalScale,
     currentScale,
     hasAutoZoomed,
-    setScale,
     setCurrentScale,
     setHasAutoZoomed,
     updateZoomScale,
@@ -59,8 +58,6 @@ export default function PDFPreviewModal({
   const {
     pageNumber,
     setPageNumber,
-    goToPrevPage,
-    goToNextPage,
     canGoPrevPaper,
     canGoNextPaper,
     goToPrevPaper,
@@ -91,7 +88,6 @@ export default function PDFPreviewModal({
     pageContainerRefs,
     renderPage,
     cancelAllRenders,
-    setRenderedPages,
     resetRenderer,
   } = usePDFRenderer(pdfDoc, scale, internalScale);
 
@@ -172,7 +168,7 @@ export default function PDFPreviewModal({
     });
 
     return () => observer.disconnect();
-  }, [numPages, renderPage, setVisiblePages, setPageNumber, pageContainerRefs]);
+  }, [numPages, renderPage, setVisiblePages, setPageNumber, pageContainerRefs, isNavigating]);
 
   // Scale change handler with debouncing
   useEffect(() => {
@@ -383,15 +379,6 @@ export default function PDFPreviewModal({
             onTouchStart={contextValue.handleTouchStart}
             onTouchMove={contextValue.handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            style={{
-              WebkitOverflowScrolling: "touch",
-              touchAction: "pan-y",
-              scrollBehavior: "auto",
-              willChange: "scroll-position",
-              transform: "translate3d(0, 0, 0)",
-              backfaceVisibility: "hidden",
-              contain: "layout style paint",
-            }}
           >
             <div
               className="w-full min-h-full"

@@ -1,9 +1,10 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { Paper } from "@/types/paper";
+import { type PDFDocumentProxy } from "@/lib/pdfConfig";
 
 interface PDFContextType {
   // Document state
-  pdfDoc: any;
+  pdfDoc: PDFDocumentProxy | null;
   numPages: number;
   loading: boolean;
   error: string | null;
@@ -58,7 +59,7 @@ interface PDFContextType {
   // Actions
   onClose: () => void;
   handleDownload: () => Promise<void>;
-  containerRef?: React.RefObject<HTMLDivElement>;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
   
   // Navigation control
   isNavigating?: boolean;
