@@ -59,12 +59,14 @@ export function usePDFZoom(initialScale: number = 1.0) {
   );
 
   const handleZoomIn = useCallback(() => {
-    const newScale = Math.min(internalScale * 1.2, 5.0);
+    // Use 10% increments for consistent zoom behavior
+    const newScale = Math.min(internalScale + 0.1, 5.0);
     updateZoomScale(newScale);
   }, [internalScale, updateZoomScale]);
 
   const handleZoomOut = useCallback(() => {
-    const newScale = Math.max(internalScale / 1.2, 0.6);
+    // Use 10% decrements for consistent zoom behavior
+    const newScale = Math.max(internalScale - 0.1, 0.6);
     updateZoomScale(newScale);
   }, [internalScale, updateZoomScale]);
 

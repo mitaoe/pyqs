@@ -154,17 +154,34 @@ export function usePDFGestures(
         const currentDistance = getTouchDistance(e.touches);
 
         if (initialPinchDistance.current > 0 && currentDistance > 0) {
-          // Calculate scale based on initial distance and scale
-          const scaleRatio = currentDistance / initialPinchDistance.current;
-          const newScale = Math.max(0.6, Math.min(5.0, initialScale.current * scaleRatio));
+          // Calculate the distance change ratio
+          const distanceRatio = currentDistance / initialPinchDistance.current;
+          
+          // Convert to discrete 10% steps
+          // If pinch out (ratio > 1), zoom in by 10% steps
+          // If pinch in (ratio < 1), zoom out by 10% steps
+          let targetScale = initialScale.current;
+          
+          if (distanceRatio > 1.15) {
+            // Pinch out - zoom in by 10%
+            const steps = Math.floor((distanceRatio - 1) / 0.15);
+            targetScale = initialScale.current + (steps * 0.1);
+          } else if (distanceRatio < 0.85) {
+            // Pinch in - zoom out by 10%
+            const steps = Math.floor((1 - distanceRatio) / 0.15);
+            targetScale = initialScale.current - (steps * 0.1);
+          }
+          
+          // Clamp the scale within bounds
+          const newScale = Math.max(0.6, Math.min(5.0, targetScale));
 
-          // Only update if the scale change is significant enough to avoid jitter
-          if (Math.abs(newScale - currentScaleRef.current) > 0.01) {
-            // Debug log for mobile testing
-            console.log('Pinch zoom:', { 
+          // Only update if there's a significant change (10% increment)
+          if (Math.abs(newScale - currentScaleRef.current) >= 0.09) {
+            console.log('Pinch zoom (10% steps):', { 
               currentDistance, 
               initialDistance: initialPinchDistance.current,
-              scaleRatio, 
+              distanceRatio, 
+              targetScale,
               newScale, 
               currentScale: currentScaleRef.current 
             });
@@ -179,6 +196,10 @@ export function usePDFGestures(
             } else {
               updateZoomScale(newScale);
             }
+            
+            // Update initial values to prevent continuous triggering
+            initialPinchDistance.current = currentDistance;
+            initialScale.current = newScale;
           }
         }
 

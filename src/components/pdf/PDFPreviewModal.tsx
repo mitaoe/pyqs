@@ -234,6 +234,7 @@ export default function PDFPreviewModal({
         e.preventDefault();
         e.stopPropagation();
 
+        // Use 10% increments for consistent zoom behavior
         const delta = e.deltaY > 0 ? -0.1 : 0.1;
         const newScale = internalScale + delta;
 
@@ -289,12 +290,33 @@ export default function PDFPreviewModal({
         const dy = touch1.clientY - touch2.clientY;
         const currentDistance = Math.sqrt(dx * dx + dy * dy);
 
-        const scaleRatio = currentDistance / initialDistance;
-        const newScale = Math.max(0.6, Math.min(5.0, initialScale * scaleRatio));
+        // Calculate the distance change ratio for discrete 10% steps
+        const distanceRatio = currentDistance / initialDistance;
 
-        if (Math.abs(newScale - internalScale) > 0.01) {
-          console.log('Native touch zoom:', { currentDistance, scaleRatio, newScale });
+        // Convert to discrete 10% steps
+        let targetScale = initialScale;
+
+        if (distanceRatio > 1.15) {
+          // Pinch out - zoom in by 10%
+          const steps = Math.floor((distanceRatio - 1) / 0.15);
+          targetScale = initialScale + (steps * 0.1);
+        } else if (distanceRatio < 0.85) {
+          // Pinch in - zoom out by 10%
+          const steps = Math.floor((1 - distanceRatio) / 0.15);
+          targetScale = initialScale - (steps * 0.1);
+        }
+
+        // Clamp the scale within bounds
+        const newScale = Math.max(0.6, Math.min(5.0, targetScale));
+
+        // Only update if there's a significant change (10% increment)
+        if (Math.abs(newScale - internalScale) >= 0.09) {
+          console.log('Native touch zoom (10% steps):', { currentDistance, distanceRatio, targetScale, newScale });
           updateZoomScale(newScale);
+
+          // Update initial values to prevent continuous triggering
+          initialDistance = currentDistance;
+          initialScale = newScale;
         }
       }
     };

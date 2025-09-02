@@ -46,16 +46,20 @@ export function PDFToolbar() {
       <div className={`flex items-center flex-1 justify-center min-w-0 ${isMobile ? 'gap-1' : 'gap-2'}`}>
         {/* Mobile: PDF Navigation on left side of zoom controls */}
         {isMobile && papers.length > 1 && (
-          <button
-            onClick={goToPrevPaper}
-            disabled={!canGoPrevPaper()}
-            className="px-2 py-1 rounded flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
-            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title="Previous PDF"
-          >
-            ←
-          </button>
+          <>
+            <button
+              onClick={goToPrevPaper}
+              disabled={!canGoPrevPaper()}
+              className="px-2 py-1 rounded flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
+              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title="Previous PDF"
+            >
+              ←
+            </button>
+            {/* Spacer between PDF nav and zoom controls */}
+            <div className="w-4"></div>
+          </>
         )}
 
         <button
@@ -115,16 +119,20 @@ export function PDFToolbar() {
 
         {/* Mobile: PDF Navigation on right side of zoom controls */}
         {isMobile && papers.length > 1 && (
-          <button
-            onClick={goToNextPaper}
-            disabled={!canGoNextPaper()}
-            className="px-2 py-1 rounded flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
-            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            title="Next PDF"
-          >
-            →
-          </button>
+          <>
+            {/* Spacer between zoom controls and PDF nav */}
+            <div className="w-4"></div>
+            <button
+              onClick={goToNextPaper}
+              disabled={!canGoNextPaper()}
+              className="px-2 py-1 rounded flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
+              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title="Next PDF"
+            >
+              →
+            </button>
+          </>
         )}
 
         {/* Desktop: Fit and Actual Size buttons */}
