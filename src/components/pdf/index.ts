@@ -1,4 +1,3 @@
-export { default as PDFPreviewModal } from "./PDFPreviewModalRefactored";
 export { usePDFContext, PDFProvider } from "./context/PDFContext";
 export { usePDFDocument } from "./hooks/usePDFDocument";
 export { usePDFZoom } from "./hooks/usePDFZoom";
