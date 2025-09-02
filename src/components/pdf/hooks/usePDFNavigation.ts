@@ -57,10 +57,8 @@ export function usePDFNavigation(
   }, [papers, paper]);
 
   const canGoNextPaper = useCallback(() => {
-    const currentIndex = papers.findIndex(
-      (p) => p.fileName === paper?.fileName
-    );
-    return currentIndex < papers.length - 1;
+    const currentIndex = papers.findIndex((p) => p.fileName === paper?.fileName);
+    return currentIndex !== -1 && currentIndex < papers.length - 1;
   }, [papers, paper]);
 
   const goToPrevPaper = useCallback(() => {

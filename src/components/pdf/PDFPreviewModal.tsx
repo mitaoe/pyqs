@@ -253,92 +253,6 @@ export default function PDFPreviewModal({
     };
   }, [internalScale, updateZoomScale]);
 
-  // Native touch event handlers for better mobile support
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !isMobile) return;
-
-    let initialDistance = 0;
-    let initialScale = 1;
-    let isZooming = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const dx = touch1.clientX - touch2.clientX;
-        const dy = touch1.clientY - touch2.clientY;
-        initialDistance = Math.sqrt(dx * dx + dy * dy);
-        initialScale = internalScale;
-        isZooming = true;
-
-        console.log('Native touch start:', { initialDistance, initialScale });
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && isZooming && initialDistance > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const dx = touch1.clientX - touch2.clientX;
-        const dy = touch1.clientY - touch2.clientY;
-        const currentDistance = Math.sqrt(dx * dx + dy * dy);
-
-        // Calculate the distance change ratio for discrete 10% steps
-        const distanceRatio = currentDistance / initialDistance;
-
-        // Convert to discrete 10% steps
-        let targetScale = initialScale;
-
-        if (distanceRatio > 1.15) {
-          // Pinch out - zoom in by 10%
-          const steps = Math.floor((distanceRatio - 1) / 0.15);
-          targetScale = initialScale + (steps * 0.1);
-        } else if (distanceRatio < 0.85) {
-          // Pinch in - zoom out by 10%
-          const steps = Math.floor((1 - distanceRatio) / 0.15);
-          targetScale = initialScale - (steps * 0.1);
-        }
-
-        // Clamp the scale within bounds
-        const newScale = Math.max(0.6, Math.min(5.0, targetScale));
-
-        // Only update if there's a significant change (10% increment)
-        if (Math.abs(newScale - internalScale) >= 0.09) {
-          console.log('Native touch zoom (10% steps):', { currentDistance, distanceRatio, targetScale, newScale });
-          updateZoomScale(newScale);
-
-          // Update initial values to prevent continuous triggering
-          initialDistance = currentDistance;
-          initialScale = newScale;
-        }
-      }
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length < 2) {
-        isZooming = false;
-        initialDistance = 0;
-      }
-    };
-
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd, { passive: false });
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isMobile, internalScale, updateZoomScale]);
-
   // Initial render of first few pages
   useEffect(() => {
     if (pdfDoc && numPages > 0 && renderedPages.size === 0) {
@@ -355,6 +269,11 @@ export default function PDFPreviewModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
 
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
       if (e.ctrlKey || e.metaKey) {
         switch (e.key) {
           case "=":
@@ -378,7 +297,7 @@ export default function PDFPreviewModal({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, handleZoomIn, handleZoomOut, handleZoomActual]);
+  }, [isOpen, handleZoomIn, handleZoomOut, handleZoomActual, onClose]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -468,20 +387,33 @@ export default function PDFPreviewModal({
     setIsNavigating,
   };
 
-  // Add viewport meta tag to prevent zooming when modal is open
+  // Add viewport meta tag to prevent zooming and disable background scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
       // Store original viewport meta tag
       const originalViewport = document.querySelector('meta[name="viewport"]');
       const originalContent = originalViewport?.getAttribute('content') || '';
 
+      // Store original body styles
+      const originalOverflow = document.body.style.overflow;
+      const originalTouchAction = document.body.style.touchAction;
+
       // Set new viewport to prevent zooming
       if (originalViewport) {
         originalViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
       }
 
-      // Restore original viewport when modal closes
+      // Disable background scrolling
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+
+      // Restore original styles when modal closes
       return () => {
+        // Always restore body styles regardless of viewport meta tag branch
+        document.body.style.overflow = originalOverflow;
+        document.body.style.touchAction = originalTouchAction;
+        
+        // Restore viewport meta tag if it was modified
         if (originalViewport && originalContent) {
           originalViewport.setAttribute('content', originalContent);
         }
