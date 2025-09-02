@@ -9,6 +9,7 @@ import { usePDFZoom } from "./hooks/usePDFZoom";
 import { usePDFNavigation } from "./hooks/usePDFNavigation";
 import { usePDFGestures } from "./hooks/usePDFGestures";
 import { usePDFRenderer } from "./hooks/usePDFRenderer";
+import { useResponsive } from "./hooks/useResponsive";
 
 import { PDFProvider } from "./context/PDFContext";
 import { PDFToolbar } from "./components/PDFToolbar";
@@ -36,6 +37,7 @@ export default function PDFPreviewModal({
   const [isNavigating, setIsNavigating] = useState(false);
 
   // Custom hooks
+  const { isMobile } = useResponsive();
   const { pdfDoc, numPages, loading, error } = usePDFDocument(paper, isOpen);
 
   const {
@@ -93,7 +95,7 @@ export default function PDFPreviewModal({
     resetRenderer,
   } = usePDFRenderer(pdfDoc, scale, internalScale);
 
-  // Auto-zoom effect (negligible zoom just to trigger rendering)
+  // Auto-zoom effect (fit to width on mobile, negligible zoom on desktop)
   useEffect(() => {
     if (
       !loading &&
@@ -104,9 +106,14 @@ export default function PDFPreviewModal({
       !hasAutoZoomed
     ) {
       const autoZoomTimer = setTimeout(() => {
-        // Apply a negligible zoom (1% increase) just to trigger the system
-        const newScale = Math.min(internalScale * 1.01, 5.0);
-        updateZoomScale(newScale);
+        if (isMobile) {
+          // On mobile, fit to width for better initial view
+          handleZoomFit(containerRef, pdfDoc, pageNumber);
+        } else {
+          // On desktop, apply a negligible zoom (1% increase) just to trigger the system
+          const newScale = Math.min(internalScale * 1.01, 5.0);
+          updateZoomScale(newScale);
+        }
         setHasAutoZoomed(true);
       }, 500);
 
@@ -119,9 +126,12 @@ export default function PDFPreviewModal({
     numPages,
     renderedPages.size,
     hasAutoZoomed,
+    isMobile,
     internalScale,
     updateZoomScale,
     setHasAutoZoomed,
+    handleZoomFit,
+    pageNumber,
   ]);
 
   // Reset auto-zoom when paper changes
@@ -396,7 +406,7 @@ export default function PDFPreviewModal({
             <div
               className="w-full min-h-full"
               style={{
-                padding: "20px",
+                padding: isMobile ? "10px" : "20px",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -414,6 +424,7 @@ export default function PDFPreviewModal({
                         : "grab"
                       : "text",
                   minWidth: "fit-content",
+                  width: isMobile && (internalScale || scale) <= 1.0 ? "100%" : "auto",
                 }}
               >
                 {loading && <PDFLoadingState />}
@@ -422,7 +433,12 @@ export default function PDFPreviewModal({
 
                 {/* Render all pages */}
                 {!loading && !error && numPages > 0 && (
-                  <div className="space-y-6">
+                  <div 
+                    className={isMobile ? "space-y-2" : "space-y-6"}
+                    style={{
+                      width: isMobile && (internalScale || scale) <= 1.0 ? "100%" : "auto",
+                    }}
+                  >
                     {Array.from({ length: numPages }, (_, index) => {
                       const pageNum = index + 1;
                       return (

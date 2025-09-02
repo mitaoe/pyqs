@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useResponsive } from "../hooks/useResponsive";
+import { usePDFContext } from "../context/PDFContext";
 
 interface PDFPageProps {
   pageNum: number;
@@ -12,6 +14,12 @@ export function PDFPage({
   pageRefs,
 }: PDFPageProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const { isMobile } = useResponsive();
+  const { scale, internalScale } = usePDFContext();
+  
+  // On mobile, only constrain width when scale is 1.0 or less (initial fit)
+  const currentScale = internalScale || scale;
+  const shouldConstrainWidth = isMobile && currentScale <= 1.0;
 
   useEffect(() => {
     const canvas = pageRefs.current.get(pageNum);
@@ -46,11 +54,14 @@ export function PDFPage({
         }
       }}
       data-page={pageNum}
-      className="bg-white shadow-md border border-gray-200 overflow-hidden relative"
+      className="bg-white shadow-md border border-gray-200 relative"
       style={{
-        minHeight: "400px",
-        minWidth: "fit-content",
+        minHeight: isMobile ? "300px" : "400px",
+        minWidth: shouldConstrainWidth ? "100%" : "fit-content",
+        maxWidth: shouldConstrainWidth ? "100%" : "none",
+        width: shouldConstrainWidth ? "100%" : "auto",
         contain: "layout style paint",
+        overflow: shouldConstrainWidth ? "hidden" : "visible",
       }}
     >
       {/* Loading placeholder */}
@@ -74,8 +85,8 @@ export function PDFPage({
         }}
         className="block"
         style={{
-          maxWidth: "none",
-          width: "auto",
+          maxWidth: shouldConstrainWidth ? "100%" : "none",
+          width: shouldConstrainWidth ? "100%" : "auto",
           height: "auto",
           display: "block",
           transform: "translate3d(0, 0, 0)",

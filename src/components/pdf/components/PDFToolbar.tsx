@@ -8,6 +8,7 @@ import {
   ArrowsIn,
 } from "@phosphor-icons/react";
 import { usePDFContext } from "../context/PDFContext";
+import { useResponsive } from "../hooks/useResponsive";
 
 export function PDFToolbar() {
   const {
@@ -28,25 +29,43 @@ export function PDFToolbar() {
     onClose,
   } = usePDFContext();
 
+  const { isMobile } = useResponsive();
+
   return (
     <div className="flex h-12 text-white text-sm overflow-x-auto whitespace-nowrap border-b shadow-sm" style={{ backgroundColor: '#3b3b3b', borderBottomColor: '#2a2a2a' }}>
       {/* Left section - Page Display Only */}
-      <div className="flex items-center flex-shrink-0 px-4">
+      <div className={`flex items-center flex-shrink-0 ${isMobile ? 'px-2' : 'px-4'}`}>
         <div className="flex items-center">
-          <span style={{ color: '#cccccc' }}>Page {pageNumber} of {numPages}</span>
+          <span style={{ color: '#cccccc', fontSize: isMobile ? '12px' : '14px' }}>
+            {isMobile ? `${pageNumber}/${numPages}` : `Page ${pageNumber} of ${numPages}`}
+          </span>
         </div>
       </div>
 
       {/* Center section */}
-      <div className="flex items-center flex-1 justify-center min-w-0 gap-2">
+      <div className={`flex items-center flex-1 justify-center min-w-0 ${isMobile ? 'gap-1' : 'gap-2'}`}>
+        {/* Mobile: PDF Navigation on left side of zoom controls */}
+        {isMobile && papers.length > 1 && (
+          <button
+            onClick={goToPrevPaper}
+            disabled={!canGoPrevPaper()}
+            className="px-2 py-1 rounded flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title="Previous PDF"
+          >
+            ←
+          </button>
+        )}
+
         <button
           onClick={handleZoomOut}
-          className="px-3 py-2 rounded flex items-center transition-colors"
+          className={`${isMobile ? 'px-2 py-1' : 'px-3 py-2'} rounded flex items-center transition-colors`}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Zoom Out"
         >
-          <MagnifyingGlassMinus size={18} />
+          <MagnifyingGlassMinus size={isMobile ? 16 : 18} />
         </button>
 
         <div className="relative">
@@ -56,7 +75,9 @@ export function PDFToolbar() {
               const newScale = parseInt(e.target.value) / 100;
               updateZoomScale(newScale);
             }}
-            className="rounded px-3 py-1 outline-none appearance-none text-sm min-w-[80px] cursor-pointer transition-colors"
+            className={`rounded outline-none appearance-none cursor-pointer transition-colors ${
+              isMobile ? 'px-2 py-1 text-xs min-w-[60px]' : 'px-3 py-1 text-sm min-w-[80px]'
+            }`}
             style={{
               backgroundColor: '#2a2a2a',
               border: '1px solid #555555',
@@ -84,43 +105,62 @@ export function PDFToolbar() {
 
         <button
           onClick={handleZoomIn}
-          className="px-3 py-2 rounded flex items-center transition-colors"
+          className={`${isMobile ? 'px-2 py-1' : 'px-3 py-2'} rounded flex items-center transition-colors`}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Zoom In"
         >
-          <MagnifyingGlassPlus size={18} />
+          <MagnifyingGlassPlus size={isMobile ? 16 : 18} />
         </button>
 
-        <div className="w-px h-6 mx-2" style={{ backgroundColor: '#555555' }} />
+        {/* Mobile: PDF Navigation on right side of zoom controls */}
+        {isMobile && papers.length > 1 && (
+          <button
+            onClick={goToNextPaper}
+            disabled={!canGoNextPaper()}
+            className="px-2 py-1 rounded flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs"
+            onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title="Next PDF"
+          >
+            →
+          </button>
+        )}
 
-        <button
-          onClick={handleZoomFit}
-          className="px-3 py-2 rounded text-sm flex items-center transition-colors"
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          title="Fit to Page"
-        >
-          <ArrowsIn size={16} className="mr-1" />
-          <span>Fit</span>
-        </button>
+        {/* Desktop: Fit and Actual Size buttons */}
+        {!isMobile && (
+          <>
+            <div className="w-px h-6 mx-2" style={{ backgroundColor: '#555555' }} />
 
-        <button
-          onClick={handleZoomActual}
-          className="px-3 py-2 rounded text-sm flex items-center transition-colors"
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          title="Actual Size"
-        >
-          <ArrowsOut size={16} className="mr-1" />
-          <span>100%</span>
-        </button>
+            <button
+              onClick={handleZoomFit}
+              className="px-3 py-2 text-sm rounded flex items-center transition-colors"
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title="Fit to Page"
+            >
+              <ArrowsIn size={16} className="mr-1" />
+              <span>Fit</span>
+            </button>
+
+            <button
+              onClick={handleZoomActual}
+              className="px-3 py-2 rounded text-sm flex items-center transition-colors"
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              title="Actual Size"
+            >
+              <ArrowsOut size={16} className="mr-1" />
+              <span>100%</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Right section */}
-      <div className="flex items-center flex-shrink-0 px-4 gap-2">
-        {/* PDF Navigation - only show if there are multiple papers */}
-        {papers.length > 1 && (
+      <div className={`flex items-center flex-shrink-0 ${isMobile ? 'px-2 gap-1' : 'px-4 gap-2'}`}>
+        {/* Desktop: PDF Navigation */}
+        {papers.length > 1 && !isMobile && (
           <>
             <button
               onClick={goToPrevPaper}
@@ -150,24 +190,22 @@ export function PDFToolbar() {
 
         <button
           onClick={handleDownload}
-          className="px-3 py-2 rounded flex items-center transition-colors"
+          className={`${isMobile ? 'px-2 py-1' : 'px-3 py-2'} rounded flex items-center transition-colors`}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Download"
         >
-          <Download size={18} />
+          <Download size={isMobile ? 16 : 18} />
         </button>
-
-
 
         <button
           onClick={onClose}
-          className="px-3 py-2 rounded flex items-center transition-colors"
+          className={`${isMobile ? 'px-2 py-1' : 'px-3 py-2'} rounded flex items-center transition-colors`}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Close"
         >
-          <X size={18} />
+          <X size={isMobile ? 16 : 18} />
         </button>
       </div>
     </div>
