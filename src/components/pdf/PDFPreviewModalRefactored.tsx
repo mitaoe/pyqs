@@ -174,7 +174,7 @@ export default function PDFPreviewModal({
     return () => observer.disconnect();
   }, [numPages, renderPage, setVisiblePages, setPageNumber, pageContainerRefs]);
 
-  // Scale change handler
+  // Scale change handler with debouncing
   useEffect(() => {
     const currentScaleValue = internalScale || scale || 1.0;
     if (
@@ -183,15 +183,28 @@ export default function PDFPreviewModal({
     ) {
       setCurrentScale(currentScaleValue);
 
-      requestAnimationFrame(() => {
-        const isMobile = window.innerWidth <= 768;
-        const maxPages = isMobile ? 2 : 3;
-        const pagesToRender = Array.from(visiblePages).slice(0, maxPages);
+      // Debounce the rendering to prevent excessive re-renders during zoom
+      const renderTimeout = setTimeout(() => {
+        requestAnimationFrame(() => {
+          const isMobile = window.innerWidth <= 768;
+          const maxPages = isMobile ? 3 : 5; // Render more pages for better experience
+          const pagesToRender = Array.from(visiblePages).slice(0, maxPages);
 
-        pagesToRender.forEach((pageNum) => {
-          renderPage(pageNum);
+          // Prioritize currently visible pages
+          const sortedPages = pagesToRender.sort((a, b) => {
+            const aDistance = Math.abs(a - pageNumber);
+            const bDistance = Math.abs(b - pageNumber);
+            return aDistance - bDistance;
+          });
+
+          sortedPages.forEach((pageNum, index) => {
+            // Stagger rendering slightly to prevent blocking
+            setTimeout(() => renderPage(pageNum, true), index * 10);
+          });
         });
-      });
+      }, 50); // Small delay to debounce rapid zoom changes
+
+      return () => clearTimeout(renderTimeout);
     }
   }, [
     internalScale,
@@ -200,6 +213,7 @@ export default function PDFPreviewModal({
     renderPage,
     currentScale,
     setCurrentScale,
+    pageNumber,
   ]);
 
   // Wheel event for zoom

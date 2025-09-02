@@ -88,15 +88,48 @@ export function usePDFRenderer(
 
         const viewport = page.getViewport({ scale: currentScaleValue });
 
-        // Set canvas dimensions
+        // Store current canvas content if it exists (for smooth transitions)
+        const hasExistingContent = canvas.width > 0 && canvas.height > 0;
+        let imageData: ImageData | null = null;
+        
+        if (hasExistingContent && lastRenderedScale) {
+          try {
+            imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          } catch (e) {
+            // Ignore errors when getting image data
+          }
+        }
+
+        // Set new canvas dimensions
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         canvas.style.width = viewport.width + "px";
         canvas.style.height = viewport.height + "px";
 
-        // Clear and reset canvas
+        // If we have existing content, scale and draw it temporarily
+        if (imageData && lastRenderedScale) {
+          context.setTransform(1, 0, 0, 1, 0, 0);
+          const scaleRatio = currentScaleValue / lastRenderedScale;
+          context.scale(scaleRatio, scaleRatio);
+          
+          // Create temporary canvas for the old content
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = imageData.width;
+          tempCanvas.height = imageData.height;
+          const tempContext = tempCanvas.getContext('2d');
+          
+          if (tempContext) {
+            tempContext.putImageData(imageData, 0, 0);
+            context.drawImage(tempCanvas, 0, 0);
+          }
+        } else {
+          // Clear canvas if no existing content
+          context.setTransform(1, 0, 0, 1, 0, 0);
+          context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Reset transform for new render
         context.setTransform(1, 0, 0, 1, 0, 0);
-        context.clearRect(0, 0, canvas.width, canvas.height);
 
         const renderContext = {
           canvasContext: context,

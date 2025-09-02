@@ -42,9 +42,10 @@ export function usePDFZoom(initialScale: number = 1.0) {
           clearTimeout(zoomTimeout.current);
         }
 
+        // Longer timeout for better stability during zoom operations
         zoomTimeout.current = setTimeout(() => {
           isZooming.current = false;
-        }, 100);
+        }, 300);
 
         isZooming.current = true;
       }
