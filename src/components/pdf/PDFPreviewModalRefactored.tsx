@@ -308,6 +308,7 @@ export default function PDFPreviewModal({
     handleZoomOut,
     handleZoomActual,
     handleZoomFit: () => handleZoomFit(containerRef, pdfDoc, pageNumber),
+    updateZoomScale,
     isDragging,
     tool,
     handleMouseDown: (e: React.MouseEvent) => handleMouseDown(e, containerRef),
@@ -327,15 +328,16 @@ export default function PDFPreviewModal({
 
   return (
     <PDFProvider value={contextValue}>
-      <div className="fixed inset-0 z-50 bg-slate-50" data-pdf-modal>
+      <div className="fixed inset-0 z-50" style={{ backgroundColor: '#333333' }} data-pdf-modal>
         <PDFToolbar />
 
         {/* Main content area */}
-        <div className="flex h-[calc(100vh-3.5rem)] bg-slate-50">
+        <div className="flex h-[calc(100vh-3rem)]" style={{ backgroundColor: '#333333' }}>
           {/* PDF Viewer */}
           <div
             ref={containerRef}
-            className="flex-1 overflow-auto bg-slate-50"
+            className="flex-1 overflow-auto"
+            style={{ backgroundColor: '#333333' }}
             onMouseDown={contextValue.handleMouseDown}
             onMouseMove={contextValue.handleMouseMove}
             onMouseUp={handleMouseUp}

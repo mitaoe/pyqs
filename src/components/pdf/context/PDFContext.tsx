@@ -37,6 +37,7 @@ interface PDFContextType {
   handleZoomOut: () => void;
   handleZoomActual: () => void;
   handleZoomFit: () => void;
+  updateZoomScale: (newScale: number) => void;
 
   // Gesture handlers
   isDragging: boolean;

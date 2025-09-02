@@ -27,7 +27,7 @@ export function usePDFZoom(initialScale: number = 1.0) {
 
   const updateZoomScale = useCallback(
     (newScale: number, centerX?: number, centerY?: number) => {
-      const clampedScale = Math.max(0.25, Math.min(5.0, newScale));
+      const clampedScale = Math.max(0.6, Math.min(5.0, newScale));
 
       if (Math.abs(clampedScale - internalScale) > 0.01) {
         if (centerX !== undefined && centerY !== undefined) {
@@ -58,7 +58,7 @@ export function usePDFZoom(initialScale: number = 1.0) {
   }, [internalScale, updateZoomScale]);
 
   const handleZoomOut = useCallback(() => {
-    const newScale = Math.max(internalScale / 1.2, 0.25);
+    const newScale = Math.max(internalScale / 1.2, 0.6);
     updateZoomScale(newScale);
   }, [internalScale, updateZoomScale]);
 
@@ -75,13 +75,12 @@ export function usePDFZoom(initialScale: number = 1.0) {
       if (containerRef.current && pdfDoc) {
         const container = containerRef.current;
         const containerWidth = container.clientWidth - 80;
-        const containerHeight = container.clientHeight - 80;
 
         pdfDoc.getPage(pageNumber).then((page: any) => {
           const viewport = page.getViewport({ scale: 1.0 });
+          // Fit to width like Chrome PDF viewer
           const scaleX = containerWidth / viewport.width;
-          const scaleY = containerHeight / viewport.height;
-          const newScale = Math.min(scaleX, scaleY, 5.0);
+          const newScale = Math.min(scaleX, 5.0);
           updateZoomScale(Math.round(newScale * 100) / 100);
         });
       }

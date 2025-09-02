@@ -29,27 +29,52 @@ export function PDFToolbar() {
     handleZoomOut,
     handleZoomFit,
     handleZoomActual,
+    updateZoomScale,
     handleDownload,
     onClose,
   } = usePDFContext();
 
   return (
-    <div className="flex h-14 bg-slate-700 text-white text-sm overflow-x-auto whitespace-nowrap border-b border-slate-600 shadow-sm">
+    <div className="flex h-12 text-white text-sm overflow-x-auto whitespace-nowrap border-b shadow-sm" style={{ backgroundColor: '#3b3b3b', borderBottomColor: '#2a2a2a' }}>
       {/* Left section */}
       <div className="flex items-center flex-shrink-0 px-4">
         <button
-          onClick={() => goToPrevPage(numPages, {} as any, {} as any)}
+          onClick={() => {
+            if (pageNumber > 1) {
+              const targetPage = pageNumber - 1;
+              setPageNumber(targetPage);
+              // Scroll to the page
+              const pageElement = document.querySelector(`[data-page="${targetPage}"]`);
+              if (pageElement) {
+                pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          }}
           disabled={pageNumber <= 1}
-          className="px-3 py-2 rounded hover:bg-slate-600 disabled:opacity-50 disabled:hover:bg-transparent flex items-center transition-colors"
+          className="px-3 py-2 rounded disabled:opacity-50 disabled:hover:bg-transparent flex items-center transition-colors"
+          onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Previous Page"
         >
           <CaretLeft size={18} />
         </button>
 
         <button
-          onClick={() => goToNextPage(numPages, {} as any, {} as any)}
+          onClick={() => {
+            if (pageNumber < numPages) {
+              const targetPage = pageNumber + 1;
+              setPageNumber(targetPage);
+              // Scroll to the page
+              const pageElement = document.querySelector(`[data-page="${targetPage}"]`);
+              if (pageElement) {
+                pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          }}
           disabled={pageNumber >= numPages}
-          className="px-3 py-2 rounded hover:bg-slate-600 disabled:opacity-50 disabled:hover:bg-transparent flex items-center transition-colors"
+          className="px-3 py-2 rounded disabled:opacity-50 disabled:hover:bg-transparent flex items-center transition-colors"
+          onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Next Page"
         >
           <CaretRight size={18} />
@@ -63,13 +88,25 @@ export function PDFToolbar() {
               const page = parseInt(e.target.value);
               if (page >= 1 && page <= numPages) {
                 setPageNumber(page);
+                // Scroll to the page
+                const pageElement = document.querySelector(`[data-page="${page}"]`);
+                if (pageElement) {
+                  pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
               }
             }}
-            className="w-12 bg-slate-600 text-center border border-slate-500 rounded px-2 py-1 outline-none focus:border-blue-400 text-sm"
+            className="w-12 text-center rounded px-2 py-1 outline-none text-sm"
+            style={{ 
+              backgroundColor: '#2a2a2a', 
+              border: '1px solid #555555',
+              color: 'white'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#0078d4'}
+            onBlur={(e) => e.target.style.borderColor = '#555555'}
             min={1}
             max={numPages}
           />
-          <span className="mx-2 text-slate-300">of {numPages}</span>
+          <span className="mx-2" style={{ color: '#cccccc' }}>of {numPages}</span>
         </div>
       </div>
 
@@ -77,7 +114,9 @@ export function PDFToolbar() {
       <div className="flex items-center flex-1 justify-center min-w-0 gap-2">
         <button
           onClick={handleZoomOut}
-          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
+          className="px-3 py-2 rounded flex items-center transition-colors"
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Zoom Out"
         >
           <MagnifyingGlassMinus size={18} />
@@ -87,40 +126,52 @@ export function PDFToolbar() {
           <select
             value={Math.round(scale * 100)}
             onChange={(e) => {
-              // This would need to be handled by the zoom hook
-              const newScale = Math.min(parseInt(e.target.value) / 100, 3.0);
-              // setScale(newScale); // This would be passed from context
+              const newScale = parseInt(e.target.value) / 100;
+              updateZoomScale(newScale);
             }}
-            className="bg-slate-600 border border-slate-500 rounded px-3 py-1 outline-none focus:border-blue-400 appearance-none text-sm min-w-[80px] cursor-pointer hover:bg-slate-500 transition-colors"
+            className="rounded px-3 py-1 outline-none appearance-none text-sm min-w-[80px] cursor-pointer transition-colors"
+            style={{ 
+              backgroundColor: '#2a2a2a', 
+              border: '1px solid #555555',
+              color: 'white'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+            onFocus={(e) => e.target.style.borderColor = '#0078d4'}
+            onBlur={(e) => e.target.style.borderColor = '#555555'}
           >
             <option value={Math.round(scale * 100)}>
               {Math.round(scale * 100)}%
             </option>
-            <option value={10}>10%</option>
-            <option value={25}>25%</option>
-            <option value={50}>50%</option>
+            <option value={60}>60%</option>
             <option value={75}>75%</option>
             <option value={100}>100%</option>
             <option value={125}>125%</option>
             <option value={150}>150%</option>
             <option value={200}>200%</option>
             <option value={300}>300%</option>
+            <option value={400}>400%</option>
+            <option value={500}>500%</option>
           </select>
         </div>
 
         <button
           onClick={handleZoomIn}
-          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
+          className="px-3 py-2 rounded flex items-center transition-colors"
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Zoom In"
         >
           <MagnifyingGlassPlus size={18} />
         </button>
 
-        <div className="w-px h-6 bg-slate-500 mx-2" />
+        <div className="w-px h-6 mx-2" style={{ backgroundColor: '#555555' }} />
 
         <button
           onClick={handleZoomFit}
-          className="px-3 py-2 rounded hover:bg-slate-600 text-sm flex items-center transition-colors"
+          className="px-3 py-2 rounded text-sm flex items-center transition-colors"
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Fit to Page"
         >
           <ArrowsIn size={16} className="mr-1" />
@@ -129,7 +180,9 @@ export function PDFToolbar() {
 
         <button
           onClick={handleZoomActual}
-          className="px-3 py-2 rounded hover:bg-slate-600 text-sm flex items-center transition-colors"
+          className="px-3 py-2 rounded text-sm flex items-center transition-colors"
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Actual Size"
         >
           <ArrowsOut size={16} className="mr-1" />
@@ -145,7 +198,9 @@ export function PDFToolbar() {
             <button
               onClick={goToPrevPaper}
               disabled={!canGoPrevPaper()}
-              className="px-3 py-2 rounded hover:bg-slate-600 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+              className="px-3 py-2 rounded flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="Previous PDF"
             >
               <CaretLeft size={18} />
@@ -154,19 +209,23 @@ export function PDFToolbar() {
             <button
               onClick={goToNextPaper}
               disabled={!canGoNextPaper()}
-              className="px-3 py-2 rounded hover:bg-slate-600 flex items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+              className="px-3 py-2 rounded flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = '#4a4a4a')}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               title="Next PDF"
             >
               <CaretRight size={18} />
             </button>
 
-            <div className="w-px h-6 bg-slate-500 mx-2" />
+            <div className="w-px h-6 mx-2" style={{ backgroundColor: '#555555' }} />
           </>
         )}
 
         <button
           onClick={handleDownload}
-          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
+          className="px-3 py-2 rounded flex items-center transition-colors"
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Download"
         >
           <Download size={18} />
@@ -174,17 +233,21 @@ export function PDFToolbar() {
 
         <button
           onClick={() => window.print()}
-          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
+          className="px-3 py-2 rounded flex items-center transition-colors"
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Print"
         >
           <Printer size={18} />
         </button>
 
-        <div className="w-px h-6 bg-slate-500 mx-2" />
+        <div className="w-px h-6 mx-2" style={{ backgroundColor: '#555555' }} />
 
         <button
           onClick={onClose}
-          className="px-3 py-2 rounded hover:bg-slate-600 flex items-center transition-colors"
+          className="px-3 py-2 rounded flex items-center transition-colors"
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4a4a4a'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           title="Close"
         >
           <X size={18} />
