@@ -62,6 +62,7 @@ export function PDFPage({
         width: shouldConstrainWidth ? "100%" : "auto",
         contain: "layout style paint",
         overflow: shouldConstrainWidth ? "hidden" : "visible",
+        touchAction: 'none', // Prevent browser zoom on individual pages
       }}
     >
       {/* Loading placeholder */}
@@ -94,6 +95,7 @@ export function PDFPage({
           // Smooth transitions during zoom
           transition: "opacity 0.2s ease-in-out",
           opacity: isLoading ? 0 : 1,
+          touchAction: 'none', // Prevent browser zoom on canvas
         }}
       />
     </div>

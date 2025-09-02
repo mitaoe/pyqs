@@ -30,7 +30,10 @@ export function usePDFZoom(initialScale: number = 1.0) {
     (newScale: number, centerX?: number, centerY?: number) => {
       const clampedScale = Math.max(0.6, Math.min(5.0, newScale));
 
-      if (Math.abs(clampedScale - internalScale) > 0.01) {
+      // Use a smaller threshold for mobile to make zoom more responsive
+      const threshold = window.innerWidth <= 768 ? 0.005 : 0.01;
+      
+      if (Math.abs(clampedScale - internalScale) > threshold) {
         if (centerX !== undefined && centerY !== undefined) {
           zoomCenter.current = { x: centerX, y: centerY };
         }
@@ -43,10 +46,11 @@ export function usePDFZoom(initialScale: number = 1.0) {
           clearTimeout(zoomTimeout.current);
         }
 
-        // Longer timeout for better stability during zoom operations
+        // Shorter timeout for mobile for more responsive zoom
+        const timeoutDuration = window.innerWidth <= 768 ? 150 : 300;
         zoomTimeout.current = setTimeout(() => {
           isZooming.current = false;
-        }, 300);
+        }, timeoutDuration);
 
         isZooming.current = true;
       }

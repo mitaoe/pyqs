@@ -21,6 +21,8 @@ export function usePDFGestures(
   });
 
   const isZooming = useRef<boolean>(false);
+  const initialPinchDistance = useRef<number>(0);
+  const initialScale = useRef<number>(1);
   const tool = "hand"; // Always use hand tool
 
   // Calculate distance between two touch points
@@ -97,12 +99,20 @@ export function usePDFGestures(
       containerRef: React.RefObject<HTMLDivElement | null>
     ) => {
       if (e.touches.length === 2) {
-        // Two finger pinch zoom
+        // Two finger pinch zoom - prevent default to stop browser zoom
+        e.preventDefault();
+        e.stopPropagation();
+        
         const distance = getTouchDistance(e.touches);
+        initialPinchDistance.current = distance;
         lastPinchDistance.current = distance;
+        initialScale.current = currentScaleRef.current;
         isZooming.current = true;
 
-        // Get pinch center
+        // Debug log for mobile testing
+        console.log('Pinch start:', { distance, initialScale: initialScale.current });
+
+        // Get pinch center relative to the container
         const center = getTouchCenter(e.touches);
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
@@ -111,14 +121,12 @@ export function usePDFGestures(
             y: center.y - rect.top,
           };
         }
-
-        e.preventDefault();
       } else if (
         tool === "hand" &&
         e.touches.length === 1 &&
         !isZooming.current
       ) {
-        // Single finger drag
+        // Single finger drag - only prevent default if we're actually dragging
         const touch = e.touches[0];
         setIsDragging(true);
         setDragStart({ x: touch.clientX, y: touch.clientY });
@@ -130,7 +138,7 @@ export function usePDFGestures(
         }
       }
     },
-    [tool, getTouchDistance, getTouchCenter, lastPinchDistance, zoomCenter]
+    [tool, getTouchDistance, getTouchCenter, lastPinchDistance, zoomCenter, currentScaleRef]
   );
 
   const handleTouchMove = useCallback(
@@ -139,27 +147,42 @@ export function usePDFGestures(
       containerRef: React.RefObject<HTMLDivElement | null>
     ) => {
       if (e.touches.length === 2 && isZooming.current) {
-        // Handle pinch zoom
+        // Handle pinch zoom - prevent default to stop browser zoom
+        e.preventDefault();
+        e.stopPropagation();
+        
         const currentDistance = getTouchDistance(e.touches);
 
-        if (lastPinchDistance.current > 0) {
-          const scaleChange = currentDistance / lastPinchDistance.current;
-          const newScale = currentScaleRef.current * scaleChange;
+        if (initialPinchDistance.current > 0 && currentDistance > 0) {
+          // Calculate scale based on initial distance and scale
+          const scaleRatio = currentDistance / initialPinchDistance.current;
+          const newScale = Math.max(0.6, Math.min(5.0, initialScale.current * scaleRatio));
 
-          // Get current pinch center
-          const center = getTouchCenter(e.touches);
-          const rect = containerRef.current?.getBoundingClientRect();
-          if (rect) {
-            const centerX = center.x - rect.left;
-            const centerY = center.y - rect.top;
-            updateZoomScale(newScale, centerX, centerY);
-          } else {
-            updateZoomScale(newScale);
+          // Only update if the scale change is significant enough to avoid jitter
+          if (Math.abs(newScale - currentScaleRef.current) > 0.01) {
+            // Debug log for mobile testing
+            console.log('Pinch zoom:', { 
+              currentDistance, 
+              initialDistance: initialPinchDistance.current,
+              scaleRatio, 
+              newScale, 
+              currentScale: currentScaleRef.current 
+            });
+
+            // Get current pinch center
+            const center = getTouchCenter(e.touches);
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (rect) {
+              const centerX = center.x - rect.left;
+              const centerY = center.y - rect.top;
+              updateZoomScale(newScale, centerX, centerY);
+            } else {
+              updateZoomScale(newScale);
+            }
           }
         }
 
         lastPinchDistance.current = currentDistance;
-        e.preventDefault();
       } else if (
         isDragging &&
         tool === "hand" &&
@@ -167,7 +190,9 @@ export function usePDFGestures(
         e.touches.length === 1 &&
         !isZooming.current
       ) {
-        // Handle single finger drag
+        // Handle single finger drag - prevent default to stop scrolling
+        e.preventDefault();
+        
         const touch = e.touches[0];
         const deltaX = touch.clientX - dragStart.x;
         const deltaY = touch.clientY - dragStart.y;
@@ -190,21 +215,27 @@ export function usePDFGestures(
       updateZoomScale,
       currentScaleRef,
       lastPinchDistance,
+      initialPinchDistance,
+      initialScale,
     ]
   );
 
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
-      if (e.touches.length === 0) {
+      if (e.touches.length < 2) {
+        // Reset zoom state when less than 2 fingers
         isZooming.current = false;
         lastPinchDistance.current = 0;
+        initialPinchDistance.current = 0;
+        initialScale.current = currentScaleRef.current;
       }
 
-      if (tool === "hand") {
+      if (e.touches.length === 0) {
+        // All fingers lifted - reset drag state
         setIsDragging(false);
       }
     },
-    [tool, lastPinchDistance]
+    [currentScaleRef]
   );
 
   return {

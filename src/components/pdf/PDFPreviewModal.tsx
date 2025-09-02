@@ -252,6 +252,71 @@ export default function PDFPreviewModal({
     };
   }, [internalScale, updateZoomScale]);
 
+  // Native touch event handlers for better mobile support
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !isMobile) return;
+
+    let initialDistance = 0;
+    let initialScale = 1;
+    let isZooming = false;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        initialDistance = Math.sqrt(dx * dx + dy * dy);
+        initialScale = internalScale;
+        isZooming = true;
+
+        console.log('Native touch start:', { initialDistance, initialScale });
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && isZooming && initialDistance > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        const currentDistance = Math.sqrt(dx * dx + dy * dy);
+
+        const scaleRatio = currentDistance / initialDistance;
+        const newScale = Math.max(0.6, Math.min(5.0, initialScale * scaleRatio));
+
+        if (Math.abs(newScale - internalScale) > 0.01) {
+          console.log('Native touch zoom:', { currentDistance, scaleRatio, newScale });
+          updateZoomScale(newScale);
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        isZooming = false;
+        initialDistance = 0;
+      }
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile, internalScale, updateZoomScale]);
+
   // Initial render of first few pages
   useEffect(() => {
     if (pdfDoc && numPages > 0 && renderedPages.size === 0) {
@@ -381,6 +446,27 @@ export default function PDFPreviewModal({
     setIsNavigating,
   };
 
+  // Add viewport meta tag to prevent zooming when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Store original viewport meta tag
+      const originalViewport = document.querySelector('meta[name="viewport"]');
+      const originalContent = originalViewport?.getAttribute('content') || '';
+
+      // Set new viewport to prevent zooming
+      if (originalViewport) {
+        originalViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      }
+
+      // Restore original viewport when modal closes
+      return () => {
+        if (originalViewport && originalContent) {
+          originalViewport.setAttribute('content', originalContent);
+        }
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen || !paper) return null;
 
   return (
@@ -394,7 +480,13 @@ export default function PDFPreviewModal({
           <div
             ref={containerRef}
             className="flex-1 overflow-auto"
-            style={{ backgroundColor: '#333333' }}
+            style={{
+              backgroundColor: '#333333',
+              touchAction: 'none', // Prevent browser zoom and scrolling
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none'
+            }}
             onMouseDown={contextValue.handleMouseDown}
             onMouseMove={contextValue.handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -425,6 +517,7 @@ export default function PDFPreviewModal({
                       : "text",
                   minWidth: "fit-content",
                   width: isMobile && (internalScale || scale) <= 1.0 ? "100%" : "auto",
+                  touchAction: 'none', // Prevent browser zoom on PDF content
                 }}
               >
                 {loading && <PDFLoadingState />}
@@ -433,7 +526,7 @@ export default function PDFPreviewModal({
 
                 {/* Render all pages */}
                 {!loading && !error && numPages > 0 && (
-                  <div 
+                  <div
                     className={isMobile ? "space-y-2" : "space-y-6"}
                     style={{
                       width: isMobile && (internalScale || scale) <= 1.0 ? "100%" : "auto",
