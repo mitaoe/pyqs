@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import mime from "mime-types";
+import crypto from "crypto";
+
+// Generate ETag based on paper URL for conditional requests
+function generateETagFromUrl(url: string): string {
+  return `"${crypto.createHash('md5').update(url).digest('hex')}"`;
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -11,6 +17,22 @@ export async function GET(request: NextRequest) {
       { error: "URL parameter is required" },
       { status: 400 }
     );
+  }
+
+  // Generate ETag for conditional requests
+  const etag = generateETagFromUrl(url);
+  
+  // Check If-None-Match header for conditional requests
+  const ifNoneMatch = request.headers.get('if-none-match');
+  if (ifNoneMatch === etag) {
+    return new NextResponse(null, { 
+      status: 304,
+      headers: {
+        'ETag': etag,
+        'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, immutable',
+        'CDN-Cache-Control': 'max-age=31536000',
+      }
+    });
   }
 
   try {
@@ -85,7 +107,10 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": contentDispositionValue,
-        "Cache-Control": "no-store",
+        "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
+        "CDN-Cache-Control": "max-age=31536000", // Vercel edge cache optimization
+        "Vary": "Accept-Encoding", // Vary on encoding for compression
+        "ETag": etag, // ETag for conditional requests
         // Forward content-length if available for better download progress
         ...(response.headers.get("content-length") && {
           "Content-Length": response.headers.get("content-length")!,
