@@ -14,7 +14,6 @@ export async function downloadFile(url: string, fileName: string, paper?: Paper)
     if (cachedData) {
       // Use cached version
       blob = new Blob([cachedData], { type: 'application/pdf' });
-      toast.success('Downloaded from cache (instant)');
     } else {
       // Fetch from network
       const proxyUrl = `/api/download/proxy?url=${encodeURIComponent(url)}`;
