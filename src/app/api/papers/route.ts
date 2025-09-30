@@ -1,13 +1,36 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import dbConnect from '@/lib/db';
 import PYQ from '@/models/Paper';
 import type { SavedDocument } from '@/types/paper';
-import type { FilterQuery } from 'mongoose';
+
+async function getPapersData() {
+  await dbConnect();
+  const doc = await PYQ.findOne().sort({ lastUpdated: -1 }).lean() as SavedDocument | null;
+  return doc;
+}
+
+// Request memoization for duplicate API calls within request lifecycle
+const memoizedRequests = new Map<string, Promise<SavedDocument | null>>();
+
+function getMemoizedRequest<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  if (memoizedRequests.has(key)) {
+    return memoizedRequests.get(key) as Promise<T>;
+  }
+
+  const promise = fn();
+  memoizedRequests.set(key, promise as Promise<SavedDocument | null>);
+
+  // Clean up after request completes
+  promise.finally(() => {
+    memoizedRequests.delete(key);
+  });
+
+  return promise;
+}
 
 export async function GET(request: Request) {
   try {
-    await dbConnect();
-
     // Get query parameters
     const url = new URL(request.url);
     const subject = url.searchParams.get('subject');
@@ -16,21 +39,13 @@ export async function GET(request: Request) {
     const semester = url.searchParams.get('semester');
     const examType = url.searchParams.get('examType');
 
-    // Build query
-    const query: FilterQuery<SavedDocument> = {};
-    if (subject) {
-      query.$or = [
-        { 'papers.subject': subject },
-        { 'papers.standardSubject': subject }
-      ];
-    }
-    if (year) query['papers.year'] = year;
-    if (branch) query['papers.branch'] = branch;
-    if (semester) query['papers.semester'] = semester;
-    if (examType) query['papers.examType'] = examType;
+    // Create cache key for memoization
+    const queryParams = { subject, year, branch, semester, examType };
+    const memoKey = `papers-${JSON.stringify(queryParams)}`;
 
-    const doc = await PYQ.findOne(query).sort({ lastUpdated: -1 }).lean() as SavedDocument | null;
-    
+    // Use request memoization for duplicate calls within request lifecycle
+    const doc = await getMemoizedRequest(memoKey, () => getPapersData());
+
     if (!doc) {
       console.warn('No paper data found in database');
       return NextResponse.json(
@@ -42,7 +57,7 @@ export async function GET(request: Request) {
     // Filter papers based on query parameters
     let papers = doc.papers;
     if (subject) {
-      papers = papers.filter(p => 
+      papers = papers.filter(p =>
         p.subject === subject || p.standardSubject === subject
       );
     }
@@ -65,20 +80,45 @@ export async function GET(request: Request) {
       papers: papers
     };
 
-    return NextResponse.json({
+    const responseData = {
       meta,
       lastUpdated: doc.stats.lastUpdated,
       stats: doc.stats
+    };
+
+    // Generate ETag based on response data and last updated time
+    const etag = `"${crypto.createHash('md5').update(JSON.stringify(responseData)).digest('hex')}"`;
+
+    // Check If-None-Match header for conditional requests
+    const ifNoneMatch = request.headers.get('if-none-match');
+    if (ifNoneMatch === etag) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          'ETag': etag,
+          'Cache-Control': 'public, max-age=604800, s-maxage=2592000', // 1 week browser, 1 month edge
+          'CDN-Cache-Control': 'max-age=2592000', // 1 month Vercel edge
+        }
+      });
+    }
+
+    return NextResponse.json(responseData, {
+      headers: {
+        'ETag': etag,
+        'Cache-Control': 'public, max-age=604800, s-maxage=2592000', // 1 week browser, 1 month edge
+        'CDN-Cache-Control': 'max-age=2592000', // 1 month Vercel edge
+        'Vary': 'Accept-Encoding',
+      }
     });
 
   } catch (error) {
     console.error('Failed to fetch papers:', error);
-    
+
     // Handle specific MongoDB errors
     if (error instanceof Error) {
       if (error.name === 'MongooseError' || error.name === 'MongoError') {
         return NextResponse.json(
-          { 
+          {
             error: 'Database connection error',
             details: error.message
           },
@@ -88,7 +128,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch papers',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

@@ -66,8 +66,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     // Clear all cache function
     const clearAllCache = useCallback(async () => {
         try {
+            // Clear PDF cache from IndexedDB
             const cacheManager = getCacheManager()
             await cacheManager.clearAllCache()
+            
+            // Clear papers metadata from localStorage
+            localStorage.removeItem('pyq_papers_data')
         } catch (error) {
             console.error("Failed to clear cache:", error)
             throw error

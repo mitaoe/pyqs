@@ -79,6 +79,25 @@ export interface BatchDownloadProgress {
 
 export type ProgressCallback = (progress: BatchDownloadProgress) => void;
 
+// Format filename for ZIP - replace spaces with underscores and include filters
+function formatZipFilename(papers: Paper[], filters: Record<string, string[]>): string {
+  const subject = papers[0]?.standardSubject || papers[0]?.subject || '';
+  const sanitizedSubject = subject.replace(/\s+/g, '_');
+
+  let filename = sanitizedSubject ? `${sanitizedSubject}_Papers` : 'MITAoE_Papers';
+
+  // Add filters to filename if they exist
+  if (filters.years?.length) {
+    filename += `_${filters.years.join('-')}`;
+  }
+
+  if (filters.examTypes?.length) {
+    filename += `_${filters.examTypes.join('-')}`;
+  }
+
+  return `${filename}.zip`;
+}
+
 export async function batchDownloadPapers(
   papers: Paper[],
   filters: Record<string, string[]> = {},
@@ -98,6 +117,26 @@ export async function batchDownloadPapers(
       return acc;
     }, [] as Paper[]);
 
+    // Validate number of papers
+    if (uniquePapers.length > 50) {
+      const errorMsg = 'Maximum 50 papers can be downloaded at once';
+      toast.error(errorMsg);
+      const progress: BatchDownloadProgress = {
+        totalPapers: uniquePapers.length,
+        completed: 0,
+        status: 'error',
+        error: errorMsg,
+        percentage: 0
+      };
+      onProgress?.(progress);
+      return false;
+    }
+
+    // Dynamic import JSZip to reduce bundle size
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    const cacheManager = getCacheManager();
+
     // Initialize progress
     const progress: BatchDownloadProgress = {
       totalPapers: uniquePapers.length,
@@ -108,227 +147,155 @@ export async function batchDownloadPapers(
 
     onProgress?.(progress);
 
-    // Validate number of papers
-    if (uniquePapers.length > 50) {
-      const errorMsg = 'Maximum 50 papers can be downloaded at once';
-      toast.error(errorMsg);
+    let successCount = 0;
+    let errorCount = 0;
+    let cacheHitCount = 0;
+    let networkFetchCount = 0;
+
+    // Keep track of filenames to avoid duplicates
+    const filenameMap = new Map<string, number>();
+
+    // Process each paper
+    for (let i = 0; i < uniquePapers.length; i++) {
+      const paper = uniquePapers[i];
+
+      try {
+        progress.status = 'downloading';
+        progress.completed = i;
+        progress.percentage = Math.round((i / uniquePapers.length) * 80);
+        progress.currentPaper = `Processing ${paper.fileName}...`;
+        onProgress?.(progress);
+
+        let pdfData: ArrayBuffer | null = null;
+
+        // Check cache first
+        pdfData = await cacheManager.getPdf(paper.url);
+
+        if (pdfData) {
+          cacheHitCount++;
+          progress.currentPaper = `${paper.fileName} (cached - instant!)`;
+          onProgress?.(progress);
+        } else {
+          // Fetch via proxy
+          networkFetchCount++;
+          progress.currentPaper = `Downloading ${paper.fileName}...`;
+          onProgress?.(progress);
+
+          const proxyUrl = `/api/download/proxy?url=${encodeURIComponent(paper.url)}`;
+          const response = await fetch(proxyUrl);
+
+          if (!response.ok) {
+            console.error(`Failed to fetch ${paper.url}, status: ${response.status}`);
+            errorCount++;
+            continue;
+          }
+
+          pdfData = await response.arrayBuffer();
+
+          // Cache for future use
+          try {
+            await cacheManager.storePdf(
+              paper.url,
+              pdfData,
+              paper.fileName,
+              paper.subject || 'Unknown',
+              paper.year || 'Unknown'
+            );
+          } catch (cacheError) {
+            console.warn('Failed to cache PDF:', cacheError);
+            // Continue anyway - caching failure shouldn't break download
+          }
+        }
+
+        if (pdfData) {
+          // Handle duplicate filenames by adding a suffix
+          let fileName = paper.fileName;
+          if (!fileName.toLowerCase().endsWith('.pdf')) {
+            fileName += '.pdf';
+          }
+
+          if (filenameMap.has(fileName)) {
+            const count = filenameMap.get(fileName)! + 1;
+            filenameMap.set(fileName, count);
+            const nameParts = fileName.split('.');
+            fileName = `${nameParts[0]}_${count}.${nameParts[1]}`;
+          } else {
+            filenameMap.set(fileName, 1);
+          }
+
+          // Add to ZIP
+          zip.file(fileName, pdfData);
+          successCount++;
+        }
+
+      } catch (error) {
+        console.error(`Error processing ${paper.fileName}:`, error);
+        errorCount++;
+      }
+    }
+
+    if (successCount === 0) {
+      const errorMsg = 'Failed to download any papers';
       progress.status = 'error';
       progress.error = errorMsg;
+      progress.percentage = 0;
       onProgress?.(progress);
+      toast.error(errorMsg);
       return false;
     }
 
-    // Check cache for each paper
-    const cacheManager = getCacheManager();
-    const cachedPapers: Paper[] = [];
-    const uncachedPapers: Paper[] = [];
-
-    progress.status = 'preparing';
-    progress.currentPaper = 'Checking cache for existing papers...';
+    // Create ZIP file
+    progress.status = 'processing';
+    progress.percentage = 85;
+    progress.completed = uniquePapers.length;
+    progress.currentPaper = `Creating ZIP file with ${successCount} papers...`;
     onProgress?.(progress);
 
-    for (const paper of uniquePapers) {
-      const cachedData = await cacheManager.getPdf(paper.url);
-      if (cachedData) {
-        cachedPapers.push(paper);
-      } else {
-        uncachedPapers.push(paper);
+    const zipBlob = await zip.generateAsync({
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: {
+        level: 9  // Maximum compression level
       }
+    });
+
+    // Prepare download
+    progress.status = 'sending';
+    progress.percentage = 95;
+    progress.currentPaper = 'Preparing download...';
+    onProgress?.(progress);
+
+    const zipFileName = formatZipFilename(uniquePapers, filters);
+    const objectUrl = URL.createObjectURL(zipBlob);
+
+    // Create download link
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = zipFileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(objectUrl);
+
+    // Complete
+    progress.status = 'complete';
+    progress.percentage = 100;
+
+    let completionMessage = `Downloaded ${successCount} papers successfully`;
+    if (cacheHitCount > 0 && networkFetchCount > 0) {
+      completionMessage += ` (${cacheHitCount} from cache, ${networkFetchCount} from network)`;
+    } else if (cacheHitCount > 0) {
+      completionMessage += ` (all from cache)`;
+    }
+    if (errorCount > 0) {
+      completionMessage += ` (${errorCount} failed)`;
     }
 
-    const cacheHitCount = cachedPapers.length;
-    const networkFetchCount = uncachedPapers.length;
+    progress.currentPaper = completionMessage;
+    onProgress?.(progress);
 
+    return true;
 
-    await new Promise(resolve => setTimeout(resolve, 400));
-    progress.status = 'downloading';
-    progress.percentage = 2;
-    progress.completed = 0;
-    onProgress?.({ ...progress });
-
-    try {
-      const responsePromise = fetch('/api/download/batch', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          papers: uncachedPapers, // Only fetch papers not in cache
-          filters,
-          cacheInfo: {
-            totalPapers: uniquePapers.length,
-            cachedCount: cacheHitCount,
-            networkCount: networkFetchCount
-          }
-        }),
-      });
-
-      progress.status = 'downloading';
-      progress.percentage = 5;
-      
-      if (cacheHitCount > 0 && networkFetchCount > 0) {
-        progress.currentPaper = `Using ${cacheHitCount} cached papers, fetching ${networkFetchCount} more...`;
-      } else if (cacheHitCount > 0) {
-        progress.currentPaper = 'All papers found in cache...';
-      } else {
-        progress.currentPaper = `Fetching ${networkFetchCount} papers...`;
-      }
-      
-      onProgress?.({ ...progress });
-
-      const fastDownloadSteps = 8;
-      const totalPapers = uniquePapers.length;
-
-      // Account for cached papers in progress - they're "instantly" available
-      const baseCompleted = cacheHitCount;
-
-      for (let i = 0; i < fastDownloadSteps; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 150));
-
-        const networkProgress = Math.min(networkFetchCount, (i + 1) * Math.ceil(networkFetchCount / fastDownloadSteps));
-        const newCompleted = baseCompleted + networkProgress;
-        progress.completed = newCompleted;
-        progress.percentage = 5 + Math.round((newCompleted / totalPapers) * 35);
-        onProgress?.({ ...progress });
-
-        if (i < fastDownloadSteps / 2) {
-          if (cacheHitCount > 0 && networkFetchCount > 0) {
-            const networkDownloaded = newCompleted - baseCompleted;
-            progress.currentPaper = `Downloaded ${networkDownloaded}/${networkFetchCount} new papers (${cacheHitCount} from cache)`;
-          } else {
-            progress.currentPaper = `Collecting files (${progress.completed} of ${totalPapers})...`;
-          }
-        } else {
-          progress.currentPaper = `Preparing batch (${progress.completed} of ${totalPapers})...`;
-        }
-      }
-
-      progress.percentage = 40;
-      progress.currentPaper = networkFetchCount > 0
-        ? 'Waiting for server to process files...'
-        : 'Processing cached files...';
-      onProgress?.({ ...progress });
-
-      const response = await responsePromise;
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to create batch download';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-        }
-        throw new Error(errorMessage);
-      }
-
-      const networkSuccessCount = parseInt(response.headers.get('X-Download-Success-Count') || '0');
-      const networkErrorCount = parseInt(response.headers.get('X-Download-Error-Count') || '0');
-
-      const totalSuccessCount = networkSuccessCount + cacheHitCount;
-      const totalErrorCount = networkErrorCount;
-
-      const blobPromise = response.blob();
-
-      progress.completed = uniquePapers.length;
-      progress.status = 'processing';
-      progress.percentage = 50;
-      progress.currentPaper = `Creating ZIP file with ${totalSuccessCount} papers`;
-      if (cacheHitCount > 0) {
-        progress.currentPaper += ` (${cacheHitCount} from cache)`;
-      }
-      if (totalErrorCount > 0) {
-        progress.currentPaper += ` (${totalErrorCount} failed)`;
-      }
-      onProgress?.({ ...progress });
-
-      const zipCreationTime = Math.min(2000, Math.max(800, papers.length * 40));
-      const zipStartTime = Date.now();
-      const zipUpdateInterval = setInterval(() => {
-        const elapsed = Date.now() - zipStartTime;
-        if (elapsed >= zipCreationTime) {
-          clearInterval(zipUpdateInterval);
-          return;
-        }
-
-        const progressPercent = 50 + Math.min(30, Math.round((elapsed / zipCreationTime) * 30));
-        progress.percentage = progressPercent;
-        onProgress?.({ ...progress });
-      }, 120);
-
-      const blob = await blobPromise;
-      clearInterval(zipUpdateInterval);
-
-      const actualZipTime = Date.now() - zipStartTime;
-      if (actualZipTime < zipCreationTime) {
-        const remainingTime = zipCreationTime - actualZipTime;
-        progress.percentage = 80;
-        onProgress?.({ ...progress });
-        await new Promise(resolve => setTimeout(resolve, remainingTime));
-      }
-
-      progress.status = 'sending';
-      progress.percentage = 90;
-      progress.currentPaper = 'Preparing download...';
-      onProgress?.({ ...progress });
-
-      const objectUrl = URL.createObjectURL(blob);
-
-      // Get filename from header if available
-      const contentDisposition = response.headers.get('content-disposition');
-      let fileName = 'MITAoE_Papers.zip';
-
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename="(.+?)"/);
-        if (match && match[1]) {
-          fileName = match[1];
-        }
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 400));
-
-      progress.percentage = 95;
-      progress.currentPaper = 'Starting download...';
-      onProgress?.({ ...progress });
-
-      // Create download link
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(objectUrl);
-
-      // Complete the progress
-      progress.status = 'complete';
-      progress.percentage = 100;
-
-      let completionMessage = `Downloaded ${totalSuccessCount} papers successfully`;
-      if (cacheHitCount > 0 && networkSuccessCount > 0) {
-        completionMessage += ` (${cacheHitCount} from cache, ${networkSuccessCount} from network)`;
-      } else if (cacheHitCount > 0) {
-        completionMessage += ` (all from cache)`;
-      }
-      if (totalErrorCount > 0) {
-        completionMessage += ` (${totalErrorCount} failed)`;
-      }
-
-      progress.currentPaper = completionMessage;
-      onProgress?.({ ...progress });
-
-      return true;
-    } catch (fetchError) {
-      console.error('Batch download request failed:', fetchError);
-
-      progress.status = 'error';
-      progress.error = fetchError instanceof Error
-        ? fetchError.message
-        : 'Failed to connect to download service';
-      progress.percentage = 0;
-
-      onProgress?.(progress);
-      return false;
-    }
   } catch (error) {
     console.error('Batch download failed:', error);
 
@@ -341,6 +308,7 @@ export async function batchDownloadPapers(
     };
 
     onProgress?.(progress);
+    toast.error('Failed to create batch download');
     return false;
   }
 } 
