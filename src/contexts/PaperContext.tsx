@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useRef, type ReactNode,
 import { toast } from 'sonner';
 import type { DirectoryMeta, DirectoryNode, Paper } from '@/types/paper';
 import { STANDARD_VALUES } from '@/config/mappings';
+import { getCacheManager } from '@/lib/cache';
 
 export enum LoadingStatus {
   IDLE = 'idle',
@@ -35,10 +36,11 @@ interface PaperContextType {
   refreshData: () => Promise<void>;
   prefetchData: () => Promise<void>;
   fetchDirectoryData: () => Promise<void>;
+  checkCacheStatus: (paper: Paper) => Promise<Paper>;
 }
 
 const PAPERS_CACHE_KEY = 'pyq_papers_data';
-const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+const CACHE_DURATION = 1000 * 60 * 60 * 24 * 7; // 1 week
 
 const PaperContext = createContext<PaperContextType | undefined>(undefined);
 
@@ -94,13 +96,46 @@ export function PaperProvider({ children }: PaperProviderProps) {
     examType: ''
   });
   const isMounted = useRef(false);
+  const cacheManager = getCacheManager();
+
+  // Lazy cache status checking - don't block UI with 5K lookups
+  const checkPaperCacheStatus = useCallback(async (paper: Paper): Promise<Paper> => {
+    try {
+      const cachedData = await cacheManager.getPdf(paper.url);
+      if (cachedData) {
+        return {
+          ...paper,
+          cacheStatus: 'cached' as const,
+          cacheSize: cachedData.byteLength,
+          lastCached: new Date()
+        };
+      }
+      return {
+        ...paper,
+        cacheStatus: 'not-cached' as const
+      };
+    } catch {
+      return {
+        ...paper,
+        cacheStatus: 'not-cached' as const
+      };
+    }
+  }, [cacheManager]);
+
+  // Initialize papers without cache status - add it lazily when needed
+  const initializePapers = useCallback((papers: Paper[]): Paper[] => {
+    return papers.map(paper => ({
+      ...paper,
+      cacheStatus: 'not-cached' as const // Default assumption
+    }));
+  }, []);
 
   const fetchPapersData = useCallback(async (force = false) => {
     if (isLoading) return;
 
     try {
       setIsLoading(true);
-      
+
       if (!force && isMounted.current) {
         setLoadingStatus(LoadingStatus.METADATA_LOADING);
         try {
@@ -108,10 +143,17 @@ export function PaperProvider({ children }: PaperProviderProps) {
           if (cached) {
             const { data, timestamp } = JSON.parse(cached);
             const age = Date.now() - timestamp;
-            
+
             if (age < CACHE_DURATION) {
-              setMeta(data.meta);
-              setPapers(data.meta.papers || []);
+              // Load cached metadata immediately - no expensive cache checks
+              const initializedPapers = initializePapers(data.meta.papers || []);
+              const initializedMeta = {
+                ...data.meta,
+                papers: initializedPapers
+              };
+
+              setMeta(initializedMeta);
+              setPapers(initializedPapers);
               setLastUpdated(new Date(data.lastUpdated));
               setLoadingStatus(LoadingStatus.COMPLETE);
               setDataReady(true);
@@ -119,8 +161,8 @@ export function PaperProvider({ children }: PaperProviderProps) {
               return;
             }
           }
-        } catch (e) {
-          console.warn('Failed to read from cache:', e);
+        } catch {
+          console.warn('Failed to read from cache');
         }
       }
 
@@ -135,40 +177,46 @@ export function PaperProvider({ children }: PaperProviderProps) {
 
       setLoadingStatus(LoadingStatus.PAPERS_LOADING);
       const papersResponse = await fetch(`/api/papers?${query}`);
-      
+
       if (!papersResponse.ok) {
         const errorData = await papersResponse.json();
         throw new Error(errorData.error || 'Failed to fetch papers');
       }
 
       const papersData = await papersResponse.json();
-      
-      setMeta(papersData.meta);
-      setPapers(papersData.meta.papers || []);
+
+      // Initialize papers without expensive cache checks - UI loads fast
+      const initializedPapers = initializePapers(papersData.meta.papers || []);
+
+      setMeta({
+        ...papersData.meta,
+        papers: initializedPapers
+      });
+      setPapers(initializedPapers);
       setLastUpdated(new Date(papersData.lastUpdated));
-      
+
       if (isMounted.current) {
         const cacheData = {
           data: {
             meta: {
               ...papersData.meta,
-              papers: papersData.meta.papers || []
+              papers: initializedPapers
             },
             lastUpdated: papersData.lastUpdated
           },
           timestamp: Date.now()
         };
-        
+
         safeLocalStorage(PAPERS_CACHE_KEY, cacheData);
       }
 
       if (force) {
         toast.success('Papers refreshed successfully');
       }
-      
+
       setLoadingStatus(LoadingStatus.COMPLETE);
       setDataReady(true);
-      
+
     } catch (error) {
       console.error('Failed to fetch papers data:', error);
       setError(error instanceof Error ? error : new Error('Unknown error'));
@@ -177,26 +225,26 @@ export function PaperProvider({ children }: PaperProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [filters, isLoading]);
+  }, [filters, isLoading, initializePapers]);
 
   const fetchDirectoryData = useCallback(async () => {
     if (isLoading) return;
-    
+
     try {
       setIsLoading(true);
       setLoadingStatus(LoadingStatus.DIRECTORY_LOADING);
-      
+
       // We never cache directory structure - it's only for developer use
       const directoryResponse = await fetch('/api/directory');
-      
+
       if (!directoryResponse.ok) {
         const errorData = await directoryResponse.json();
         throw new Error(errorData.error || 'Failed to fetch directory structure');
       }
-      
+
       const directoryData = await directoryResponse.json();
       setStructure(directoryData.structure);
-      
+
       setLoadingStatus(LoadingStatus.COMPLETE);
     } catch (error) {
       console.error('Failed to fetch directory data:', error);
@@ -211,7 +259,6 @@ export function PaperProvider({ children }: PaperProviderProps) {
   const prefetchData = useCallback(async () => {
     // Don't prefetch if data is already ready or already loading
     if (dataReady || isLoading) return;
-    
     await fetchPapersData(false);
   }, [dataReady, isLoading, fetchPapersData]);
 
@@ -247,7 +294,8 @@ export function PaperProvider({ children }: PaperProviderProps) {
       setFilter,
       refreshData: () => fetchPapersData(true),
       prefetchData,
-      fetchDirectoryData
+      fetchDirectoryData,
+      checkCacheStatus: checkPaperCacheStatus
     }}>
       {children}
     </PaperContext.Provider>
