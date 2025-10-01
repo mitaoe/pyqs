@@ -10,41 +10,29 @@ async function getPapersData() {
   return doc;
 }
 
-// Request memoization for duplicate API calls within request lifecycle
-const memoizedRequests = new Map<string, Promise<SavedDocument | null>>();
+// Single-entry cache for the papers document
+let cachedDoc: SavedDocument | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-function getMemoizedRequest<T>(key: string, fn: () => Promise<T>): Promise<T> {
-  if (memoizedRequests.has(key)) {
-    return memoizedRequests.get(key) as Promise<T>;
+async function getCachedPapersData(): Promise<SavedDocument | null> {
+  // Check if cache is still valid
+  if (cachedDoc && (Date.now() - cacheTimestamp < CACHE_TTL)) {
+    return cachedDoc;
   }
 
-  const promise = fn();
-  memoizedRequests.set(key, promise as Promise<SavedDocument | null>);
-
-  // Clean up after request completes
-  promise.finally(() => {
-    memoizedRequests.delete(key);
-  });
-
-  return promise;
+  // Fetch fresh data and cache it
+  const doc = await getPapersData();
+  cachedDoc = doc;
+  cacheTimestamp = Date.now();
+  
+  return doc;
 }
 
 export async function GET(request: Request) {
   try {
-    // Get query parameters
-    const url = new URL(request.url);
-    const subject = url.searchParams.get('subject');
-    const year = url.searchParams.get('year');
-    const branch = url.searchParams.get('branch');
-    const semester = url.searchParams.get('semester');
-    const examType = url.searchParams.get('examType');
-
-    // Create cache key for memoization
-    const queryParams = { subject, year, branch, semester, examType };
-    const memoKey = `papers-${JSON.stringify(queryParams)}`;
-
-    // Use request memoization for duplicate calls within request lifecycle
-    const doc = await getMemoizedRequest(memoKey, () => getPapersData());
+    // Get cached papers document
+    const doc = await getCachedPapersData();
 
     if (!doc) {
       console.warn('No paper data found in database');
@@ -54,40 +42,18 @@ export async function GET(request: Request) {
       );
     }
 
-    // Filter papers based on query parameters
-    let papers = doc.papers;
-    if (subject) {
-      papers = papers.filter(p =>
-        p.subject === subject || p.standardSubject === subject
-      );
-    }
-    if (year) {
-      papers = papers.filter(p => p.year === year);
-    }
-    if (branch) {
-      papers = papers.filter(p => p.branch === branch);
-    }
-    if (semester) {
-      papers = papers.filter(p => p.semester === semester);
-    }
-    if (examType) {
-      papers = papers.filter(p => p.examType === examType);
-    }
-
-    // Create meta object with papers included
-    const meta = {
-      ...doc.meta,
-      papers: papers
-    };
-
+    // Return all papers
     const responseData = {
-      meta,
+      meta: {
+        ...doc.meta,
+        papers: doc.papers
+      },
       lastUpdated: doc.stats.lastUpdated,
       stats: doc.stats
     };
 
-    // Generate ETag based on response data and last updated time
-    const etag = `"${crypto.createHash('md5').update(JSON.stringify(responseData)).digest('hex')}"`;
+    // Generate ETag based on last updated time
+    const etag = `"${crypto.createHash('md5').update(doc.stats.lastUpdated.toString()).digest('hex')}"`;
 
     // Check If-None-Match header for conditional requests
     const ifNoneMatch = request.headers.get('if-none-match');
@@ -135,4 +101,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

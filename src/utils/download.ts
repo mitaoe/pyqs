@@ -81,6 +81,10 @@ export type ProgressCallback = (progress: BatchDownloadProgress) => void;
 
 // Format filename for ZIP - replace spaces with underscores and include filters
 function formatZipFilename(papers: Paper[], filters: Record<string, string[]>): string {
+  if (!papers || papers.length === 0) {
+    return 'MITAoE_Papers.zip';
+  }
+
   const subject = papers[0]?.standardSubject || papers[0]?.subject || '';
   const sanitizedSubject = subject.replace(/\s+/g, '_');
 
@@ -310,8 +314,14 @@ export async function batchDownloadPapers(
         if (filenameMap.has(fileName)) {
           const count = filenameMap.get(fileName)! + 1;
           filenameMap.set(fileName, count);
-          const nameParts = fileName.split('.');
-          fileName = `${nameParts[0]}_${count}.${nameParts[1]}`;
+          const dotIndex = fileName.lastIndexOf('.');
+          if (dotIndex !== -1) {
+            const base = fileName.substring(0, dotIndex);
+            const ext = fileName.substring(dotIndex + 1);
+            fileName = `${base}_${count}.${ext}`;
+          } else {
+            fileName = `${fileName}_${count}`;
+          }
         } else {
           filenameMap.set(fileName, 1);
         }
