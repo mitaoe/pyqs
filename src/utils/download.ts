@@ -79,25 +79,6 @@ export interface BatchDownloadProgress {
 
 export type ProgressCallback = (progress: BatchDownloadProgress) => void;
 
-// Handle filename collisions by appending a counter
-function handleFilenameCollision(fileName: string, filenameMap: Map<string, number>): string {
-  if (filenameMap.has(fileName)) {
-    const count = filenameMap.get(fileName)! + 1;
-    filenameMap.set(fileName, count);
-    const dotIndex = fileName.lastIndexOf('.');
-    if (dotIndex !== -1) {
-      const base = fileName.substring(0, dotIndex);
-      const ext = fileName.substring(dotIndex + 1);
-      return `${base}_${count}.${ext}`;
-    } else {
-      return `${fileName}_${count}`;
-    }
-  } else {
-    filenameMap.set(fileName, 1);
-    return fileName;
-  }
-}
-
 // Format filename for ZIP - replace spaces with underscores and include filters
 function formatZipFilename(papers: Paper[], filters: Record<string, string[]>): string {
   if (!papers || papers.length === 0) {
@@ -256,7 +237,6 @@ export async function batchDownloadPapers(
 
     let successCount = 0;
     let errorCount = 0;
-    const filenameMap = new Map<string, number>();
 
     // Process cached papers first (instant)
     for (let i = 0; i < cachedPapers.length; i++) {
@@ -274,7 +254,7 @@ export async function batchDownloadPapers(
             fileName += '.pdf';
           }
 
-          fileName = handleFilenameCollision(fileName, filenameMap);
+
 
           zip.file(fileName, pdfData);
           successCount++;
@@ -324,8 +304,6 @@ export async function batchDownloadPapers(
         if (!fileName.toLowerCase().endsWith('.pdf')) {
           fileName += '.pdf';
         }
-
-        fileName = handleFilenameCollision(fileName, filenameMap);
 
         zip.file(fileName, pdfData);
         successCount++;
