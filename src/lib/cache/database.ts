@@ -28,7 +28,7 @@ export class CacheDatabase {
                 // Create simple PDF store
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
                     const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                    store.createIndex('url', 'url', { unique: true });
+                    store.createIndex('url', 'url');
                     store.createIndex('lastAccessed', 'lastAccessed');
                 }
             };

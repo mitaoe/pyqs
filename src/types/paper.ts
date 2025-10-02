@@ -8,9 +8,6 @@ export interface Paper {
   fileName: string;
   url: string;
   isDirectory?: boolean;
-  cacheStatus?: 'not-cached' | 'cached' | 'expired';
-  cacheSize?: number;
-  lastCached?: Date;
 }
 
 export interface DBPaper extends Paper {

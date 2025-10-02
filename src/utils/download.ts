@@ -79,6 +79,25 @@ export interface BatchDownloadProgress {
 
 export type ProgressCallback = (progress: BatchDownloadProgress) => void;
 
+// Handle filename collisions by appending a counter
+function handleFilenameCollision(fileName: string, filenameMap: Map<string, number>): string {
+  if (filenameMap.has(fileName)) {
+    const count = filenameMap.get(fileName)! + 1;
+    filenameMap.set(fileName, count);
+    const dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex !== -1) {
+      const base = fileName.substring(0, dotIndex);
+      const ext = fileName.substring(dotIndex + 1);
+      return `${base}_${count}.${ext}`;
+    } else {
+      return `${fileName}_${count}`;
+    }
+  } else {
+    filenameMap.set(fileName, 1);
+    return fileName;
+  }
+}
+
 // Format filename for ZIP - replace spaces with underscores and include filters
 function formatZipFilename(papers: Paper[], filters: Record<string, string[]>): string {
   if (!papers || papers.length === 0) {
@@ -114,12 +133,14 @@ export async function batchDownloadPapers(
     }
 
     // Deduplicate papers by URL to avoid duplicate requests
-    const uniquePapers = papers.reduce((acc, paper) => {
-      if (!acc.some(p => p.url === paper.url)) {
-        acc.push(paper);
+    const seenUrls = new Set<string>();
+    const uniquePapers = papers.filter(paper => {
+      if (seenUrls.has(paper.url)) {
+        return false;
       }
-      return acc;
-    }, [] as Paper[]);
+      seenUrls.add(paper.url);
+      return true;
+    });
 
     // Validate number of papers
     if (uniquePapers.length > 50) {
@@ -253,20 +274,7 @@ export async function batchDownloadPapers(
             fileName += '.pdf';
           }
 
-          if (filenameMap.has(fileName)) {
-            const count = filenameMap.get(fileName)! + 1;
-            filenameMap.set(fileName, count);
-            const dotIndex = fileName.lastIndexOf('.');
-            if (dotIndex !== -1) {
-              const base = fileName.substring(0, dotIndex);
-              const ext = fileName.substring(dotIndex + 1);
-              fileName = `${base}_${count}.${ext}`;
-            } else {
-              fileName = `${fileName}_${count}`;
-            }
-          } else {
-            filenameMap.set(fileName, 1);
-          }
+          fileName = handleFilenameCollision(fileName, filenameMap);
 
           zip.file(fileName, pdfData);
           successCount++;
@@ -317,20 +325,7 @@ export async function batchDownloadPapers(
           fileName += '.pdf';
         }
 
-        if (filenameMap.has(fileName)) {
-          const count = filenameMap.get(fileName)! + 1;
-          filenameMap.set(fileName, count);
-          const dotIndex = fileName.lastIndexOf('.');
-          if (dotIndex !== -1) {
-            const base = fileName.substring(0, dotIndex);
-            const ext = fileName.substring(dotIndex + 1);
-            fileName = `${base}_${count}.${ext}`;
-          } else {
-            fileName = `${fileName}_${count}`;
-          }
-        } else {
-          filenameMap.set(fileName, 1);
-        }
+        fileName = handleFilenameCollision(fileName, filenameMap);
 
         zip.file(fileName, pdfData);
         successCount++;

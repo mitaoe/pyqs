@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, useState, useRef, type ReactNode,
 import { toast } from 'sonner';
 import type { DirectoryMeta, DirectoryNode, Paper } from '@/types/paper';
 import { STANDARD_VALUES } from '@/config/mappings';
-import { getCacheManager } from '@/lib/cache';
 
 export enum LoadingStatus {
   IDLE = 'idle',
@@ -36,7 +35,6 @@ interface PaperContextType {
   refreshData: () => Promise<void>;
   prefetchData: () => Promise<void>;
   fetchDirectoryData: () => Promise<void>;
-  checkCacheStatus: (paper: Paper) => Promise<Paper>;
 }
 
 const PAPERS_CACHE_KEY = 'pyq_papers_data';
@@ -96,39 +94,6 @@ export function PaperProvider({ children }: PaperProviderProps) {
     examType: ''
   });
   const isMounted = useRef(false);
-  const cacheManager = getCacheManager();
-
-  // Lazy cache status checking - don't block UI with 5K lookups
-  const checkPaperCacheStatus = useCallback(async (paper: Paper): Promise<Paper> => {
-    try {
-      const cacheMetadata = await cacheManager.getPdfMetadata(paper.url);
-      if (cacheMetadata) {
-        return {
-          ...paper,
-          cacheStatus: 'cached' as const,
-          cacheSize: cacheMetadata.size,
-          lastCached: cacheMetadata.cachedAt
-        };
-      }
-      return {
-        ...paper,
-        cacheStatus: 'not-cached' as const
-      };
-    } catch {
-      return {
-        ...paper,
-        cacheStatus: 'not-cached' as const
-      };
-    }
-  }, [cacheManager]);
-
-  // Initialize papers without cache status - add it lazily when needed
-  const initializePapers = useCallback((papers: Paper[]): Paper[] => {
-    return papers.map(paper => ({
-      ...paper,
-      cacheStatus: 'not-cached' as const // Default assumption
-    }));
-  }, []);
 
   const fetchPapersData = useCallback(async (force = false) => {
     if (isLoading) return;
@@ -145,15 +110,15 @@ export function PaperProvider({ children }: PaperProviderProps) {
             const age = Date.now() - timestamp;
 
             if (age < CACHE_DURATION) {
-              // Load cached metadata immediately - no expensive cache checks
-              const initializedPapers = initializePapers(data.meta.papers || []);
-              const initializedMeta = {
+              // Load cached metadata immediately
+              const papers = data.meta.papers || [];
+              const meta = {
                 ...data.meta,
-                papers: initializedPapers
+                papers
               };
 
-              setMeta(initializedMeta);
-              setPapers(initializedPapers);
+              setMeta(meta);
+              setPapers(papers);
               setLastUpdated(new Date(data.lastUpdated));
               setLoadingStatus(LoadingStatus.COMPLETE);
               setDataReady(true);
@@ -185,14 +150,14 @@ export function PaperProvider({ children }: PaperProviderProps) {
 
       const papersData = await papersResponse.json();
 
-      // Initialize papers without expensive cache checks - UI loads fast
-      const initializedPapers = initializePapers(papersData.meta.papers || []);
+      // Use papers directly from API
+      const papers = papersData.meta.papers || [];
 
       setMeta({
         ...papersData.meta,
-        papers: initializedPapers
+        papers
       });
-      setPapers(initializedPapers);
+      setPapers(papers);
       setLastUpdated(new Date(papersData.lastUpdated));
 
       if (isMounted.current) {
@@ -200,7 +165,7 @@ export function PaperProvider({ children }: PaperProviderProps) {
           data: {
             meta: {
               ...papersData.meta,
-              papers: initializedPapers
+              papers
             },
             lastUpdated: papersData.lastUpdated
           },
@@ -225,7 +190,7 @@ export function PaperProvider({ children }: PaperProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [filters, isLoading, initializePapers]);
+  }, [filters, isLoading]);
 
   const fetchDirectoryData = useCallback(async () => {
     if (isLoading) return;
@@ -295,7 +260,6 @@ export function PaperProvider({ children }: PaperProviderProps) {
       refreshData: () => fetchPapersData(true),
       prefetchData,
       fetchDirectoryData,
-      checkCacheStatus: checkPaperCacheStatus
     }}>
       {children}
     </PaperContext.Provider>
