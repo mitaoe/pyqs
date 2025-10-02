@@ -12,16 +12,9 @@ export class SimpleCacheManager implements CacheManager {
   private db = getCacheDatabase();
   private config = DEFAULT_CONFIG;
 
-  // Generate simple ID from URL
+  // Generate ID from URL - use URL directly as it's already unique
   private generateId(url: string): string {
-    // Use a simple hash of the full URL to avoid collisions
-    let hash = 0;
-    for (let i = 0; i < url.length; i++) {
-      const char = url.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash).toString(36);
+    return url;
   }
 
   // Check if PDF is expired
@@ -80,6 +73,35 @@ export class SimpleCacheManager implements CacheManager {
       return entry.data;
     } catch (error) {
       console.error('Cache get failed:', error);
+      return null;
+    }
+  }
+
+  // Get PDF metadata from cache (without the data payload)
+  async getPdfMetadata(url: string): Promise<Omit<PdfCacheEntry, 'data'> | null> {
+    try {
+      const entry = await this.db.getPdf(url);
+
+      if (!entry) return null;
+
+      // Check if expired
+      if (this.isExpired(entry)) {
+        await this.db.deletePdf(entry.id);
+        return null;
+      }
+
+      return {
+        id: entry.id,
+        url: entry.url,
+        fileName: entry.fileName,
+        subject: entry.subject,
+        year: entry.year,
+        cachedAt: entry.cachedAt,
+        lastAccessed: entry.lastAccessed,
+        size: entry.size
+      };
+    } catch (error) {
+      console.error('Cache metadata get failed:', error);
       return null;
     }
   }

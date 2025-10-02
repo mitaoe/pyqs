@@ -101,13 +101,13 @@ export function PaperProvider({ children }: PaperProviderProps) {
   // Lazy cache status checking - don't block UI with 5K lookups
   const checkPaperCacheStatus = useCallback(async (paper: Paper): Promise<Paper> => {
     try {
-      const cachedData = await cacheManager.getPdf(paper.url);
-      if (cachedData) {
+      const cacheMetadata = await cacheManager.getPdfMetadata(paper.url);
+      if (cacheMetadata) {
         return {
           ...paper,
           cacheStatus: 'cached' as const,
-          cacheSize: cachedData.byteLength,
-          lastCached: new Date()
+          cacheSize: cacheMetadata.size,
+          lastCached: cacheMetadata.cachedAt
         };
       }
       return {

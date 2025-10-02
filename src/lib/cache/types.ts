@@ -28,6 +28,7 @@ export interface PdfCacheEntry {
 export interface CacheManager {
   storePdf(url: string, data: ArrayBuffer, fileName: string, subject: string, year: string): Promise<void>;
   getPdf(url: string): Promise<ArrayBuffer | null>;
+  getPdfMetadata(url: string): Promise<Omit<PdfCacheEntry, 'data'> | null>;
   clearAllCache(): Promise<void>;
   getCacheStats(): Promise<CacheStats>;
 }
