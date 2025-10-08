@@ -38,7 +38,7 @@ interface PaperContextType {
 }
 
 const PAPERS_CACHE_KEY = 'pyq_papers_data';
-const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+const CACHE_DURATION = 1000 * 60 * 60 * 24 * 7; // 1 week
 
 const PaperContext = createContext<PaperContextType | undefined>(undefined);
 
@@ -100,7 +100,7 @@ export function PaperProvider({ children }: PaperProviderProps) {
 
     try {
       setIsLoading(true);
-      
+
       if (!force && isMounted.current) {
         setLoadingStatus(LoadingStatus.METADATA_LOADING);
         try {
@@ -108,10 +108,17 @@ export function PaperProvider({ children }: PaperProviderProps) {
           if (cached) {
             const { data, timestamp } = JSON.parse(cached);
             const age = Date.now() - timestamp;
-            
+
             if (age < CACHE_DURATION) {
-              setMeta(data.meta);
-              setPapers(data.meta.papers || []);
+              // Load cached metadata immediately
+              const papers = data.meta.papers || [];
+              const meta = {
+                ...data.meta,
+                papers
+              };
+
+              setMeta(meta);
+              setPapers(papers);
               setLastUpdated(new Date(data.lastUpdated));
               setLoadingStatus(LoadingStatus.COMPLETE);
               setDataReady(true);
@@ -119,8 +126,8 @@ export function PaperProvider({ children }: PaperProviderProps) {
               return;
             }
           }
-        } catch (e) {
-          console.warn('Failed to read from cache:', e);
+        } catch {
+          console.warn('Failed to read from cache');
         }
       }
 
@@ -135,40 +142,46 @@ export function PaperProvider({ children }: PaperProviderProps) {
 
       setLoadingStatus(LoadingStatus.PAPERS_LOADING);
       const papersResponse = await fetch(`/api/papers?${query}`);
-      
+
       if (!papersResponse.ok) {
         const errorData = await papersResponse.json();
         throw new Error(errorData.error || 'Failed to fetch papers');
       }
 
       const papersData = await papersResponse.json();
-      
-      setMeta(papersData.meta);
-      setPapers(papersData.meta.papers || []);
+
+      // Use papers directly from API
+      const papers = papersData.meta.papers || [];
+
+      setMeta({
+        ...papersData.meta,
+        papers
+      });
+      setPapers(papers);
       setLastUpdated(new Date(papersData.lastUpdated));
-      
+
       if (isMounted.current) {
         const cacheData = {
           data: {
             meta: {
               ...papersData.meta,
-              papers: papersData.meta.papers || []
+              papers
             },
             lastUpdated: papersData.lastUpdated
           },
           timestamp: Date.now()
         };
-        
+
         safeLocalStorage(PAPERS_CACHE_KEY, cacheData);
       }
 
       if (force) {
         toast.success('Papers refreshed successfully');
       }
-      
+
       setLoadingStatus(LoadingStatus.COMPLETE);
       setDataReady(true);
-      
+
     } catch (error) {
       console.error('Failed to fetch papers data:', error);
       setError(error instanceof Error ? error : new Error('Unknown error'));
@@ -181,22 +194,22 @@ export function PaperProvider({ children }: PaperProviderProps) {
 
   const fetchDirectoryData = useCallback(async () => {
     if (isLoading) return;
-    
+
     try {
       setIsLoading(true);
       setLoadingStatus(LoadingStatus.DIRECTORY_LOADING);
-      
+
       // We never cache directory structure - it's only for developer use
       const directoryResponse = await fetch('/api/directory');
-      
+
       if (!directoryResponse.ok) {
         const errorData = await directoryResponse.json();
         throw new Error(errorData.error || 'Failed to fetch directory structure');
       }
-      
+
       const directoryData = await directoryResponse.json();
       setStructure(directoryData.structure);
-      
+
       setLoadingStatus(LoadingStatus.COMPLETE);
     } catch (error) {
       console.error('Failed to fetch directory data:', error);
@@ -211,7 +224,6 @@ export function PaperProvider({ children }: PaperProviderProps) {
   const prefetchData = useCallback(async () => {
     // Don't prefetch if data is already ready or already loading
     if (dataReady || isLoading) return;
-    
     await fetchPapersData(false);
   }, [dataReady, isLoading, fetchPapersData]);
 
@@ -247,7 +259,7 @@ export function PaperProvider({ children }: PaperProviderProps) {
       setFilter,
       refreshData: () => fetchPapersData(true),
       prefetchData,
-      fetchDirectoryData
+      fetchDirectoryData,
     }}>
       {children}
     </PaperContext.Provider>

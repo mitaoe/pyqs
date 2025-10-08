@@ -7,13 +7,16 @@ import {
     ReactNode,
     useMemo,
     useEffect,
+    useCallback,
 } from "react"
+import { getCacheManager } from "@/lib/cache/manager"
 
 type CursorStyle = "default" | "ghost"
 
 interface SettingsContextType {
     cursorStyle: CursorStyle
     setCursorStyle: (style: CursorStyle) => void
+    clearAllCache: () => Promise<void>
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(
@@ -49,7 +52,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, [])
 
     // Save cursor style to localStorage whenever it changes
-    const setCursorStyle = (style: CursorStyle) => {
+    const setCursorStyle = useCallback((style: CursorStyle) => {
         setCursorStyleState(style)
         try {
             if (typeof window !== "undefined") {
@@ -58,14 +61,30 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.warn("Failed to save cursor style to localStorage:", error)
         }
-    }
+    }, [])
+
+    // Clear all cache function
+    const clearAllCache = useCallback(async () => {
+        try {
+            // Clear PDF cache from IndexedDB
+            const cacheManager = getCacheManager()
+            await cacheManager.clearAllCache()
+            
+            // Clear papers metadata from localStorage
+            localStorage.removeItem('pyq_papers_data')
+        } catch (error) {
+            console.error("Failed to clear cache:", error)
+            throw error
+        }
+    }, [])
 
     const value = useMemo(
         () => ({
             cursorStyle,
             setCursorStyle,
+            clearAllCache,
         }),
-        [cursorStyle]
+        [cursorStyle, setCursorStyle, clearAllCache]
     )
 
     // Don't render until we've loaded the saved preferences

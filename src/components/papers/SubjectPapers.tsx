@@ -272,7 +272,7 @@ const SubjectPapersView = () => {
     if (downloadingFile) return;
     setDownloadingFile(paper.fileName);
     try {
-      await downloadFile(paper.url, paper.fileName);
+      await downloadFile(paper.url, paper.fileName, paper);
     } catch (error) {
       console.error("Download failed:", error);
     } finally {
@@ -422,11 +422,7 @@ const SubjectPapersView = () => {
                       downloadingFile === paper.fileName ? "animate-spin" : ""
                     }
                   />
-                  <span>
-                    {downloadingFile === paper.fileName
-                      ? "Downloading..."
-                      : "Download"}
-                  </span>
+                  <span>Download</span>
                 </button>
               </div>
             ) : null}
@@ -526,11 +522,7 @@ const SubjectPapersView = () => {
                       downloadingFile === paper.fileName ? "animate-spin" : ""
                     }
                   />
-                  <span className="hidden sm:inline">
-                    {downloadingFile === paper.fileName
-                      ? "Downloading..."
-                      : "Download"}
-                  </span>
+                  <span className="hidden sm:inline">Download</span>
                 </button>
               </div>
             ) : null}
