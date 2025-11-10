@@ -23,6 +23,7 @@ interface PDFPreviewModalProps {
   paper: Paper | null;
   papers: Paper[];
   onNavigate: (paper: Paper) => void;
+  onFailure?: () => void;
 }
 
 export default function PDFPreviewModal({
@@ -31,6 +32,7 @@ export default function PDFPreviewModal({
   paper,
   papers,
   onNavigate,
+  onFailure,
 }: PDFPreviewModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +40,7 @@ export default function PDFPreviewModal({
 
   // Custom hooks
   const { isMobile } = useResponsive();
-  const { pdfDoc, numPages, loading, error } = usePDFDocument(paper, isOpen);
+  const { pdfDoc, numPages, loading, error } = usePDFDocument(paper, isOpen, onFailure);
 
   const {
     scale,

@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { usePapers } from "@/contexts/PaperContext";
+import { useServerStatus } from "@/contexts/ServerStatusContext";
 import Image from "next/image";
 import {
   GridFour,
@@ -32,6 +33,7 @@ const SubjectPapersView = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { papers, dataReady, meta } = usePapers();
+  const { isServerDown, recordFailure } = useServerStatus();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const {
     isOpen: isPDFOpen,
@@ -269,18 +271,31 @@ const SubjectPapersView = () => {
   };
 
   const handleDownload = async (paper: Paper) => {
-    if (downloadingFile) return;
+    if (downloadingFile || isServerDown) {
+      if (isServerDown) {
+        toast.error("MITAoE servers are currently down. Please try again later.");
+      }
+      return;
+    }
     setDownloadingFile(paper.fileName);
     try {
-      await downloadFile(paper.url, paper.fileName, paper);
+      const success = await downloadFile(paper.url, paper.fileName, paper);
+      if (!success) {
+        recordFailure();
+      }
     } catch (error) {
       console.error("Download failed:", error);
+      recordFailure();
     } finally {
       setDownloadingFile(null);
     }
   };
 
   const handlePreview = (paper: Paper) => {
+    if (isServerDown) {
+      toast.error("MITAoE servers are currently down. Preview is unavailable.");
+      return;
+    }
     openPreview(paper, filteredPapers);
   };
 
@@ -402,7 +417,8 @@ const SubjectPapersView = () => {
                     e.stopPropagation();
                     handlePreview(paper);
                   }}
-                  className="flex-1 flex items-center justify-center gap-2 bg-gray-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                  disabled={isServerDown}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gray-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Eye size={16} weight="duotone" />
                   <span>Preview</span>
@@ -412,8 +428,8 @@ const SubjectPapersView = () => {
                     e.stopPropagation();
                     handleDownload(paper);
                   }}
-                  disabled={downloadingFile === paper.fileName}
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50"
+                  disabled={downloadingFile === paper.fileName || isServerDown}
+                  className="flex-1 flex items-center justify-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download
                     size={16}
@@ -502,7 +518,8 @@ const SubjectPapersView = () => {
                     e.stopPropagation();
                     handlePreview(paper);
                   }}
-                  className="flex items-center gap-2 bg-gray-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+                  disabled={isServerDown}
+                  className="flex items-center gap-2 bg-gray-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Eye size={16} weight="duotone" />
                   <span className="hidden sm:inline">Preview</span>
@@ -512,8 +529,8 @@ const SubjectPapersView = () => {
                     e.stopPropagation();
                     handleDownload(paper);
                   }}
-                  disabled={downloadingFile === paper.fileName}
-                  className="flex items-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50"
+                  disabled={downloadingFile === paper.fileName || isServerDown}
+                  className="flex items-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download
                     size={16}
@@ -879,6 +896,11 @@ const SubjectPapersView = () => {
   };
 
   const handleBatchDownload = async () => {
+    if (isServerDown) {
+      toast.error("MITAoE servers are currently down. Please try again later.");
+      return;
+    }
+    
     if (selectedPapersArray.length === 0) {
       toast.error("No papers selected for download");
       return;
@@ -1191,7 +1213,8 @@ const SubjectPapersView = () => {
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
           <button
             onClick={handleBatchDownload}
-            className="bg-brand text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-xl backdrop-blur-sm transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 flex items-center gap-2 border border-brand/30"
+            disabled={isServerDown}
+            className="bg-brand text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-xl backdrop-blur-sm transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 flex items-center gap-2 border border-brand/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {selectedPapersCount === 1 ? (
               <Download size={20} weight="duotone" />
@@ -1216,6 +1239,7 @@ const SubjectPapersView = () => {
         paper={currentPaper}
         papers={pdfPapers}
         onNavigate={navigateToPaper}
+        onFailure={recordFailure}
       />
     </div>
   );
