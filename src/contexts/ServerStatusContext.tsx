@@ -25,7 +25,7 @@ interface ServerStatusProviderProps {
   children: ReactNode;
 }
 
-const FAILURE_THRESHOLD = 2; // Show banner after 2 consecutive failures
+const FAILURE_THRESHOLD = 1; // Show banner after 1 failure
 
 export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
   const [isServerDown, setIsServerDown] = useState(false);
@@ -34,16 +34,17 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastCheckRef = useRef<number>(0);
   const hasInitialCheckRef = useRef(false);
+  const hasAutoRecheckedRef = useRef(false);
 
-  const checkServerStatus = useCallback(async (): Promise<boolean> => {
+  const checkServerStatus = useCallback(async (isAutoRecheck = false): Promise<boolean> => {
     // If already checking, wait for that check to complete
     if (isChecking) {
       return !isServerDown;
     }
 
-    // Prevent duplicate checks within 2 seconds
+    // Prevent duplicate checks within 2 seconds (skip for auto-recheck)
     const now = Date.now();
-    if (now - lastCheckRef.current < 2000) {
+    if (!isAutoRecheck && now - lastCheckRef.current < 2000) {
       return !isServerDown;
     }
     lastCheckRef.current = now;
@@ -61,6 +62,7 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
         // Server is up - reset everything
         setIsServerDown(false);
         setConsecutiveFailures(0);
+        hasAutoRecheckedRef.current = false; // Reset for next time
         return true;
       } else {
         // Server is down
@@ -95,6 +97,7 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
   const resetStatus = useCallback(() => {
     setIsServerDown(false);
     setConsecutiveFailures(0);
+    hasAutoRecheckedRef.current = false;
   }, []);
 
   // Check server status on initial mount
@@ -104,6 +107,18 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
       checkServerStatus();
     }
   }, [checkServerStatus]);
+
+  // Auto-recheck once when banner first appears
+  useEffect(() => {
+    if (isServerDown && !hasAutoRecheckedRef.current && !isChecking) {
+      hasAutoRecheckedRef.current = true;
+      // Small delay before auto-recheck so user sees the banner first
+      const timer = setTimeout(() => {
+        checkServerStatus(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isServerDown, isChecking, checkServerStatus]);
 
   return (
     <ServerStatusContext.Provider 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 const MITAOE_LIBRARY_URL = 'http://43.227.20.36:82/DigitalLibrary/';
-const TIMEOUT_MS = 5000; // 5 seconds timeout
+const TIMEOUT_MS = 2500; // 2.5 seconds timeout
 
 export async function GET() {
   try {
