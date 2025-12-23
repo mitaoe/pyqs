@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { PaperProvider } from "@/contexts/PaperContext"
+import { ServerStatusProvider } from "@/contexts/ServerStatusContext"
 import LoadingDataChecker from "@/components/middleware/LoadingDataChecker"
 import ClientProvider from "@/components/ClientProvider"
+import ServerStatusBanner from "@/components/layout/ServerStatusBanner"
 import { Suspense } from "react"
 import "./globals.css"
 
@@ -106,13 +108,16 @@ export default function RootLayout({
                 />
             </head>
             <body className={inter.className} suppressHydrationWarning={true}>
-                <PaperProvider>
-                    <Suspense fallback={<div>Loading...</div>}>
-                        <LoadingDataChecker>
-                            <ClientProvider>{children}</ClientProvider>
-                        </LoadingDataChecker>
-                    </Suspense>
-                </PaperProvider>
+                <ServerStatusProvider>
+                    <ServerStatusBanner />
+                    <PaperProvider>
+                        <Suspense fallback={<div>Loading...</div>}>
+                            <LoadingDataChecker>
+                                <ClientProvider>{children}</ClientProvider>
+                            </LoadingDataChecker>
+                        </Suspense>
+                    </PaperProvider>
+                </ServerStatusProvider>
             </body>
         </html>
     )

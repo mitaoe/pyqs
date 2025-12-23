@@ -3,7 +3,11 @@ import { Paper } from "@/types/paper";
 import { pdfjsLib, type PDFDocumentProxy } from "@/lib/pdfConfig";
 import { getCacheManager } from "@/lib/cache/manager";
 
-export function usePDFDocument(paper: Paper | null, isOpen: boolean) {
+export function usePDFDocument(
+  paper: Paper | null, 
+  isOpen: boolean,
+  onFailure?: () => void
+) {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
@@ -63,11 +67,12 @@ export function usePDFDocument(paper: Paper | null, isOpen: boolean) {
         console.error("Error loading PDF:", err);
         setError("Failed to load PDF");
         setLoading(false);
+        onFailure?.();
       }
     };
 
     loadPDF();
-  }, [isOpen, paper]);
+  }, [isOpen, paper, onFailure]);
 
   return {
     pdfDoc,

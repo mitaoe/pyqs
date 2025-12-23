@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Paper } from "@/types/paper";
 import { downloadFile } from "@/utils/download";
+import { useServerStatus } from "@/contexts/ServerStatusContext";
 
 import { usePDFDocument } from "./hooks/usePDFDocument";
 import { usePDFZoom } from "./hooks/usePDFZoom";
@@ -23,6 +24,7 @@ interface PDFPreviewModalProps {
   paper: Paper | null;
   papers: Paper[];
   onNavigate: (paper: Paper) => void;
+  onFailure?: () => void;
 }
 
 export default function PDFPreviewModal({
@@ -31,6 +33,7 @@ export default function PDFPreviewModal({
   paper,
   papers,
   onNavigate,
+  onFailure,
 }: PDFPreviewModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +41,19 @@ export default function PDFPreviewModal({
 
   // Custom hooks
   const { isMobile } = useResponsive();
-  const { pdfDoc, numPages, loading, error } = usePDFDocument(paper, isOpen);
+  const { isServerDown } = useServerStatus();
+  const { pdfDoc, numPages, loading, error } = usePDFDocument(paper, isOpen, onFailure);
+
+  // Auto-close modal only if server is down, otherwise let user retry with reload button
+  useEffect(() => {
+    if (error && !loading && isServerDown) {
+      // Small delay so user sees the error briefly before closing
+      const timer = setTimeout(() => {
+        onClose();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [error, loading, isServerDown, onClose]);
 
   const {
     scale,
@@ -322,7 +337,7 @@ export default function PDFPreviewModal({
       const pdfBytes = await pdfDoc.getData();
 
       // Create a blob from the PDF data
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
       const objectUrl = URL.createObjectURL(blob);
 
       // Create download link
