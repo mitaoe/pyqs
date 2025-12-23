@@ -84,15 +84,15 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
   }, [isServerDown, isChecking]);
 
   const recordFailure = useCallback(() => {
-    setConsecutiveFailures((prev) => {
-      const newCount = prev + 1;
-      if (newCount >= FAILURE_THRESHOLD && !isServerDown) {
-        // Trigger a server check after threshold
-        checkServerStatus();
-      }
-      return newCount;
-    });
-  }, [isServerDown, checkServerStatus]);
+    setConsecutiveFailures((prev) => prev + 1);
+  }, []);
+
+  // Trigger server check when failures cross threshold
+  useEffect(() => {
+    if (consecutiveFailures >= FAILURE_THRESHOLD && !isServerDown) {
+      checkServerStatus();
+    }
+  }, [consecutiveFailures, isServerDown, checkServerStatus]);
 
   const resetStatus = useCallback(() => {
     setIsServerDown(false);
