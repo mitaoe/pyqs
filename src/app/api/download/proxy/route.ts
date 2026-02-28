@@ -59,13 +59,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(resolvedUrl, {
-      headers: {
-        Accept: "application/pdf, application/octet-stream",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-      },
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000); // 15s timeout
+
+    let response: Response;
+    try {
+      response = await fetch(resolvedUrl, {
+        signal: controller.signal,
+        headers: {
+          Accept: "application/pdf, application/octet-stream",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        },
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       return NextResponse.json(
@@ -139,6 +148,12 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return NextResponse.json(
+        { error: "Upstream server timed out" },
+        { status: 504 }
+      );
+    }
     console.error("Proxy fetch error:", error);
     return NextResponse.json(
       {
