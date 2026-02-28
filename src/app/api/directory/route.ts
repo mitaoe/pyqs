@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Directory from '@/models/Directory';
 import type { DirectoryDocument } from '@/types/paper';
+import { rewriteDirectoryUrls } from '@/utils/urlParser';
 
 export async function GET() {
   try {
@@ -27,9 +28,11 @@ export async function GET() {
       );
     }
 
+    const rewrittenStructure = rewriteDirectoryUrls(structure);
+
     return NextResponse.json({
-      structure,
-      meta: doc.meta,
+      structure: rewrittenStructure,
+      meta: rewrittenStructure.meta,
       stats: doc.stats,
       lastUpdated: doc.lastUpdated
     });

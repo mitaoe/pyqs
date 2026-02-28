@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import mime from "mime-types";
 import crypto from "crypto";
+import { rewritePdfUrl } from "@/utils/urlParser";
 
 // Generate ETag based on paper URL for conditional requests
 function generateETagFromUrl(url: string): string {
@@ -19,8 +20,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Generate ETag for conditional requests
-  const etag = generateETagFromUrl(url);
+  const resolvedUrl = rewritePdfUrl(url);
+
+  const etag = generateETagFromUrl(resolvedUrl);
   
   // Check If-None-Match header for conditional requests
   const ifNoneMatch = request.headers.get('if-none-match');
@@ -36,8 +38,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Fetch the file from the original URL
-    const response = await fetch(url, {
+    const response = await fetch(resolvedUrl, {
       headers: {
         Accept: "application/pdf, application/octet-stream",
         "User-Agent":
@@ -68,8 +69,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!fileName) {
-      // Try to extract filename from URL path
-      const urlPath = new URL(url).pathname;
+      const urlPath = new URL(resolvedUrl).pathname;
       const pathSegments = urlPath.split("/");
       fileName = pathSegments[pathSegments.length - 1];
     }
