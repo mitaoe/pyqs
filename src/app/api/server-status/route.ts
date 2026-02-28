@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { PDF_BASE_URL } from '@/config/urls';
 
-const MITAOE_LIBRARY_URL = 'http://43.227.20.36:82/DigitalLibrary/';
+const MITAOE_LIBRARY_URL = PDF_BASE_URL;
 const TIMEOUT_MS = 2500; // 2.5 seconds timeout
 
 export async function GET() {

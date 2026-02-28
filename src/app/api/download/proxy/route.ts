@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import mime from "mime-types";
 import crypto from "crypto";
+import { rewritePdfUrl } from "@/utils/urlParser";
+import { LEGACY_BASE_URL, PDF_BASE_URL } from "@/config/urls";
+
+// Allowed hostnames for proxying — prevents SSRF via arbitrary URL fetching
+const ALLOWED_HOSTS = new Set(
+  [LEGACY_BASE_URL, PDF_BASE_URL].map((u) => new URL(u).hostname)
+);
+
+function isAllowedUrl(url: string): boolean {
+  try {
+    return ALLOWED_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
 
 // Generate ETag based on paper URL for conditional requests
 function generateETagFromUrl(url: string): string {
@@ -19,8 +34,16 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Generate ETag for conditional requests
-  const etag = generateETagFromUrl(url);
+  const resolvedUrl = rewritePdfUrl(url);
+
+  if (!isAllowedUrl(resolvedUrl)) {
+    return NextResponse.json(
+      { error: "URL domain is not allowed" },
+      { status: 403 }
+    );
+  }
+
+  const etag = generateETagFromUrl(resolvedUrl);
   
   // Check If-None-Match header for conditional requests
   const ifNoneMatch = request.headers.get('if-none-match');
@@ -36,14 +59,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Fetch the file from the original URL
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/pdf, application/octet-stream",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-      },
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000); // 15s timeout
+
+    let response: Response;
+    try {
+      response = await fetch(resolvedUrl, {
+        signal: controller.signal,
+        headers: {
+          Accept: "application/pdf, application/octet-stream",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        },
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       return NextResponse.json(
@@ -68,8 +99,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!fileName) {
-      // Try to extract filename from URL path
-      const urlPath = new URL(url).pathname;
+      const urlPath = new URL(resolvedUrl).pathname;
       const pathSegments = urlPath.split("/");
       fileName = pathSegments[pathSegments.length - 1];
     }
@@ -118,6 +148,12 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return NextResponse.json(
+        { error: "Upstream server timed out" },
+        { status: 504 }
+      );
+    }
     console.error("Proxy fetch error:", error);
     return NextResponse.json(
       {

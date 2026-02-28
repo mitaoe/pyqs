@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import dbConnect from '@/lib/db';
 import PYQ from '@/models/Paper';
 import type { SavedDocument } from '@/types/paper';
+import { rewritePaperUrls } from '@/utils/urlParser';
 
 async function getPapersData() {
   await dbConnect();
@@ -42,11 +43,12 @@ export async function GET(request: Request) {
       );
     }
 
-    // Return all papers
+    const papers = rewritePaperUrls(doc.papers);
+
     const responseData = {
       meta: {
         ...doc.meta,
-        papers: doc.papers
+        papers
       },
       lastUpdated: doc.stats.lastUpdated,
       stats: doc.stats
