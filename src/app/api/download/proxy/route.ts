@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import mime from "mime-types";
 import crypto from "crypto";
 import { rewritePdfUrl } from "@/utils/urlParser";
+import { LEGACY_BASE_URL, PDF_BASE_URL } from "@/config/urls";
+
+// Allowed hostnames for proxying — prevents SSRF via arbitrary URL fetching
+const ALLOWED_HOSTS = new Set(
+  [LEGACY_BASE_URL, PDF_BASE_URL].map((u) => new URL(u).hostname)
+);
+
+function isAllowedUrl(url: string): boolean {
+  try {
+    return ALLOWED_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
 
 // Generate ETag based on paper URL for conditional requests
 function generateETagFromUrl(url: string): string {
@@ -21,6 +35,13 @@ export async function GET(request: NextRequest) {
   }
 
   const resolvedUrl = rewritePdfUrl(url);
+
+  if (!isAllowedUrl(resolvedUrl)) {
+    return NextResponse.json(
+      { error: "URL domain is not allowed" },
+      { status: 403 }
+    );
+  }
 
   const etag = generateETagFromUrl(resolvedUrl);
   

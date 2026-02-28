@@ -2,7 +2,8 @@ import type { DirectoryNode } from '@/types/paper';
 import { LEGACY_BASE_URL, PDF_BASE_URL } from '@/config/urls';
 
 export function rewritePdfUrl(url: string): string {
-  return url.replace(LEGACY_BASE_URL, PDF_BASE_URL);
+  if (!url.startsWith(LEGACY_BASE_URL)) return url;
+  return PDF_BASE_URL + url.slice(LEGACY_BASE_URL.length);
 }
 
 export function rewritePaperUrls<T extends { url: string }>(papers: T[]): T[] {
