@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useRef, useEffect, type ReactNode, useCallback } from 'react';
+import { PDF_BASE_URL } from '@/config/urls';
 
 interface ServerStatusContextType {
   isServerDown: boolean;
@@ -53,19 +54,18 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
     abortControllerRef.current = new AbortController();
 
     try {
-      const response = await fetch('/api/server-status', {
+      const response = await fetch(PDF_BASE_URL, {
+        method: 'HEAD',
+        mode: 'cors',
         signal: abortControllerRef.current.signal,
       });
-      const data = await response.json();
       
-      if (data.isAvailable) {
-        // Server is up - reset everything
+      if (response.ok || response.status === 403 || response.status === 404) {
         setIsServerDown(false);
         setConsecutiveFailures(0);
-        hasAutoRecheckedRef.current = false; // Reset for next time
+        hasAutoRecheckedRef.current = false;
         return true;
       } else {
-        // Server is down
         setIsServerDown(true);
         return false;
       }
