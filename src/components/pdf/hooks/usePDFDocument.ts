@@ -36,9 +36,8 @@ export function usePDFDocument(
           pdfData = cachedData;
           setFromCache(true);
         } else {
-          // Fetch from network and cache it
-          const pdfUrl = `/api/download/proxy?url=${encodeURIComponent(paper.url)}`;
-          const response = await fetch(pdfUrl);
+          // Fetch directly from R2 and cache it
+          const response = await fetch(paper.url);
           
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

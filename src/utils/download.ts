@@ -16,8 +16,7 @@ export async function downloadFile(url: string, fileName: string, paper?: Paper)
       blob = new Blob([cachedData], { type: 'application/pdf' });
     } else {
       // Fetch from network
-      const proxyUrl = `/api/download/proxy?url=${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error('Download failed');
@@ -275,8 +274,7 @@ export async function batchDownloadPapers(
         progress.currentPaper = `Downloading ${paper.fileName}...`;
         onProgress?.({ ...progress });
 
-        const proxyUrl = `/api/download/proxy?url=${encodeURIComponent(paper.url)}`;
-        const response = await fetch(proxyUrl);
+        const response = await fetch(paper.url);
 
         if (!response.ok) {
           console.error(`Failed to fetch ${paper.url}, status: ${response.status}`);
