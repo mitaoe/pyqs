@@ -21,11 +21,11 @@ export default function ServerStatusBanner() {
           <Warning size={24} weight="fill" className="flex-shrink-0" />
           <div className="flex-1">
             <p className="font-semibold text-sm sm:text-base">
-              MITAoE Library Servers Are Currently Down
+              Paper Storage Is Currently Unreachable
             </p>
             <p className="text-xs sm:text-sm mt-0.5 opacity-90">
-              Just like how Moodle goes down sometimes, the library servers are temporarily unavailable. 
-              Download and preview features are disabled until servers are back online.
+              The paper storage service is temporarily unavailable. 
+              Download and preview features are disabled until it&apos;s back online.
             </p>
           </div>
         </div>

@@ -89,7 +89,7 @@ This project stands as a testament to collaborative efforts in making educationa
 
 ## Legal Notice
 
-We don't store any papers - all content is served directly from MITAoE servers. This project is maintained by students for educational purposes.
+All question paper PDFs are sourced from MITAoE and stored in Cloudflare R2 cloud storage. This project is maintained by students for educational purposes.
 
 ## License
 
