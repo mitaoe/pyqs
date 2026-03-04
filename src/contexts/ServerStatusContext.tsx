@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useRef, useEffect, type ReactNode, useCallback } from 'react';
 import { PDF_BASE_URL } from '@/config/urls';
+import { fetchWithTimeout } from '@/utils/api';
 
 interface ServerStatusContextType {
   isServerDown: boolean;
@@ -54,13 +55,13 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
     abortControllerRef.current = new AbortController();
 
     try {
-      const response = await fetch(PDF_BASE_URL, {
+      const response = await fetchWithTimeout(PDF_BASE_URL, {
         method: 'HEAD',
         mode: 'cors',
-        signal: abortControllerRef.current.signal,
-      });
+      }, 5000); // 5 second timeout for status check
       
-      if (response.ok || response.status === 403 || response.status === 404) {
+      // Only consider 200 OK as healthy
+      if (response.ok) {
         setIsServerDown(false);
         setConsecutiveFailures(0);
         hasAutoRecheckedRef.current = false;

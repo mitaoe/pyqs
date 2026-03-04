@@ -3,6 +3,8 @@ import { Paper } from "@/types/paper";
 import { pdfjsLib, type PDFDocumentProxy } from "@/lib/pdfConfig";
 import { getCacheManager } from "@/lib/cache/manager";
 
+import { fetchWithTimeout } from "@/utils/api";
+
 export function usePDFDocument(
   paper: Paper | null, 
   isOpen: boolean,
@@ -37,7 +39,7 @@ export function usePDFDocument(
           setFromCache(true);
         } else {
           // Fetch directly from R2 and cache it
-          const response = await fetch(paper.url);
+          const response = await fetchWithTimeout(paper.url);
           
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,13 +48,17 @@ export function usePDFDocument(
           pdfData = await response.arrayBuffer();
           
           // Store in cache for future use
-          await cacheManager.storePdf(
-            paper.url,
-            pdfData,
-            paper.fileName,
-            paper.subject,
-            paper.year
-          );
+          try {
+            await cacheManager.storePdf(
+              paper.url,
+              pdfData,
+              paper.fileName,
+              paper.subject,
+              paper.year
+            );
+          } catch (cacheError) {
+            console.warn('Failed to cache PDF during preview:', cacheError);
+          }
         }
 
         // Load PDF document from data
