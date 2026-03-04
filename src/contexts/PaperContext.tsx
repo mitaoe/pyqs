@@ -37,7 +37,7 @@ interface PaperContextType {
   fetchDirectoryData: () => Promise<void>;
 }
 
-const PAPERS_CACHE_KEY = 'pyq_papers_data';
+const PAPERS_CACHE_KEY = 'pyq_papers_data_v2';
 const CACHE_DURATION = 1000 * 60 * 60 * 24 * 7; // 1 week
 
 const PaperContext = createContext<PaperContextType | undefined>(undefined);
