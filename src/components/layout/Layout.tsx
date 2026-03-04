@@ -1,7 +1,6 @@
 import { ReactNode } from "react"
 import { Toaster } from "sonner"
 import Header from "./Header"
-import Footer from "./Footer"
 
 interface LayoutProps {
     children: ReactNode
@@ -19,7 +18,6 @@ export default function Layout({ children }: LayoutProps) {
                     <div className="container mx-auto">{children}</div>
                 </div>
             </main>
-            <Footer />
             <Toaster
                 position="bottom-right"
                 theme="system"
