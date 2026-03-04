@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useRef, useEffect, type ReactNode, useCallback } from 'react';
+import { PDF_BASE_URL } from '@/config/urls';
+import { fetchWithTimeout } from '@/utils/api';
 
 interface ServerStatusContextType {
   isServerDown: boolean;
@@ -53,19 +55,18 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
     abortControllerRef.current = new AbortController();
 
     try {
-      const response = await fetch('/api/server-status', {
-        signal: abortControllerRef.current.signal,
-      });
-      const data = await response.json();
+      const response = await fetchWithTimeout(PDF_BASE_URL, {
+        method: 'HEAD',
+        mode: 'cors',
+      }, 5000); // 5 second timeout for status check
       
-      if (data.isAvailable) {
-        // Server is up - reset everything
+      // Only consider 200 OK as healthy
+      if (response.ok) {
         setIsServerDown(false);
         setConsecutiveFailures(0);
-        hasAutoRecheckedRef.current = false; // Reset for next time
+        hasAutoRecheckedRef.current = false;
         return true;
       } else {
-        // Server is down
         setIsServerDown(true);
         return false;
       }

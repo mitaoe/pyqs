@@ -273,7 +273,7 @@ const SubjectPapersView = () => {
   const handleDownload = async (paper: Paper) => {
     if (downloadingFile || isServerDown) {
       if (isServerDown) {
-        toast.error("MITAoE servers are currently down. Please try again later.");
+        toast.error("Paper storage is currently unreachable. Please try again later.");
       }
       return;
     }
@@ -293,7 +293,7 @@ const SubjectPapersView = () => {
 
   const handlePreview = (paper: Paper) => {
     if (isServerDown) {
-      toast.error("MITAoE servers are currently down. Preview is unavailable.");
+      toast.error("Paper storage is currently unreachable. Preview is unavailable.");
       return;
     }
     openPreview(paper, filteredPapers);
@@ -897,7 +897,7 @@ const SubjectPapersView = () => {
 
   const handleBatchDownload = async () => {
     if (isServerDown) {
-      toast.error("MITAoE servers are currently down. Please try again later.");
+      toast.error("Paper storage is currently unreachable. Please try again later.");
       return;
     }
     

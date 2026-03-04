@@ -1,6 +1,8 @@
 import { toast } from 'sonner';
 import { Paper } from '@/types/paper';
 import { getCacheManager } from '@/lib/cache/manager';
+import { fetchWithTimeout } from '@/utils/api';
+
 
 export async function downloadFile(url: string, fileName: string, paper?: Paper): Promise<boolean> {
   try {
@@ -15,9 +17,8 @@ export async function downloadFile(url: string, fileName: string, paper?: Paper)
       // Use cached version
       blob = new Blob([cachedData], { type: 'application/pdf' });
     } else {
-      // Fetch from network
-      const proxyUrl = `/api/download/proxy?url=${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
+      // Fetch from network with timeout
+      const response = await fetchWithTimeout(url);
 
       if (!response.ok) {
         throw new Error('Download failed');
@@ -275,8 +276,8 @@ export async function batchDownloadPapers(
         progress.currentPaper = `Downloading ${paper.fileName}...`;
         onProgress?.({ ...progress });
 
-        const proxyUrl = `/api/download/proxy?url=${encodeURIComponent(paper.url)}`;
-        const response = await fetch(proxyUrl);
+        // Fetch with timeout
+        const response = await fetchWithTimeout(paper.url);
 
         if (!response.ok) {
           console.error(`Failed to fetch ${paper.url}, status: ${response.status}`);
