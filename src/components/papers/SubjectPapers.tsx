@@ -44,7 +44,7 @@ const SubjectPapersView = () => {
     navigateToPaper,
   } = usePDFPreview();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPapers, setSelectedPapers] = useState<Record<string, boolean>>(
     {}
@@ -271,13 +271,17 @@ const SubjectPapersView = () => {
   };
 
   const handleDownload = async (paper: Paper) => {
-    if (downloadingFile || isServerDown) {
+    if (activeDownloads.has(paper.fileName) || isServerDown) {
       if (isServerDown) {
         toast.error("Paper storage is currently unreachable. Please try again later.");
       }
       return;
     }
-    setDownloadingFile(paper.fileName);
+    setActiveDownloads(prev => {
+      const next = new Set(prev);
+      next.add(paper.fileName);
+      return next;
+    });
     try {
       const success = await downloadFile(paper.url, paper.fileName, paper);
       if (!success) {
@@ -287,7 +291,11 @@ const SubjectPapersView = () => {
       console.error("Download failed:", error);
       recordFailure();
     } finally {
-      setDownloadingFile(null);
+      setActiveDownloads(prev => {
+        const next = new Set(prev);
+        next.delete(paper.fileName);
+        return next;
+      });
     }
   };
 
@@ -428,14 +436,14 @@ const SubjectPapersView = () => {
                     e.stopPropagation();
                     handleDownload(paper);
                   }}
-                  disabled={downloadingFile === paper.fileName || isServerDown}
+                  disabled={activeDownloads.has(paper.fileName) || isServerDown}
                   className="flex-1 flex items-center justify-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download
                     size={16}
                     weight="duotone"
                     className={
-                      downloadingFile === paper.fileName ? "animate-spin" : ""
+                      activeDownloads.has(paper.fileName) ? "animate-spin" : ""
                     }
                   />
                   <span>Download</span>
@@ -529,14 +537,14 @@ const SubjectPapersView = () => {
                     e.stopPropagation();
                     handleDownload(paper);
                   }}
-                  disabled={downloadingFile === paper.fileName || isServerDown}
+                  disabled={activeDownloads.has(paper.fileName) || isServerDown}
                   className="flex items-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download
                     size={16}
                     weight="duotone"
                     className={
-                      downloadingFile === paper.fileName ? "animate-spin" : ""
+                      activeDownloads.has(paper.fileName) ? "animate-spin" : ""
                     }
                   />
                   <span className="hidden sm:inline">Download</span>
@@ -736,27 +744,6 @@ const SubjectPapersView = () => {
   const renderBatchDownloadProgress = () => {
     if (!batchDownloadProgress) return null;
 
-    const getStatusText = () => {
-      switch (batchDownloadProgress.status) {
-        case "preparing":
-          return "Preparing download...";
-        case "downloading":
-          return `Downloading ${batchDownloadProgress.completed || 0} of ${
-            batchDownloadProgress.totalPapers
-          } papers...`;
-        case "processing":
-          return "Creating ZIP file...";
-        case "sending":
-          return "Sending to your browser...";
-        case "complete":
-          return "Download complete!";
-        case "error":
-          return batchDownloadProgress.error || "Download failed";
-        default:
-          return "Processing...";
-      }
-    };
-
     const getProgressPercentage = () => {
       if (batchDownloadProgress.percentage !== undefined) {
         return batchDownloadProgress.percentage;
@@ -772,73 +759,156 @@ const SubjectPapersView = () => {
       return 0;
     };
 
-    const getDetailText = () => {
-      if (batchDownloadProgress.currentPaper) {
-        return batchDownloadProgress.currentPaper;
-      }
-
+    const getStatusIcon = () => {
       if (batchDownloadProgress.status === "complete") {
-        return `Successfully downloaded ${batchDownloadProgress.totalPapers} papers`;
+        return "✓";
       }
       if (batchDownloadProgress.status === "error") {
-        return batchDownloadProgress.error &&
-          batchDownloadProgress.error.includes("Failed to connect")
-          ? "Check your network connection and try again"
-          : "";
+        return "✕";
       }
+      return null;
+    };
 
-      if (batchDownloadProgress.status === "downloading") {
-        const percent = getProgressPercentage();
-        return `${percent.toFixed(0)}%`;
-      }
-
-      if (batchDownloadProgress.status === "processing") {
-        return "Compressing files into ZIP archive";
-      }
-
-      if (batchDownloadProgress.status === "sending") {
-        return "Starting browser download";
-      }
-
-      const percentage = getProgressPercentage();
-      return `${percentage.toFixed(0)}% complete`;
+    // Calculate segment widths based on actual work distribution
+    const totalPapers = batchDownloadProgress.totalPapers || 1;
+    const cachedCount = batchDownloadProgress.cachedCount || 0;
+    const networkCount = batchDownloadProgress.networkCount || 0;
+    
+    // Allocate 85% for downloads, 10% for zip, 5% for send
+    const downloadPercent = 85;
+    const zipPercent = 10;
+    const sendPercent = 5;
+    
+    const cacheSegmentWidth = (cachedCount / totalPapers) * downloadPercent;
+    const networkSegmentWidth = (networkCount / totalPapers) * downloadPercent;
+    
+    const currentProgress = getProgressPercentage();
+    
+    // Calculate how much of each segment is filled
+    const getCacheProgress = () => {
+      if (currentProgress <= 5) return 0;
+      const adjustedProgress = currentProgress - 5;
+      return Math.min(100, (adjustedProgress / cacheSegmentWidth) * 100);
+    };
+    
+    const getNetworkProgress = () => {
+      if (currentProgress <= 5 + cacheSegmentWidth) return 0;
+      const adjustedProgress = currentProgress - 5 - cacheSegmentWidth;
+      return Math.min(100, (adjustedProgress / networkSegmentWidth) * 100);
+    };
+    
+    const getZipProgress = () => {
+      if (currentProgress <= 85) return 0;
+      const adjustedProgress = currentProgress - 85;
+      return Math.min(100, (adjustedProgress / zipPercent) * 100);
+    };
+    
+    const getSendProgress = () => {
+      if (currentProgress <= 95) return 0;
+      const adjustedProgress = currentProgress - 95;
+      return Math.min(100, (adjustedProgress / sendPercent) * 100);
     };
 
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-secondary rounded-xl p-6 max-w-md w-full">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-content">
-              {batchDownloadProgress.status === "complete"
-                ? "Download Complete"
-                : "Downloading Papers"}
-            </h3>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-secondary rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-primary/20">
+          <div className="flex justify-between items-start mb-4 sm:mb-6">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg sm:text-xl font-bold text-content mb-1 truncate">
+                {batchDownloadProgress.status === "complete"
+                  ? "Download Complete"
+                  : batchDownloadProgress.status === "error"
+                  ? "Download Failed"
+                  : "Batch Download"}
+              </h3>
+              <p className="text-xs sm:text-sm text-content/60">
+                {batchDownloadProgress.totalPapers} papers selected
+                {batchDownloadProgress.failedCount ? ` • ${batchDownloadProgress.failedCount} failed` : ''}
+              </p>
+            </div>
             {(batchDownloadProgress.status === "complete" ||
               batchDownloadProgress.status === "error") && (
               <button
                 onClick={() => setBatchDownloadProgress(null)}
-                className="text-content/60 hover:text-content"
+                className="text-content/60 hover:text-content transition-colors p-1 ml-2 flex-shrink-0"
                 aria-label="Close"
               >
-                <X size={20} weight="bold" />
+                <X size={20} weight="bold" className="sm:w-6 sm:h-6" />
               </button>
             )}
           </div>
 
+          {/* Segmented Progress Bar */}
           <div className="mb-4">
-            <div className="h-2 bg-primary/30 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${
-                  batchDownloadProgress.status === "error"
-                    ? "bg-red-500"
-                    : "bg-brand"
-                } transition-all duration-300`}
-                style={{ width: `${getProgressPercentage()}%` }}
-              ></div>
+            <div className="h-2.5 bg-primary/20 rounded-full overflow-hidden flex gap-0.5">
+              {/* Cache Segment */}
+              {cachedCount > 0 && (
+                <div 
+                  className="relative overflow-hidden"
+                  style={{ width: `${cacheSegmentWidth}%` }}
+                >
+                  <div 
+                    className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 transition-all duration-500 ease-out"
+                    style={{ width: `${getCacheProgress()}%` }}
+                  />
+                </div>
+              )}
+              
+              {/* Network Segment */}
+              {networkCount > 0 && (
+                <div 
+                  className="relative overflow-hidden"
+                  style={{ width: `${networkSegmentWidth}%` }}
+                >
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 transition-all duration-500 ease-out"
+                    style={{ width: `${getNetworkProgress()}%` }}
+                  />
+                </div>
+              )}
+              
+              {/* ZIP Segment */}
+              <div 
+                className="relative overflow-hidden"
+                style={{ width: `${zipPercent}%` }}
+              >
+                <div 
+                  className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 transition-all duration-500 ease-out"
+                  style={{ width: `${getZipProgress()}%` }}
+                />
+              </div>
+              
+              {/* Send Segment */}
+              <div 
+                className="relative overflow-hidden"
+                style={{ width: `${sendPercent}%` }}
+              >
+                <div 
+                  className="h-full bg-gradient-to-r from-violet-500 via-purple-600 to-fuchsia-600 transition-all duration-500 ease-out"
+                  style={{ width: `${getSendProgress()}%` }}
+                />
+              </div>
             </div>
-            <div className="mt-1 flex justify-between text-xs text-content/70">
-              <span>{getStatusText()}</span>
-              <span>{getDetailText()}</span>
+            
+            {/* Progress Info */}
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-xs sm:text-sm text-content/80 truncate">
+                  {batchDownloadProgress.currentPaper || "Processing..."}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {getStatusIcon() && (
+                  <span className={`text-base sm:text-lg ${
+                    batchDownloadProgress.status === "complete" ? "text-emerald-500" : "text-red-500"
+                  }`}>
+                    {getStatusIcon()}
+                  </span>
+                )}
+                <span className="text-xs sm:text-sm font-mono font-bold text-content">
+                  {getProgressPercentage().toFixed(0)}%
+                </span>
+              </div>
             </div>
           </div>
 
