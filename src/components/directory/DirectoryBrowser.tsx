@@ -75,16 +75,24 @@ export default function DirectoryBrowser({
 }: DirectoryBrowserProps) {
     const directories = items.filter((item) => item.isDirectory)
     const files = items.filter((item) => !item.isDirectory)
-    const [downloadingFile, setDownloadingFile] = useState<string | null>(null)
+    const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set())
 
     const handleDownload = async (url: string, fileName: string) => {
-        if (downloadingFile) return
+        if (activeDownloads.has(fileName)) return
 
-        setDownloadingFile(fileName)
+        setActiveDownloads(prev => {
+            const next = new Set(prev)
+            next.add(fileName)
+            return next
+        })
         try {
             await downloadFile(url, fileName)
         } finally {
-            setDownloadingFile(null)
+            setActiveDownloads(prev => {
+                const next = new Set(prev)
+                next.delete(fileName)
+                return next
+            })
         }
     }
 
@@ -238,8 +246,9 @@ export default function DirectoryBrowser({
                                                 )
                                             }
                                             disabled={
-                                                downloadingFile ===
-                                                item.metadata.fileName
+                                                activeDownloads.has(
+                                                    item.metadata.fileName
+                                                )
                                             }
                                             className="flex items-center gap-2 rounded-md bg-blue-600/70 text-white px-3 py-1.5 text-sm font-medium shadow-sm transition-all hover:bg-blue-500/80 hover:shadow-blue-400/25 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:cursor-not-allowed disabled:opacity-50"
                                         >
@@ -247,15 +256,17 @@ export default function DirectoryBrowser({
                                                 size={16}
                                                 weight="duotone"
                                                 className={`h-4 w-4 ${
-                                                    downloadingFile ===
-                                                    item.metadata.fileName
+                                                    activeDownloads.has(
+                                                        item.metadata.fileName
+                                                    )
                                                         ? "animate-spin"
                                                         : ""
                                                 }`}
                                             />
                                             <span>
-                                                {downloadingFile ===
-                                                item.metadata.fileName
+                                                {activeDownloads.has(
+                                                    item.metadata.fileName
+                                                )
                                                     ? "Downloading..."
                                                     : "Download"}
                                             </span>
