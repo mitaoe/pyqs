@@ -44,7 +44,7 @@ const SubjectPapersView = () => {
     navigateToPaper,
   } = usePDFPreview();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPapers, setSelectedPapers] = useState<Record<string, boolean>>(
     {}
@@ -271,13 +271,17 @@ const SubjectPapersView = () => {
   };
 
   const handleDownload = async (paper: Paper) => {
-    if (downloadingFile || isServerDown) {
+    if (activeDownloads.has(paper.fileName) || isServerDown) {
       if (isServerDown) {
         toast.error("Paper storage is currently unreachable. Please try again later.");
       }
       return;
     }
-    setDownloadingFile(paper.fileName);
+    setActiveDownloads(prev => {
+      const next = new Set(prev);
+      next.add(paper.fileName);
+      return next;
+    });
     try {
       const success = await downloadFile(paper.url, paper.fileName, paper);
       if (!success) {
@@ -287,7 +291,11 @@ const SubjectPapersView = () => {
       console.error("Download failed:", error);
       recordFailure();
     } finally {
-      setDownloadingFile(null);
+      setActiveDownloads(prev => {
+        const next = new Set(prev);
+        next.delete(paper.fileName);
+        return next;
+      });
     }
   };
 
@@ -428,14 +436,14 @@ const SubjectPapersView = () => {
                     e.stopPropagation();
                     handleDownload(paper);
                   }}
-                  disabled={downloadingFile === paper.fileName || isServerDown}
+                  disabled={activeDownloads.has(paper.fileName) || isServerDown}
                   className="flex-1 flex items-center justify-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download
                     size={16}
                     weight="duotone"
                     className={
-                      downloadingFile === paper.fileName ? "animate-spin" : ""
+                      activeDownloads.has(paper.fileName) ? "animate-spin" : ""
                     }
                   />
                   <span>Download</span>
@@ -529,14 +537,14 @@ const SubjectPapersView = () => {
                     e.stopPropagation();
                     handleDownload(paper);
                   }}
-                  disabled={downloadingFile === paper.fileName || isServerDown}
+                  disabled={activeDownloads.has(paper.fileName) || isServerDown}
                   className="flex items-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download
                     size={16}
                     weight="duotone"
                     className={
-                      downloadingFile === paper.fileName ? "animate-spin" : ""
+                      activeDownloads.has(paper.fileName) ? "animate-spin" : ""
                     }
                   />
                   <span className="hidden sm:inline">Download</span>
