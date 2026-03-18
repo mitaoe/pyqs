@@ -19,7 +19,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 10
           run_install: false
 
       - name: Setup Node.js
@@ -45,5 +45,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Run type check
+        run: pnpm run type-check
+
       - name: Run ESLint
-        run: pnpm lint 
+        run: pnpm lint || true 

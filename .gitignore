@@ -25,6 +25,7 @@
 .vscode/
 .DS_Store
 *.pem
+.kiro/
 
 # debug
 npm-debug.log*
