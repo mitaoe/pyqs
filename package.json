@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "type-check": "tsc --noEmit",
     "crawl": "tsx src/scripts/crawler.ts",
     "crawl:debug": "tsx src/scripts/crawler.ts --debug",
     "pyq-gen": "tsx src/scripts/pyq-generator.ts",
