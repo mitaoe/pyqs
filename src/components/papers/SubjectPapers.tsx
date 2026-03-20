@@ -784,29 +784,41 @@ const SubjectPapersView = () => {
     
     const currentProgress = getProgressPercentage();
     
-    // Calculate how much of each segment is filled
+    // Calculate how much of each segment is filled - sequential completion
     const getCacheProgress = () => {
+      if (cachedCount === 0) return 0;
       if (currentProgress <= 5) return 0;
+      const cacheEndPoint = 5 + cacheSegmentWidth;
+      if (currentProgress >= cacheEndPoint) return 100;
       const adjustedProgress = currentProgress - 5;
-      return Math.min(100, (adjustedProgress / cacheSegmentWidth) * 100);
+      return (adjustedProgress / cacheSegmentWidth) * 100;
     };
     
     const getNetworkProgress = () => {
-      if (currentProgress <= 5 + cacheSegmentWidth) return 0;
-      const adjustedProgress = currentProgress - 5 - cacheSegmentWidth;
-      return Math.min(100, (adjustedProgress / networkSegmentWidth) * 100);
+      if (networkCount === 0) return 0;
+      const networkStartPoint = 5 + cacheSegmentWidth;
+      const networkEndPoint = networkStartPoint + networkSegmentWidth;
+      if (currentProgress <= networkStartPoint) return 0;
+      if (currentProgress >= networkEndPoint) return 100;
+      const adjustedProgress = currentProgress - networkStartPoint;
+      return (adjustedProgress / networkSegmentWidth) * 100;
     };
     
     const getZipProgress = () => {
-      if (currentProgress <= 85) return 0;
-      const adjustedProgress = currentProgress - 85;
-      return Math.min(100, (adjustedProgress / zipPercent) * 100);
+      const zipStartPoint = 85;
+      const zipEndPoint = 95;
+      if (currentProgress <= zipStartPoint) return 0;
+      if (currentProgress >= zipEndPoint) return 100;
+      const adjustedProgress = currentProgress - zipStartPoint;
+      return (adjustedProgress / zipPercent) * 100;
     };
     
     const getSendProgress = () => {
-      if (currentProgress <= 95) return 0;
-      const adjustedProgress = currentProgress - 95;
-      return Math.min(100, (adjustedProgress / sendPercent) * 100);
+      const sendStartPoint = 95;
+      if (currentProgress <= sendStartPoint) return 0;
+      if (currentProgress >= 100) return 100;
+      const adjustedProgress = currentProgress - sendStartPoint;
+      return (adjustedProgress / sendPercent) * 100;
     };
 
     return (
@@ -840,7 +852,7 @@ const SubjectPapersView = () => {
 
           {/* Segmented Progress Bar */}
           <div className="mb-4">
-            <div className="h-2.5 bg-primary/20 rounded-full overflow-hidden flex gap-0.5">
+            <div className="h-2.5 bg-primary/20 rounded-full overflow-hidden flex">
               {/* Cache Segment */}
               {cachedCount > 0 && (
                 <div 
@@ -848,7 +860,7 @@ const SubjectPapersView = () => {
                   style={{ width: `${cacheSegmentWidth}%` }}
                 >
                   <div 
-                    className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 transition-all duration-500 ease-out"
+                    className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 transition-all duration-500 ease-out"
                     style={{ width: `${getCacheProgress()}%` }}
                   />
                 </div>
