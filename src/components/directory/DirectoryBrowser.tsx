@@ -78,11 +78,11 @@ export default function DirectoryBrowser({
     const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set())
 
     const handleDownload = async (url: string, fileName: string) => {
-        if (activeDownloads.has(fileName)) return
+        if (activeDownloads.has(url)) return
 
         setActiveDownloads(prev => {
             const next = new Set(prev)
-            next.add(fileName)
+            next.add(url)
             return next
         })
         try {
@@ -90,7 +90,7 @@ export default function DirectoryBrowser({
         } finally {
             setActiveDownloads(prev => {
                 const next = new Set(prev)
-                next.delete(fileName)
+                next.delete(url)
                 return next
             })
         }
@@ -247,7 +247,7 @@ export default function DirectoryBrowser({
                                             }
                                             disabled={
                                                 activeDownloads.has(
-                                                    item.metadata.fileName
+                                                    item.metadata.url
                                                 )
                                             }
                                             className="flex items-center gap-2 rounded-md bg-blue-600/70 text-white px-3 py-1.5 text-sm font-medium shadow-sm transition-all hover:bg-blue-500/80 hover:shadow-blue-400/25 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:cursor-not-allowed disabled:opacity-50"
@@ -257,7 +257,7 @@ export default function DirectoryBrowser({
                                                 weight="duotone"
                                                 className={`h-4 w-4 ${
                                                     activeDownloads.has(
-                                                        item.metadata.fileName
+                                                        item.metadata.url
                                                     )
                                                         ? "animate-spin"
                                                         : ""
@@ -265,7 +265,7 @@ export default function DirectoryBrowser({
                                             />
                                             <span>
                                                 {activeDownloads.has(
-                                                    item.metadata.fileName
+                                                    item.metadata.url
                                                 )
                                                     ? "Downloading..."
                                                     : "Download"}
