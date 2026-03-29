@@ -4,14 +4,12 @@ import { useTheme } from "next-themes"
 import { useSettings } from "@/contexts/SettingsContext"
 import { Sun, Moon, Mouse, ComputerTower, Trash } from "@phosphor-icons/react"
 import { toast } from "sonner"
-import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { getCacheManager } from "@/lib/cache/manager"
 
 export default function SettingsPopup() {
     const { theme, setTheme } = useTheme()
     const { cursorStyle, setCursorStyle, clearAllCache } = useSettings()
-    const router = useRouter()
     const [isClearing, setIsClearing] = useState(false)
     const [cacheSize, setCacheSize] = useState<string>("0 B")
     const [cacheCount, setCacheCount] = useState<number>(0)
@@ -39,7 +37,6 @@ export default function SettingsPopup() {
             // Update cache stats after clearing
             setCacheSize("0 B")
             setCacheCount(0)
-            router.push("/") // Redirect to homepage
         } catch (error) {
             toast.error("Failed to clear cache")
             console.error("Cache clear error:", error)
