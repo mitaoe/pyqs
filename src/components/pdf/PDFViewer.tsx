@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { X, Download, ArrowSquareOut, SpinnerGap } from "@phosphor-icons/react";
+import {
+  X,
+  Download,
+  ArrowSquareOut,
+  SpinnerGap,
+  ArrowLeft,
+  ArrowRight,
+} from "@phosphor-icons/react";
 import { Paper } from "@/types/paper";
 import { downloadFile } from "@/utils/download";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,9 +16,11 @@ import { motion, AnimatePresence } from "framer-motion";
 interface PDFViewerProps {
   paper: Paper;
   onClose: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
-export default function PDFViewer({ paper, onClose }: PDFViewerProps) {
+export default function PDFViewer({ paper, onClose, onPrev, onNext }: PDFViewerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
@@ -22,6 +31,8 @@ export default function PDFViewer({ paper, onClose }: PDFViewerProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && typeof onPrev === "function") onPrev();
+      if (e.key === "ArrowRight" && typeof onNext === "function") onNext();
     };
     document.addEventListener("keydown", handleKeyDown);
     document.body.style.overflow = "hidden";
@@ -30,7 +41,7 @@ export default function PDFViewer({ paper, onClose }: PDFViewerProps) {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
-  }, [onClose]);
+  }, [onClose, onPrev, onNext]);
 
   const handleDownload = useCallback(async () => {
     if (downloading) return;
@@ -57,9 +68,10 @@ export default function PDFViewer({ paper, onClose }: PDFViewerProps) {
           onClick={onClose}
         />
 
-        {/* Modal */}
+        {/* Modal (full-window PDF preview) */}
         <motion.div
-          className="relative z-10 w-[95vw] h-[93vh] max-w-6xl bg-secondary rounded-2xl shadow-2xl border border-accent/30 flex flex-col overflow-hidden"
+          data-pdf-modal="true"
+          className="relative z-10 w-screen h-screen bg-secondary flex flex-col overflow-hidden"
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -67,7 +79,7 @@ export default function PDFViewer({ paper, onClose }: PDFViewerProps) {
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <header className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-accent/30 bg-primary/60 backdrop-blur-md flex-shrink-0">
+          <header className="flex items-center justify-between px-3 sm:px-5 py-2 border-b border-accent/30 bg-primary/60 backdrop-blur-md flex-shrink-0">
             <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className="px-2 py-0.5 bg-accent/20 rounded-md text-xs font-medium">
@@ -81,8 +93,26 @@ export default function PDFViewer({ paper, onClose }: PDFViewerProps) {
                 {paper.fileName}
               </h3>
             </div>
-
             <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Prev/Next (if provided) */}
+              {onPrev && (
+                <button
+                  onClick={onPrev}
+                  className="p-2 text-content/70 hover:text-content hover:bg-accent/20 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  aria-label="Previous PDF"
+                >
+                  <ArrowLeft size={18} weight="bold" />
+                </button>
+              )}
+              {onNext && (
+                <button
+                  onClick={onNext}
+                  className="p-2 text-content/70 hover:text-content hover:bg-accent/20 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  aria-label="Next PDF"
+                >
+                  <ArrowRight size={18} weight="bold" />
+                </button>
+              )}
               {/* Download */}
               <button
                 onClick={handleDownload}

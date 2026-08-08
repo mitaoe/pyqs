@@ -1227,12 +1227,34 @@ const SubjectPapersView = () => {
       {/* Batch download progress overlay */}
       {batchDownloadProgress && renderBatchDownloadProgress()}
 
-      {/* PDF Preview Viewer */}
+      {/* PDF Preview Viewer with Prev/Next handlers */}
       {previewPaper && (
-        <PDFViewer
-          paper={previewPaper}
-          onClose={() => setPreviewPaper(null)}
-        />
+        (() => {
+          const currentIndex = filteredPapers.findIndex(
+            (p) => p.fileName === previewPaper.fileName
+          );
+          const hasPrev = currentIndex > 0;
+          const hasNext = currentIndex >= 0 && currentIndex < filteredPapers.length - 1;
+
+          const goPrev = () => {
+            if (!hasPrev) return;
+            setPreviewPaper(filteredPapers[currentIndex - 1]);
+          };
+
+          const goNext = () => {
+            if (!hasNext) return;
+            setPreviewPaper(filteredPapers[currentIndex + 1]);
+          };
+
+          return (
+            <PDFViewer
+              paper={previewPaper}
+              onClose={() => setPreviewPaper(null)}
+              onPrev={hasPrev ? goPrev : undefined}
+              onNext={hasNext ? goNext : undefined}
+            />
+          );
+        })()
       )}
     </div>
   );
