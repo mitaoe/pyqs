@@ -27,7 +27,7 @@
     "next": "^16.2.11",
     "next-themes": "^0.4.6",
     "node-fetch": "^3.3.2",
-    "pdfjs-dist": "^5.5.207",
+    "pdfjs-dist": "^6.2.108",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-icons": "^5.6.0",
