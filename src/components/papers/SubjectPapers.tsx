@@ -45,6 +45,8 @@ const SubjectPapersView = () => {
   } = usePDFPreview();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set());
+  // Synchronous guard to prevent race conditions on rapid clicks
+  const activeDownloadsRef = useRef<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPapers, setSelectedPapers] = useState<Record<string, boolean>>(
     {}
@@ -159,11 +161,18 @@ const SubjectPapersView = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Update selected subject from URL parameter
+  useEffect(() => {
+    const subjectParam = searchParams.get("subject");
+    if (subjectParam) {
+      setSelectedSubject(subjectParam);
+    }
+  }, [searchParams]);
+
   // Get the subject parameter from URL and filter papers
   const filteredPapers = useMemo(() => {
     const subjectParam = searchParams.get("subject");
     if (subjectParam) {
-      setSelectedSubject(subjectParam);
       // Filter papers by subject and remove duplicates based on fileName
       const papersBySubject = papers.filter(
         (paper) =>
@@ -271,17 +280,22 @@ const SubjectPapersView = () => {
   };
 
   const handleDownload = async (paper: Paper) => {
-    if (activeDownloads.has(paper.fileName) || isServerDown) {
-      if (isServerDown) {
-        toast.error("Paper storage is currently unreachable. Please try again later.");
-      }
+    if (isServerDown) {
+      toast.error("Paper storage is currently unreachable. Please try again later.");
       return;
     }
-    setActiveDownloads(prev => {
-      const next = new Set(prev);
-      next.add(paper.fileName);
-      return next;
-    });
+
+    // Synchronous check-and-add using ref to prevent race conditions
+    if (activeDownloadsRef.current.has(paper.fileName)) {
+      return; // Already downloading
+    }
+
+    // Atomically add to ref
+    activeDownloadsRef.current.add(paper.fileName);
+    
+    // Update state to sync with ref
+    setActiveDownloads(new Set(activeDownloadsRef.current));
+
     try {
       const success = await downloadFile(paper.url, paper.fileName, paper);
       if (!success) {
@@ -291,11 +305,11 @@ const SubjectPapersView = () => {
       console.error("Download failed:", error);
       recordFailure();
     } finally {
-      setActiveDownloads(prev => {
-        const next = new Set(prev);
-        next.delete(paper.fileName);
-        return next;
-      });
+      // Remove from ref
+      activeDownloadsRef.current.delete(paper.fileName);
+      
+      // Update state to sync with ref
+      setActiveDownloads(new Set(activeDownloadsRef.current));
     }
   };
 
@@ -779,46 +793,55 @@ const SubjectPapersView = () => {
     const zipPercent = 10;
     const sendPercent = 5;
     
-    const cacheSegmentWidth = (cachedCount / totalPapers) * downloadPercent;
-    const networkSegmentWidth = (networkCount / totalPapers) * downloadPercent;
+    // Download phase actually spans 5→85, which is 80 points
+    const downloadSpan = 80;
+    
+    const cacheSegmentWidth = (cachedCount / totalPapers) * downloadSpan;
+    const networkSegmentWidth = (networkCount / totalPapers) * downloadSpan;
     
     const currentProgress = getProgressPercentage();
     
+    // Normalize progress to the download timeline (5→85 maps to 0→1)
+    const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+    const normalizedDownloadProgress = clamp((currentProgress - 5) / downloadSpan, 0, 1);
+    
+    // Calculate total filled percent in the download allocation (0→80 scale)
+    const totalDownloadFilledPercent = normalizedDownloadProgress * downloadSpan;
+    
     // Calculate how much of each segment is filled - sequential completion
     const getCacheProgress = () => {
-      if (cachedCount === 0) return 0;
-      if (currentProgress <= 5) return 0;
-      const cacheEndPoint = 5 + cacheSegmentWidth;
-      if (currentProgress >= cacheEndPoint) return 100;
-      const adjustedProgress = currentProgress - 5;
-      return (adjustedProgress / cacheSegmentWidth) * 100;
+      if (cachedCount === 0 || cacheSegmentWidth <= 0) return 0;
+      
+      const cacheFill = clamp(totalDownloadFilledPercent / cacheSegmentWidth * 100, 0, 100);
+      return cacheFill;
     };
     
     const getNetworkProgress = () => {
-      if (networkCount === 0) return 0;
-      const networkStartPoint = 5 + cacheSegmentWidth;
-      const networkEndPoint = networkStartPoint + networkSegmentWidth;
-      if (currentProgress <= networkStartPoint) return 0;
-      if (currentProgress >= networkEndPoint) return 100;
-      const adjustedProgress = currentProgress - networkStartPoint;
-      return (adjustedProgress / networkSegmentWidth) * 100;
+      if (networkCount === 0 || networkSegmentWidth <= 0) return 0;
+      
+      // Network starts after cache segment
+      const networkFilledPercent = totalDownloadFilledPercent - cacheSegmentWidth;
+      const networkFill = clamp(networkFilledPercent / networkSegmentWidth * 100, 0, 100);
+      return networkFill;
     };
     
     const getZipProgress = () => {
-      const zipStartPoint = 85;
-      const zipEndPoint = 95;
-      if (currentProgress <= zipStartPoint) return 0;
-      if (currentProgress >= zipEndPoint) return 100;
-      const adjustedProgress = currentProgress - zipStartPoint;
-      return (adjustedProgress / zipPercent) * 100;
+      const zipStart = 85;
+      const zipEnd = 95;
+      if (currentProgress <= zipStart) return 0;
+      if (currentProgress >= zipEnd) return 100;
+      const adjustedProgress = currentProgress - zipStart;
+      const fillPercent = (adjustedProgress / zipPercent) * 100;
+      return Math.max(0, Math.min(100, fillPercent));
     };
     
     const getSendProgress = () => {
-      const sendStartPoint = 95;
-      if (currentProgress <= sendStartPoint) return 0;
+      const sendStart = 95;
+      if (currentProgress <= sendStart) return 0;
       if (currentProgress >= 100) return 100;
-      const adjustedProgress = currentProgress - sendStartPoint;
-      return (adjustedProgress / sendPercent) * 100;
+      const adjustedProgress = currentProgress - sendStart;
+      const fillPercent = (adjustedProgress / sendPercent) * 100;
+      return Math.max(0, Math.min(100, fillPercent));
     };
 
     return (
@@ -937,6 +960,10 @@ const SubjectPapersView = () => {
                     completed: 0,
                     status: "preparing",
                     percentage: 0,
+                    cachedCount: 0,
+                    networkCount: 0,
+                    failedCount: 0,
+                    currentPhase: 'cache',
                   });
 
                   // Small delay to show the preparing state before starting
@@ -1016,6 +1043,10 @@ const SubjectPapersView = () => {
       completed: 0,
       status: "preparing",
       percentage: 0,
+      cachedCount: 0,
+      networkCount: 0,
+      failedCount: 0,
+      currentPhase: 'cache',
     });
 
     // Attempt the batch download with filter information

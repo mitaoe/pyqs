@@ -164,7 +164,7 @@ export async function batchDownloadPapers(
     onProgress?.({ ...progress });
 
     // Check cache for each paper first
-    const cachedPapers: Paper[] = [];
+    const cachedPapers: Array<{ paper: Paper; pdfData: ArrayBuffer }> = [];
     const uncachedPapers: Paper[] = [];
 
     progress.status = 'preparing';
@@ -187,7 +187,7 @@ export async function batchDownloadPapers(
 
       const cachedData = await cacheManager.getPdf(paper.url);
       if (cachedData) {
-        cachedPapers.push(paper);
+        cachedPapers.push({ paper, pdfData: cachedData });
       } else {
         uncachedPapers.push(paper);
       }
@@ -222,7 +222,7 @@ export async function batchDownloadPapers(
 
     // Process cached papers first (instant)
     for (let i = 0; i < cachedPapers.length; i++) {
-      const paper = cachedPapers[i];
+      const { paper, pdfData } = cachedPapers[i];
       try {
         // Update progress for cached papers
         progress.completed = i + 1;
@@ -231,16 +231,13 @@ export async function batchDownloadPapers(
         progress.currentPaper = `${i + 1}/${cachedPapers.length} from cache`;
         onProgress?.({ ...progress });
 
-        const pdfData = await cacheManager.getPdf(paper.url);
-        if (pdfData) {
-          let fileName = paper.fileName;
-          if (!fileName.toLowerCase().endsWith('.pdf')) {
-            fileName += '.pdf';
-          }
-
-          zip.file(fileName, pdfData);
-          successCount++;
+        let fileName = paper.fileName;
+        if (!fileName.toLowerCase().endsWith('.pdf')) {
+          fileName += '.pdf';
         }
+
+        zip.file(fileName, pdfData);
+        successCount++;
         
         // Small delay for smooth animation
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -268,6 +265,7 @@ export async function batchDownloadPapers(
         if (!response.ok) {
           console.error(`Failed to fetch ${paper.url}, status: ${response.status}`);
           errorCount++;
+          progress.failedCount = errorCount;
           continue;
         }
 
@@ -336,15 +334,18 @@ export async function batchDownloadPapers(
       onProgress?.({ ...progress });
     }, 120);
 
-    const zipBlob = await zip.generateAsync({
-      type: 'blob',
-      compression: 'DEFLATE',
-      compressionOptions: {
-        level: 9
-      }
-    });
-
-    clearInterval(zipUpdateInterval);
+    let zipBlob: Blob;
+    try {
+      zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: {
+          level: 9
+        }
+      });
+    } finally {
+      clearInterval(zipUpdateInterval);
+    }
 
     // Ensure minimum time for smooth UX
     const actualZipTime = Date.now() - zipStartTime;

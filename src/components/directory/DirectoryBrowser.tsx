@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import {
     Folder,
     ArrowLeft,
@@ -76,23 +76,31 @@ export default function DirectoryBrowser({
     const directories = items.filter((item) => item.isDirectory)
     const files = items.filter((item) => !item.isDirectory)
     const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set())
+    // Synchronous guard to prevent race conditions on rapid clicks
+    const ongoingDownloadsRef = useRef<Set<string>>(new Set())
 
     const handleDownload = async (url: string, fileName: string) => {
-        if (activeDownloads.has(url)) return
+        // Synchronous check-and-add using ref to prevent race conditions
+        if (ongoingDownloadsRef.current.has(url)) {
+            return; // Already downloading
+        }
 
-        setActiveDownloads(prev => {
-            const next = new Set(prev)
-            next.add(url)
-            return next
-        })
+        // Atomically add to ref using url as the key
+        ongoingDownloadsRef.current.add(url);
+        
+        // Update state to sync with ref for UI
+        setActiveDownloads(new Set(ongoingDownloadsRef.current));
+
         try {
-            await downloadFile(url, fileName)
+            await downloadFile(url, fileName);
+        } catch (error) {
+            console.error('Download failed:', error);
         } finally {
-            setActiveDownloads(prev => {
-                const next = new Set(prev)
-                next.delete(url)
-                return next
-            })
+            // Remove from ref
+            ongoingDownloadsRef.current.delete(url);
+            
+            // Update state to sync with ref
+            setActiveDownloads(new Set(ongoingDownloadsRef.current));
         }
     }
 
