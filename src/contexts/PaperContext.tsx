@@ -98,6 +98,8 @@ export function PaperProvider({ children }: PaperProviderProps) {
   const fetchPapersData = useCallback(async (force = false) => {
     if (isLoading) return;
 
+    let toastId: string | number | undefined = undefined;
+
     try {
       setIsLoading(true);
 
@@ -132,7 +134,7 @@ export function PaperProvider({ children }: PaperProviderProps) {
       }
 
       if (force) {
-        toast.loading('Refreshing papers...');
+        toastId = toast.loading('Refreshing papers...');
       }
 
       const query = new URLSearchParams();
@@ -176,6 +178,9 @@ export function PaperProvider({ children }: PaperProviderProps) {
       }
 
       if (force) {
+        if (toastId !== undefined) {
+          toast.dismiss(toastId);
+        }
         toast.success('Papers refreshed successfully');
       }
 
@@ -188,6 +193,9 @@ export function PaperProvider({ children }: PaperProviderProps) {
       setLoadingStatus(LoadingStatus.ERROR);
       toast.error(error instanceof Error ? error.message : 'Failed to fetch papers data');
     } finally {
+      if (toastId !== undefined) {
+        toast.dismiss(toastId);
+      }
       setIsLoading(false);
     }
   }, [filters, isLoading]);

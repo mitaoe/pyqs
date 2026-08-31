@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import {
     Folder,
     ArrowLeft,
@@ -75,16 +75,32 @@ export default function DirectoryBrowser({
 }: DirectoryBrowserProps) {
     const directories = items.filter((item) => item.isDirectory)
     const files = items.filter((item) => !item.isDirectory)
-    const [downloadingFile, setDownloadingFile] = useState<string | null>(null)
+    const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set())
+    // Synchronous guard to prevent race conditions on rapid clicks
+    const ongoingDownloadsRef = useRef<Set<string>>(new Set())
 
     const handleDownload = async (url: string, fileName: string) => {
-        if (downloadingFile) return
+        // Synchronous check-and-add using ref to prevent race conditions
+        if (ongoingDownloadsRef.current.has(url)) {
+            return; // Already downloading
+        }
 
-        setDownloadingFile(fileName)
+        // Atomically add to ref using url as the key
+        ongoingDownloadsRef.current.add(url);
+        
+        // Update state to sync with ref for UI
+        setActiveDownloads(new Set(ongoingDownloadsRef.current));
+
         try {
-            await downloadFile(url, fileName)
+            await downloadFile(url, fileName);
+        } catch (error) {
+            console.error('Download failed:', error);
         } finally {
-            setDownloadingFile(null)
+            // Remove from ref
+            ongoingDownloadsRef.current.delete(url);
+            
+            // Update state to sync with ref
+            setActiveDownloads(new Set(ongoingDownloadsRef.current));
         }
     }
 
@@ -238,8 +254,9 @@ export default function DirectoryBrowser({
                                                 )
                                             }
                                             disabled={
-                                                downloadingFile ===
-                                                item.metadata.fileName
+                                                activeDownloads.has(
+                                                    item.metadata.url
+                                                )
                                             }
                                             className="flex items-center gap-2 rounded-md bg-blue-600/70 text-white px-3 py-1.5 text-sm font-medium shadow-sm transition-all hover:bg-blue-500/80 hover:shadow-blue-400/25 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:cursor-not-allowed disabled:opacity-50"
                                         >
@@ -247,15 +264,17 @@ export default function DirectoryBrowser({
                                                 size={16}
                                                 weight="duotone"
                                                 className={`h-4 w-4 ${
-                                                    downloadingFile ===
-                                                    item.metadata.fileName
+                                                    activeDownloads.has(
+                                                        item.metadata.url
+                                                    )
                                                         ? "animate-spin"
                                                         : ""
                                                 }`}
                                             />
                                             <span>
-                                                {downloadingFile ===
-                                                item.metadata.fileName
+                                                {activeDownloads.has(
+                                                    item.metadata.url
+                                                )
                                                     ? "Downloading..."
                                                     : "Download"}
                                             </span>
