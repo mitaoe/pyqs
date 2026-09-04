@@ -26,8 +26,8 @@ import {
 import { Paper } from "@/types/paper";
 import FadeIn from "@/components/animations/FadeIn";
 import { toast } from "sonner";
-import { usePDFPreview } from "@/hooks/usePDFPreview";
-import PDFPreviewModal from "@/components/pdf/PDFPreviewModal";
+import PDFViewer from "@/components/pdf/PDFViewer";
+
 
 const SubjectPapersView = () => {
   const router = useRouter();
@@ -35,14 +35,8 @@ const SubjectPapersView = () => {
   const { papers, dataReady, meta } = usePapers();
   const { isServerDown, recordFailure } = useServerStatus();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const {
-    isOpen: isPDFOpen,
-    currentPaper,
-    papers: pdfPapers,
-    openPreview,
-    closePreview,
-    navigateToPaper,
-  } = usePDFPreview();
+  const [previewPaper, setPreviewPaper] = useState<Paper | null>(null);
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -296,8 +290,9 @@ const SubjectPapersView = () => {
       toast.error("Paper storage is currently unreachable. Preview is unavailable.");
       return;
     }
-    openPreview(paper, filteredPapers);
+    setPreviewPaper(paper);
   };
+
 
   const toggleFilterItem = (key: "years" | "examTypes", value: string) => {
     setFilters((prev) => {
@@ -418,7 +413,7 @@ const SubjectPapersView = () => {
                     handlePreview(paper);
                   }}
                   disabled={isServerDown}
-                  className="flex-1 flex items-center justify-center gap-2 bg-gray-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 flex items-center justify-center gap-2 bg-accent/20 text-content rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-accent/30 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Eye size={16} weight="duotone" />
                   <span>Preview</span>
@@ -519,7 +514,7 @@ const SubjectPapersView = () => {
                     handlePreview(paper);
                   }}
                   disabled={isServerDown}
-                  className="flex items-center gap-2 bg-gray-600 text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 bg-accent/20 text-content rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-accent/30 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Eye size={16} weight="duotone" />
                   <span className="hidden sm:inline">Preview</span>
@@ -1232,15 +1227,35 @@ const SubjectPapersView = () => {
       {/* Batch download progress overlay */}
       {batchDownloadProgress && renderBatchDownloadProgress()}
 
-      {/* PDF Preview Modal */}
-      <PDFPreviewModal
-        isOpen={isPDFOpen}
-        onClose={closePreview}
-        paper={currentPaper}
-        papers={pdfPapers}
-        onNavigate={navigateToPaper}
-        onFailure={recordFailure}
-      />
+      {/* PDF Preview Viewer with Prev/Next handlers */}
+      {previewPaper && (
+        (() => {
+          const currentIndex = filteredPapers.findIndex(
+            (p) => p.fileName === previewPaper.fileName
+          );
+          const hasPrev = currentIndex > 0;
+          const hasNext = currentIndex >= 0 && currentIndex < filteredPapers.length - 1;
+
+          const goPrev = () => {
+            if (!hasPrev) return;
+            setPreviewPaper(filteredPapers[currentIndex - 1]);
+          };
+
+          const goNext = () => {
+            if (!hasNext) return;
+            setPreviewPaper(filteredPapers[currentIndex + 1]);
+          };
+
+          return (
+            <PDFViewer
+              paper={previewPaper}
+              onClose={() => setPreviewPaper(null)}
+              onPrev={hasPrev ? goPrev : undefined}
+              onNext={hasNext ? goNext : undefined}
+            />
+          );
+        })()
+      )}
     </div>
   );
 };
