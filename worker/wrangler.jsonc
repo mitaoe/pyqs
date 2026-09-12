@@ -1,0 +1,17 @@
+{
+  "name": "mitaoe-pyqs",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-02-28",
+  "workers_dev": true,
+  "observability": {
+    "logs": {
+      "enabled": true
+    }
+  },
+  "r2_buckets": [
+    {
+      "binding": "PDF_BUCKET",
+      "bucket_name": "mitaoe-pyqs"
+    }
+  ]
+}
