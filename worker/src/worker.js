@@ -9,7 +9,16 @@ const worker = {
     }
 
     const url = new URL(request.url);
-    const key = decodeURIComponent(url.pathname.slice(1));
+
+    let key;
+    try {
+      key = decodeURIComponent(url.pathname.slice(1));
+    } catch {
+      return new Response('Bad Request', {
+        status: 400,
+        headers: corsHeaders(request),
+      });
+    }
 
     if (key === '' || key === '/') {
       return new Response('MITAOE PYQ Storage Active', {
