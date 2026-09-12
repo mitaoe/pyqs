@@ -6,9 +6,7 @@ export function usePDFGestures(
     centerX?: number,
     centerY?: number
   ) => void,
-  currentScaleRef: React.MutableRefObject<number>,
-  lastPinchDistance: React.MutableRefObject<number>,
-  zoomCenter: React.MutableRefObject<{ x: number; y: number }>
+  currentScaleRef: React.MutableRefObject<number>
 ) {
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({
@@ -105,22 +103,8 @@ export function usePDFGestures(
         
         const distance = getTouchDistance(e.touches);
         initialPinchDistance.current = distance;
-        lastPinchDistance.current = distance;
         initialScale.current = currentScaleRef.current;
         isZooming.current = true;
-
-        // Debug log for mobile testing
-        console.log('Pinch start:', { distance, initialScale: initialScale.current });
-
-        // Get pinch center relative to the container
-        const center = getTouchCenter(e.touches);
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (rect) {
-          zoomCenter.current = {
-            x: center.x - rect.left,
-            y: center.y - rect.top,
-          };
-        }
       } else if (
         tool === "hand" &&
         e.touches.length === 1 &&
@@ -138,7 +122,7 @@ export function usePDFGestures(
         }
       }
     },
-    [tool, getTouchDistance, getTouchCenter, lastPinchDistance, zoomCenter, currentScaleRef]
+    [tool, getTouchDistance, currentScaleRef]
   );
 
   const handleTouchMove = useCallback(
@@ -177,15 +161,6 @@ export function usePDFGestures(
 
           // Only update if there's a significant change (10% increment)
           if (Math.abs(newScale - currentScaleRef.current) >= 0.09) {
-            console.log('Pinch zoom (10% steps):', { 
-              currentDistance, 
-              initialDistance: initialPinchDistance.current,
-              distanceRatio, 
-              targetScale,
-              newScale, 
-              currentScale: currentScaleRef.current 
-            });
-
             // Get current pinch center
             const center = getTouchCenter(e.touches);
             const rect = containerRef.current?.getBoundingClientRect();
@@ -202,8 +177,6 @@ export function usePDFGestures(
             initialScale.current = newScale;
           }
         }
-
-        lastPinchDistance.current = currentDistance;
       } else if (
         isDragging &&
         tool === "hand" &&
@@ -235,7 +208,6 @@ export function usePDFGestures(
       getTouchCenter,
       updateZoomScale,
       currentScaleRef,
-      lastPinchDistance,
       initialPinchDistance,
       initialScale,
     ]
@@ -246,7 +218,6 @@ export function usePDFGestures(
       if (e.touches.length < 2) {
         // Reset zoom state when less than 2 fingers
         isZooming.current = false;
-        lastPinchDistance.current = 0;
         initialPinchDistance.current = 0;
         initialScale.current = currentScaleRef.current;
       }
@@ -256,7 +227,7 @@ export function usePDFGestures(
         setIsDragging(false);
       }
     },
-    [currentScaleRef, lastPinchDistance]
+    [currentScaleRef]
   );
 
   return {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { usePapers } from "@/contexts/PaperContext"
 import { motion } from "framer-motion"
@@ -24,18 +24,18 @@ let globalSectionRefs: GlobalAlphabetRefs = {
 // The component that displays just the A-Z bar
 export const AlphabetBar = () => {
     const { meta } = usePapers()
-    const [availableLetters, setAvailableLetters] = useState<Set<string>>(
-        new Set()
-    )
+    const standardSubjects = meta?.standardSubjects
     const [activeSection, setActiveSection] = useState<string | null>(null)
     const [hoverLetter, setHoverLetter] = useState<string | null>(null)
 
     // Determine which letters have subjects
-    useEffect(() => {
-        if (meta?.standardSubjects?.length) {
-            setAvailableLetters(getAvailableLetters(meta.standardSubjects))
-        }
-    }, [meta?.standardSubjects])
+    const availableLetters = useMemo(
+        () =>
+            standardSubjects?.length
+                ? getAvailableLetters(standardSubjects)
+                : new Set<string>(),
+        [standardSubjects]
+    )
 
     const scrollToSection = (letter: string) => {
         if (globalSectionRefs.current[letter]) {
@@ -88,18 +88,18 @@ export const AlphabetBar = () => {
 // Main component with subject listing
 const SubjectAlphabetList = () => {
     const { meta } = usePapers()
+    const standardSubjects = meta?.standardSubjects
     const router = useRouter()
-    const [subjectsByLetter, setSubjectsByLetter] = useState<
-        Record<string, string[]>
-    >({})
     const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
     // Group subjects by their first letter
-    useEffect(() => {
-        if (meta?.standardSubjects?.length) {
-            setSubjectsByLetter(groupSubjectsByLetter(meta.standardSubjects))
-        }
-    }, [meta?.standardSubjects])
+    const subjectsByLetter = useMemo<Record<string, string[]>>(
+        () =>
+            standardSubjects?.length
+                ? groupSubjectsByLetter(standardSubjects)
+                : {},
+        [standardSubjects]
+    )
 
     // Connect local refs to the global refs
     useEffect(() => {

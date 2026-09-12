@@ -26,6 +26,10 @@ export function usePDFRenderer(
   // Track retry attempts per page to prevent infinite loops
   const retryAttempts = useRef<Map<number, number>>(new Map());
 
+  const renderPageRef = useRef<
+    ((pageNum: number, force?: boolean) => Promise<void>) | null
+  >(null);
+
   // Cancel rendering for a specific page and reset retry count
   const cancelPageRender = useCallback((pageNum: number) => {
     const renderTask = renderTasks.current.get(pageNum);
@@ -179,7 +183,7 @@ export function usePDFRenderer(
 
             // Retry with exponential backoff
             setTimeout(() => {
-              renderPage(pageNum, true);
+              renderPageRef.current?.(pageNum, true);
             }, RETRY_DELAY * Math.pow(2, currentRetries));
           } else {
             console.error(
@@ -195,6 +199,10 @@ export function usePDFRenderer(
     },
     [pdfDoc, internalScale, scale, cancelPageRender, renderedPages]
   );
+
+  useEffect(() => {
+    renderPageRef.current = renderPage;
+  }, [renderPage]);
 
   // Reset all state when PDF document changes
   const resetRenderer = useCallback(() => {

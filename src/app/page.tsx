@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import Link from "next/link"
 import Layout from "@/components/layout/Layout"
 import { usePapers, LoadingStatus } from "@/contexts/PaperContext"
@@ -8,24 +8,19 @@ import { MagnifyingGlass } from "@phosphor-icons/react"
 import FadeIn from "@/components/animations/FadeIn"
 import LottieAnimation from "@/components/animations/LottieAnimation"
 import { motion } from "framer-motion"
+import { useIsHydrated } from "@/hooks/useIsHydrated"
 
 export default function HomePage() {
     const { dataReady, isLoading, loadingStatus, prefetchData } = usePapers()
-    const [isClient, setIsClient] = useState(false)
+    const isHydrated = useIsHydrated()
 
-    // Avoid hydration mismatch
     useEffect(() => {
-        setIsClient(true)
-    }, [])
-
-    // This effect runs after the component mounts to prevent hydration mismatch
-    useEffect(() => {
-        if (isClient && !dataReady && !isLoading) {
+        if (isHydrated && !dataReady && !isLoading) {
             prefetchData()
         }
-    }, [isClient, dataReady, isLoading, prefetchData])
+    }, [isHydrated, dataReady, isLoading, prefetchData])
 
-    if (!isClient) {
+    if (!isHydrated) {
         return null
     }
 

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { motion, useSpring, useMotionValue } from "framer-motion"
 import { useTheme } from "next-themes"
+import { useIsHydrated } from "@/hooks/useIsHydrated"
 import LottieAnimation from "./LottieAnimation"
 
 interface GhostCursorProps {
@@ -31,7 +32,7 @@ interface LottieJSON {
 }
 
 export default function GhostCursor({ enabled = true }: GhostCursorProps) {
-    const [isClient, setIsClient] = useState(false)
+    const isHydrated = useIsHydrated()
     const [animationData, setAnimationData] = useState<LottieJSON | null>(null)
     const cursorRef = useRef<HTMLDivElement>(null)
     const { theme, resolvedTheme } = useTheme()
@@ -143,8 +144,6 @@ export default function GhostCursor({ enabled = true }: GhostCursorProps) {
     }
 
     useEffect(() => {
-        setIsClient(true)
-
         if (!enabled) return
 
         const updateMousePosition = (e: MouseEvent) => {
@@ -162,7 +161,7 @@ export default function GhostCursor({ enabled = true }: GhostCursorProps) {
     // Load and modify animation data when theme changes
     useEffect(() => {
         const loadAndModifyAnimation = async () => {
-            if (!isClient) return
+            if (!isHydrated) return
 
             try {
                 const response = await fetch("/animations/cursor.json")
@@ -185,9 +184,9 @@ export default function GhostCursor({ enabled = true }: GhostCursorProps) {
         }
 
         loadAndModifyAnimation()
-    }, [isClient, theme, resolvedTheme])
+    }, [isHydrated, theme, resolvedTheme])
 
-    if (!isClient || !enabled || !animationData) return null
+    if (!isHydrated || !enabled || !animationData) return null
 
     return (
         <motion.div

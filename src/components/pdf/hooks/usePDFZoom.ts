@@ -3,28 +3,18 @@ import { type PDFDocumentProxy, type PDFPageProxy } from "@/lib/pdfConfig";
 
 export function usePDFZoom(initialScale: number = 1.0) {
   const [scale, setScale] = useState<number>(initialScale);
-  const [internalScale, setInternalScale] = useState<number>(initialScale);
   const [currentScale, setCurrentScale] = useState<number>(initialScale);
   const [hasAutoZoomed, setHasAutoZoomed] = useState<boolean>(false);
 
   const zoomTimeout = useRef<NodeJS.Timeout | null>(null);
-  const lastPinchDistance = useRef<number>(0);
   const isZooming = useRef<boolean>(false);
   const zoomCenter = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const currentScaleRef = useRef<number>(initialScale);
 
-  // Sync internal scale with external scale prop
-  useEffect(() => {
-    if (scale && Math.abs(scale - internalScale) > 0.01) {
-      setInternalScale(scale);
-    }
-  }, [scale, internalScale]);
-
   // Keep currentScaleRef updated with the latest scale value
   useEffect(() => {
-    const latestScale = internalScale || scale || currentScale || 1.0;
-    currentScaleRef.current = latestScale;
-  }, [internalScale, scale, currentScale]);
+    currentScaleRef.current = scale || currentScale || 1.0;
+  }, [scale, currentScale]);
 
   const updateZoomScale = useCallback(
     (newScale: number, centerX?: number, centerY?: number) => {
@@ -33,12 +23,11 @@ export function usePDFZoom(initialScale: number = 1.0) {
       // Use a smaller threshold for mobile to make zoom more responsive
       const threshold = window.innerWidth <= 768 ? 0.005 : 0.01;
       
-      if (Math.abs(clampedScale - internalScale) > threshold) {
+      if (Math.abs(clampedScale - scale) > threshold) {
         if (centerX !== undefined && centerY !== undefined) {
           zoomCenter.current = { x: centerX, y: centerY };
         }
 
-        setInternalScale(clampedScale);
         setScale(clampedScale);
         currentScaleRef.current = clampedScale;
 
@@ -55,20 +44,20 @@ export function usePDFZoom(initialScale: number = 1.0) {
         isZooming.current = true;
       }
     },
-    [internalScale]
+    [scale]
   );
 
   const handleZoomIn = useCallback(() => {
     // Use 10% increments for consistent zoom behavior
-    const newScale = Math.min(internalScale + 0.1, 5.0);
+    const newScale = Math.min(scale + 0.1, 5.0);
     updateZoomScale(newScale);
-  }, [internalScale, updateZoomScale]);
+  }, [scale, updateZoomScale]);
 
   const handleZoomOut = useCallback(() => {
     // Use 10% decrements for consistent zoom behavior
-    const newScale = Math.max(internalScale - 0.1, 0.6);
+    const newScale = Math.max(scale - 0.1, 0.6);
     updateZoomScale(newScale);
-  }, [internalScale, updateZoomScale]);
+  }, [scale, updateZoomScale]);
 
   const handleZoomActual = useCallback(() => {
     updateZoomScale(1.0);
@@ -98,7 +87,7 @@ export function usePDFZoom(initialScale: number = 1.0) {
 
   return {
     scale,
-    internalScale,
+    internalScale: scale,
     currentScale,
     hasAutoZoomed,
     setScale,
@@ -109,9 +98,6 @@ export function usePDFZoom(initialScale: number = 1.0) {
     handleZoomOut,
     handleZoomActual,
     handleZoomFit,
-    isZooming: isZooming.current,
     currentScaleRef,
-    lastPinchDistance,
-    zoomCenter,
   };
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { usePapers } from "@/contexts/PaperContext"
 import { MagnifyingGlass, XCircle } from "@phosphor-icons/react"
@@ -14,7 +14,6 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
     const { meta } = usePapers()
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
-    const [suggestions, setSuggestions] = useState<string[]>([])
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [selectedIndex, setSelectedIndex] = useState<number>(-1)
     const inputRef = useRef<HTMLInputElement>(null)
@@ -22,11 +21,10 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
     const selectedItemRef = useRef<HTMLLIElement>(null)
 
     // Filter subjects based on search query
-    useEffect(() => {
-        const filteredSubjects = searchSubjects(meta, searchQuery)
-        setSuggestions(filteredSubjects)
-        setSelectedIndex(-1) // Reset selection when query changes
-    }, [searchQuery, meta])
+    const suggestions = useMemo(
+        () => searchSubjects(meta, searchQuery),
+        [meta, searchQuery]
+    )
 
     // Handle click outside to close suggestions
     useEffect(() => {
@@ -107,7 +105,10 @@ const SubjectSearchBox = ({ onSelect }: SubjectSearchBoxProps) => {
                     ref={inputRef}
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                        setSearchQuery(e.target.value)
+                        setSelectedIndex(-1)
+                    }}
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={handleKeyDown}
                     placeholder="Search for subjects..."

@@ -34,7 +34,7 @@ const SubjectPapersView = () => {
   const searchParams = useSearchParams();
   const { papers, dataReady, meta } = usePapers();
   const { isServerDown, recordFailure } = useServerStatus();
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const selectedSubject = searchParams.get("subject");
   const {
     isOpen: isPDFOpen,
     currentPaper,
@@ -161,9 +161,8 @@ const SubjectPapersView = () => {
 
   // Get the subject parameter from URL and filter papers
   const filteredPapers = useMemo(() => {
-    const subjectParam = searchParams.get("subject");
+    const subjectParam = selectedSubject;
     if (subjectParam) {
-      setSelectedSubject(subjectParam);
       // Filter papers by subject and remove duplicates based on fileName
       const papersBySubject = papers.filter(
         (paper) =>
@@ -203,7 +202,7 @@ const SubjectPapersView = () => {
       return uniquePapers;
     }
     return [];
-  }, [searchParams, papers, filters]);
+  }, [selectedSubject, papers, filters]);
 
   // Get unique years and exam types for filters
   const filterOptions = useMemo(() => {
@@ -211,7 +210,7 @@ const SubjectPapersView = () => {
     const examTypes = new Set<string>(["ESE", "MSE"]);
 
     // Only collect unique values from papers matching the current subject
-    const subjectParam = searchParams.get("subject");
+    const subjectParam = selectedSubject;
     if (subjectParam) {
       const subjectPapers = papers.filter(
         (paper) =>
@@ -228,7 +227,7 @@ const SubjectPapersView = () => {
       years: Array.from(years).sort((a, b) => parseInt(b) - parseInt(a)),
       examTypes: Array.from(examTypes),
     };
-  }, [searchParams, papers]);
+  }, [selectedSubject, papers]);
 
   const selectedPapersCount = useMemo(() => {
     return Object.values(selectedPapers).filter(Boolean).length;
@@ -331,8 +330,11 @@ const SubjectPapersView = () => {
   const isAnyFilterActive =
     filters.years.length > 0 || filters.examTypes.length > 0;
 
-  // Add new useEffect to update selected papers when filters change
-  useEffect(() => {
+  // Drop selections for papers that the current filters exclude
+  const [lastFilteredPapers, setLastFilteredPapers] = useState(filteredPapers);
+  if (filteredPapers !== lastFilteredPapers) {
+    setLastFilteredPapers(filteredPapers);
+
     if (isSelectMode) {
       const newSelection: Record<string, boolean> = {};
 
@@ -342,21 +344,13 @@ const SubjectPapersView = () => {
         }
       });
 
-      const currentSelectedCount = Object.keys(selectedPapers).length;
-      const newSelectedCount = Object.keys(newSelection).length;
-
-      if (currentSelectedCount !== newSelectedCount) {
+      if (
+        Object.keys(newSelection).length !== Object.keys(selectedPapers).length
+      ) {
         setSelectedPapers(newSelection);
-      } else if (currentSelectedCount > 0) {
-        const hasChanges = Object.keys(newSelection).some(
-          (key) => !selectedPapers[key]
-        );
-        if (hasChanges) {
-          setSelectedPapers(newSelection);
-        }
       }
     }
-  }, [filters, isSelectMode, filteredPapers, selectedPapers]);
+  }
 
   // Grid view
   const renderGridView = () => (

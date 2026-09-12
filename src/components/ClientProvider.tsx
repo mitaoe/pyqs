@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState, ReactNode } from "react"
+import { ReactNode } from "react"
 import { ThemeProvider } from "next-themes"
 import { SettingsProvider, useSettings } from "@/contexts/SettingsContext"
+import { useIsHydrated } from "@/hooks/useIsHydrated"
 import GhostCursor from "./animations/GhostCursor"
 
 interface ClientProviderProps {
@@ -24,13 +25,9 @@ export default function ClientProvider({
     children,
     fallback = null,
 }: ClientProviderProps) {
-    const [isClient, setIsClient] = useState(false)
+    const isHydrated = useIsHydrated()
 
-    useEffect(() => {
-        setIsClient(true)
-    }, [])
-
-    if (!isClient) {
+    if (!isHydrated) {
         return <>{fallback}</>
     }
 

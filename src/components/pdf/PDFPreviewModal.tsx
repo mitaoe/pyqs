@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Paper } from "@/types/paper";
 import { downloadFile } from "@/utils/download";
 import { useServerStatus } from "@/contexts/ServerStatusContext";
@@ -68,8 +68,6 @@ export default function PDFPreviewModal({
     handleZoomActual,
     handleZoomFit,
     currentScaleRef,
-    lastPinchDistance,
-    zoomCenter,
   } = usePDFZoom(1.0);
 
   const {
@@ -92,12 +90,7 @@ export default function PDFPreviewModal({
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-  } = usePDFGestures(
-    updateZoomScale,
-    currentScaleRef,
-    lastPinchDistance,
-    zoomCenter
-  );
+  } = usePDFGestures(updateZoomScale, currentScaleRef);
 
   const {
     renderedPages,
@@ -364,6 +357,31 @@ export default function PDFPreviewModal({
     goToNextPageHook(numPages, pageContainerRefs, containerRef);
   };
 
+  const handleContainerZoomFit = useCallback(
+    () => handleZoomFit(containerRef, pdfDoc, pageNumber),
+    [handleZoomFit, pdfDoc, pageNumber]
+  );
+
+  const handleContainerMouseDown = useCallback(
+    (e: React.MouseEvent) => handleMouseDown(e, containerRef),
+    [handleMouseDown]
+  );
+
+  const handleContainerMouseMove = useCallback(
+    (e: React.MouseEvent) => handleMouseMove(e, containerRef),
+    [handleMouseMove]
+  );
+
+  const handleContainerTouchStart = useCallback(
+    (e: React.TouchEvent) => handleTouchStart(e, containerRef),
+    [handleTouchStart]
+  );
+
+  const handleContainerTouchMove = useCallback(
+    (e: React.TouchEvent) => handleTouchMove(e, containerRef),
+    [handleTouchMove]
+  );
+
   const contextValue = {
     pdfDoc,
     numPages,
@@ -382,22 +400,20 @@ export default function PDFPreviewModal({
     handleZoomIn,
     handleZoomOut,
     handleZoomActual,
-    handleZoomFit: () => handleZoomFit(containerRef, pdfDoc, pageNumber),
+    handleZoomFit: handleContainerZoomFit,
     updateZoomScale,
     isDragging,
     tool,
-    handleMouseDown: (e: React.MouseEvent) => handleMouseDown(e, containerRef),
-    handleMouseMove: (e: React.MouseEvent) => handleMouseMove(e, containerRef),
+    handleMouseDown: handleContainerMouseDown,
+    handleMouseMove: handleContainerMouseMove,
     handleMouseUp,
-    handleTouchStart: (e: React.TouchEvent) =>
-      handleTouchStart(e, containerRef),
-    handleTouchMove: (e: React.TouchEvent) => handleTouchMove(e, containerRef),
+    handleTouchStart: handleContainerTouchStart,
+    handleTouchMove: handleContainerTouchMove,
     handleTouchEnd,
     paper,
     papers,
     onClose,
     handleDownload,
-    containerRef,
     isNavigating,
     setIsNavigating,
   };

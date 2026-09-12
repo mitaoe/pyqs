@@ -37,6 +37,7 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
   const lastCheckRef = useRef<number>(0);
   const hasInitialCheckRef = useRef(false);
   const hasAutoRecheckedRef = useRef(false);
+  const failureCountRef = useRef(0);
 
   const checkServerStatus = useCallback(async (isAutoRecheck = false): Promise<boolean> => {
     // If already checking, wait for that check to complete
@@ -63,6 +64,7 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
       // Only consider 200 OK as healthy
       if (response.ok) {
         setIsServerDown(false);
+        failureCountRef.current = 0;
         setConsecutiveFailures(0);
         hasAutoRecheckedRef.current = false;
         return true;
@@ -85,18 +87,17 @@ export function ServerStatusProvider({ children }: ServerStatusProviderProps) {
   }, [isServerDown, isChecking]);
 
   const recordFailure = useCallback(() => {
-    setConsecutiveFailures((prev) => prev + 1);
-  }, []);
+    failureCountRef.current += 1;
+    setConsecutiveFailures(failureCountRef.current);
 
-  // Trigger server check when failures cross threshold
-  useEffect(() => {
-    if (consecutiveFailures >= FAILURE_THRESHOLD && !isServerDown) {
+    if (failureCountRef.current >= FAILURE_THRESHOLD && !isServerDown) {
       checkServerStatus();
     }
-  }, [consecutiveFailures, isServerDown, checkServerStatus]);
+  }, [isServerDown, checkServerStatus]);
 
   const resetStatus = useCallback(() => {
     setIsServerDown(false);
+    failureCountRef.current = 0;
     setConsecutiveFailures(0);
     hasAutoRecheckedRef.current = false;
   }, []);

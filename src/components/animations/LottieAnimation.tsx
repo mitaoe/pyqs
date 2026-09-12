@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useIsHydrated } from '@/hooks/useIsHydrated';
 
 interface LottieJSON {
   v: string;
@@ -47,7 +48,7 @@ export default function LottieAnimation({
   speed = 1,
 }: LottieAnimationProps) {
   const lottieRef = useRef<LottiePlayerRef>(null);
-  const [isClient, setIsClient] = useState(false);
+  const isHydrated = useIsHydrated();
   const [loadedAnimation, setLoadedAnimation] = useState<LottieJSON | null>(null);
   const [hasError, setHasError] = useState(false);
 
@@ -65,7 +66,6 @@ export default function LottieAnimation({
       }
     }
 
-    setIsClient(true);
     loadAnimation();
   }, [animationName, loadedAnimation]);
 
@@ -75,7 +75,7 @@ export default function LottieAnimation({
     }
   }, [speed]);
 
-  if (!isClient || hasError) {
+  if (!isHydrated || hasError) {
     return <div className="animate-pulse bg-accent/20 rounded-lg h-full w-full" style={{ width, height }} />;
   }
 

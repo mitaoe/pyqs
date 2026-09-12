@@ -63,8 +63,7 @@ interface PDFContextType {
   // Actions
   onClose: () => void;
   handleDownload: () => Promise<void>;
-  containerRef?: React.RefObject<HTMLDivElement | null>;
-  
+
   // Navigation control
   isNavigating?: boolean;
   setIsNavigating?: (navigating: boolean) => void;

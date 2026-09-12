@@ -1,22 +1,18 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { House } from "@phosphor-icons/react"
 import { motion } from "framer-motion"
 import Layout from "@/components/layout/Layout"
 import LottieAnimation from "@/components/animations/LottieAnimation"
 import FadeIn from "@/components/animations/FadeIn"
+import { useIsHydrated } from "@/hooks/useIsHydrated"
 
 // Export the actual 404 component
 export default function NotFound() {
-    const [isClient, setIsClient] = useState(false)
+    const isHydrated = useIsHydrated()
 
-    useEffect(() => {
-        setIsClient(true)
-    }, [])
-
-    if (!isClient) {
+    if (!isHydrated) {
         return null
     }
 

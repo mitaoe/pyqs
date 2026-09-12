@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import DirectoryBrowser from '@/components/directory/DirectoryBrowser';
@@ -33,7 +33,7 @@ export default function BrowseContentClient() {
   const currentPath = searchParams.get('path') || '';
   
   const { structure, isLoading, error, fetchDirectoryData } = usePapers();
-  const [currentNode, setCurrentNode] = useState<DirectoryNode | null>(null);
+  const currentNode = structure ? getCurrentNode(structure, currentPath) : null;
 
   useEffect(() => {
     if (!structure && !isLoading) {
@@ -42,15 +42,10 @@ export default function BrowseContentClient() {
   }, [structure, isLoading, fetchDirectoryData]);
 
   useEffect(() => {
-    if (structure) {
-      const node = getCurrentNode(structure, currentPath);
-      setCurrentNode(node);
-      
-      if (!node && currentPath) {
-        toast.error('Directory not found');
-      }
+    if (structure && !currentNode && currentPath) {
+      toast.error('Directory not found');
     }
-  }, [structure, currentPath]);
+  }, [structure, currentNode, currentPath]);
 
   const handleNavigate = (path: string) => {
     if (path === '../') {
