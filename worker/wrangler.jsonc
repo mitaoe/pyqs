@@ -3,6 +3,7 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-02-28",
   "workers_dev": true,
+  "preview_urls": false,
   "observability": {
     "logs": {
       "enabled": true
