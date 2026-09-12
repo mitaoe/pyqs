@@ -37,23 +37,11 @@ interface PDFContextType {
   // Gesture handlers
   isDragging: boolean;
   tool: string;
-  handleMouseDown: (
-    e: React.MouseEvent,
-    containerRef: React.RefObject<HTMLDivElement>
-  ) => void;
-  handleMouseMove: (
-    e: React.MouseEvent,
-    containerRef: React.RefObject<HTMLDivElement>
-  ) => void;
+  handleMouseDown: (e: React.MouseEvent) => void;
+  handleMouseMove: (e: React.MouseEvent) => void;
   handleMouseUp: () => void;
-  handleTouchStart: (
-    e: React.TouchEvent,
-    containerRef: React.RefObject<HTMLDivElement>
-  ) => void;
-  handleTouchMove: (
-    e: React.TouchEvent,
-    containerRef: React.RefObject<HTMLDivElement>
-  ) => void;
+  handleTouchStart: (e: React.TouchEvent) => void;
+  handleTouchMove: (e: React.TouchEvent) => void;
   handleTouchEnd: (e: React.TouchEvent) => void;
 
   // Paper data
