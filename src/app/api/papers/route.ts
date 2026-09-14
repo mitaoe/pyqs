@@ -7,7 +7,7 @@ import { rewritePaperUrls } from '@/utils/urlParser';
 
 async function getPapersData() {
   await dbConnect();
-  const doc = await PYQ.findOne().sort({ lastUpdated: -1 }).lean() as SavedDocument | null;
+  const doc = await PYQ.findOne().sort({ 'stats.lastUpdated': -1 }).lean() as SavedDocument | null;
   return doc;
 }
 
