@@ -355,7 +355,7 @@ const SubjectPapersView = () => {
 
   // Grid view
   const renderGridView = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+    <div data-papers-list="" className="papers-grid gap-6 sm:gap-8">
       {filteredPapers.map((paper, index) => (
         <FadeIn
           key={`${paper.fileName}-${index}`}
@@ -363,6 +363,7 @@ const SubjectPapersView = () => {
           duration={0.5}
         >
           <div
+            data-paper-file={paper.fileName}
             className={`bg-secondary border-2 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-lg h-full ${
               selectedPapers[paper.fileName]
                 ? "border-brand shadow-md shadow-brand/20"
@@ -444,7 +445,7 @@ const SubjectPapersView = () => {
   );
 
   const renderListView = () => (
-    <div className="space-y-3 sm:space-y-4">
+    <div data-papers-list="" className="space-y-3 sm:space-y-4">
       {filteredPapers.map((paper, index) => (
         <FadeIn
           key={`${paper.fileName}-${index}`}
@@ -452,6 +453,7 @@ const SubjectPapersView = () => {
           duration={0.4}
         >
           <div
+            data-paper-file={paper.fileName}
             className={`flex items-center justify-between bg-secondary border-2 rounded-xl p-3 sm:p-4 transition-all duration-300 hover:shadow-md ${
               selectedPapers[paper.fileName]
                 ? "border-brand shadow-sm shadow-brand/20"

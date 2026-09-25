@@ -1,0 +1,77 @@
+name: Ingest PYQ papers
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max papers to process this run (set 5 for a smoke test)"
+        required: false
+        default: "300"
+  schedule:
+    # Monthly: 03:00 UTC on the 1st. The backlog is drained by manual
+    # workflow_dispatch runs (raise `limit` and re-run until stats shows
+    # 0 pending); this cron only picks up newly published papers. While a
+    # backlog is being cleared, temporarily switch to "0 */4 * * *".
+    - cron: "0 3 1 * *"
+
+# Never run two ingests at once; a queued run waits for the current one.
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install tesseract (OCR fallback for scanned papers)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends tesseract-ocr
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Cache sentence-transformers model
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-MiniLM-L6-v2
+
+      - name: Install python dependencies (CPU-only torch)
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r pipeline/requirements.txt
+
+      - name: Apply schema (idempotent)
+        run: python pipeline/apply_schema.py
+
+      - name: Sync paper metadata
+        run: python pipeline/fetch_metadata.py
+
+      - name: Ingest batch (download -> extract -> Gemini -> save, streaming)
+        run: python pipeline/ingest.py --limit "${{ github.event.inputs.limit || '300' }}"
+
+      - name: Embed new questions
+        run: python pipeline/embed.py
+
+      - name: Cluster questions
+        run: python pipeline/cluster.py
+
+      - name: Label cluster topics
+        run: python pipeline/label_topics.py
+
+      # Last: retire every deterministic answer the runtime cached against the
+      # pre-ingest corpus. Runs after labeling so the new counts are final.
+      - name: Bump corpus version (invalidates the shared response cache)
+        run: python pipeline/bump_corpus_version.py
+
+      - name: Stats summary
+        run: python pipeline/stats.py

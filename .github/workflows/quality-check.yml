@@ -1,0 +1,28 @@
+name: Quality check
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample:
+        description: "Number of random processed papers to sample"
+        required: false
+        default: "20"
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (db access only)
+        run: pip install psycopg2-binary
+
+      - name: Sample extracted questions vs source PDFs
+        run: python pipeline/quality_check.py --sample "${{ github.event.inputs.sample || '20' }}"

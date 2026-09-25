@@ -1,0 +1,71 @@
+# Runs the API integration tests against the LIVE Neon database — the same
+# DATABASE_URL secret the ingestion pipeline writes to. Trigger manually
+# after backend changes. Analytics/DB tests always run; the semantic
+# synthesis tests additionally use the shared Gemini keys (GEMINI_API_KEYS),
+# degrading honestly when every key is quota-benched.
+#
+# Because that database is production, the tests must never write
+# corpus_version, the freshness signal behind the shared response cache.
+# Moving it, even briefly, lets live instances stamp cache rows with a version
+# the corpus is not at. tests/live-db-guard.ts refuses such writes inside the
+# test process (corpus bumps are simulated in-process with
+# _pinCorpusVersionForTests), and the first test step below proves that guard
+# is active before anything else runs against the live database.
+name: API integration tests
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: api-tests
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Gate: if the guard is broken or not installed, stop here, before any
+      # other test touches the production database.
+      - name: Verify the live-DB guard refuses corpus_version writes
+        run: pnpm exec vitest run tests/live-db-guard.test.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run integration tests (unit + live DB)
+        run: pnpm test
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEYS: ${{ secrets.GEMINI_API_KEYS }}

@@ -26,6 +26,9 @@ body {
     font-family: "Inter", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* The AskAI panel is kept mounted and translated off-screen when closed;
+       clip horizontal overflow so it never adds a scrollbar. */
+    overflow-x: clip;
 }
 
 ::-webkit-scrollbar {
@@ -44,4 +47,94 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--brand));
+}
+
+/* Brief brand flash when a [n] citation marker jumps to its source card
+   in the AskAI answer view. Theme-aware via the --brand token. */
+@keyframes cite-flash {
+    0% {
+        background-color: hsl(var(--brand) / 0.28);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.cite-flash {
+    animation: cite-flash 1.6s ease-out;
+}
+
+/* Citation-thread hover/focus sync: a brand ring on the emphasised source row
+   and its paper card. Follows each element's own border-radius. */
+[data-thread-emph="1"] {
+    box-shadow: 0 0 0 1.5px hsl(var(--brand));
+    transition: box-shadow 0.15s ease-out;
+}
+
+/* Paper grid column count responds to the grid's OWN width, not the viewport,
+   so opening the AskAI split (which shrinks the grid) degrades 4→3→2→1 columns
+   gracefully instead of squeezing fixed viewport columns. min(280px,100%) keeps
+   cards ≥280px yet never overflows a narrow container. Column counts match the
+   host's viewport breakpoints at full (panel-closed) width. */
+.papers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+}
+
+/* Idle citation-thread anchor: a small host-accent dot on the panel's left
+   edge that gently pulses. CSS-only (no per-frame JS); a soft ring gives it
+   presence without an orb/glow. */
+@keyframes askai-idle-pulse {
+    0%,
+    100% {
+        opacity: 0.55;
+        transform: scale(0.82);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+.askai-idle-dot {
+    background-color: hsl(var(--accent));
+    box-shadow: 0 0 0 3px hsl(var(--accent) / 0.35);
+    animation: askai-idle-pulse 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .askai-idle-dot {
+        animation: none;
+        opacity: 0.85;
+        transform: none;
+    }
+}
+
+/* Glassmorphism for the AskAI panel's CONTAINER surfaces only (panel bg,
+   chip row, input bar). Content cards inside stay solid host surfaces for
+   readability. Per-theme surface alpha: light washes out fast under blur, so
+   it stays more opaque; dark can be more transparent. */
+.askai-glass {
+    background-color: hsl(var(--primary) / 0.82);
+    -webkit-backdrop-filter: saturate(1.4) blur(14px);
+    backdrop-filter: saturate(1.4) blur(14px);
+}
+.dark .askai-glass {
+    background-color: hsl(var(--primary) / 0.62);
+}
+/* No backdrop-filter support → solid surface fallback. */
+@supports not (
+    (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
+) {
+    .askai-glass,
+    .dark .askai-glass {
+        background-color: hsl(var(--primary));
+    }
+}
+/* Respect reduced transparency (accessibility) → solid, no blur. */
+@media (prefers-reduced-transparency: reduce) {
+    .askai-glass,
+    .dark .askai-glass {
+        background-color: hsl(var(--primary));
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
 }

@@ -13,6 +13,9 @@
 # testing
 /coverage
 /logs
+/test-results
+/playwright-report
+/.playwright
 
 # next.js
 /.next/
@@ -33,11 +36,22 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
+# env files (all local variants; keep only the example)
 .env
+.env*
+!.env.example
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
+
+# Python (RAG ingestion pipeline)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Downloaded PDFs must never be stored or committed
+*.pdf

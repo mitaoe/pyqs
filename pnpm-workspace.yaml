@@ -1,0 +1,21 @@
+# NOT a monorepo workspace — no `packages:` key, so this stays a single-package
+# project. The file is still load-bearing, for two reasons:
+#
+#   1. It anchors pnpm's workspace root to THIS directory. Without it pnpm
+#      walks up the tree and adopts the first pnpm-workspace.yaml it finds
+#      (there is one in ~), and then installs this project against that root.
+#
+#   2. It records build-script approvals for the pinned pnpm 10 (see
+#      package.json "packageManager"). `ignoredBuiltDependencies` = do not run
+#      that dependency's install/build scripts. The native deps ship prebuilt
+#      binaries, so skipping them is safe and keeps installs non-interactive
+#      (CI included). The same list is mirrored in package.json's "pnpm" field
+#      — pnpm 10 has moved these settings between the two files across
+#      releases, and an unapproved build script fails the install outright
+#      (ERR_PNPM_IGNORED_BUILDS), so both stay in sync on purpose.
+ignoredBuiltDependencies:
+  - esbuild
+  - onnxruntime-node
+  - protobufjs
+  - sharp
+  - unrs-resolver

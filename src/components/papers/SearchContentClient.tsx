@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useAskAi } from "@/contexts/AskAiContext"
 import PageTransition from "@/components/animations/PageTransition"
 import SubjectAlphabetList, {
     AlphabetBar,
@@ -13,6 +14,7 @@ import { ArrowUp } from "@phosphor-icons/react"
 export default function SearchContentClient() {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const { setBrowsedSubject } = useAskAi()
     const selectedSubject = searchParams.get("subject")
     const [showGoUp, setShowGoUp] = useState(false)
     const scrollToTopTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -43,6 +45,17 @@ export default function SearchContentClient() {
             }
         }
     }, [selectedSubject, scrollToTop])
+
+    // Feed the browsed subject to the AskAI panel so, on this page, the panel
+    // binds to what's being browsed (the route) rather than any stored subject.
+    // Clear it when leaving the page so the panel doesn't keep a stale subject.
+    useEffect(() => {
+        setBrowsedSubject(selectedSubject)
+    }, [selectedSubject, setBrowsedSubject])
+
+    useEffect(() => {
+        return () => setBrowsedSubject(null)
+    }, [setBrowsedSubject])
 
     useEffect(() => {
         const scrollContainer = document.getElementById("scrollable-content")
