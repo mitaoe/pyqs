@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+public/
+data/
+src/scripts/
+worker/
+.github/workflows/worker.yml
+test-results/
+playwright-report/
+next-env.d.ts
+AGENTS.md

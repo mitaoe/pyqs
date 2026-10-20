@@ -3,45 +3,45 @@
 @tailwind utilities;
 
 @layer base {
-    :root {
-        --primary: 0 0% 100%;
-        --secondary: 0 0% 98%;
-        --accent: 0 0% 90%;
-        --content: 0 0% 15%;
-        --brand: 217 91% 60%;
-    }
+  :root {
+    --primary: 0 0% 100%;
+    --secondary: 0 0% 98%;
+    --accent: 0 0% 90%;
+    --content: 0 0% 15%;
+    --brand: 217 91% 60%;
+  }
 
-    .dark {
-        --primary: 0 0% 8%;
-        --secondary: 0 0% 12%;
-        --accent: 0 0% 20%;
-        --content: 0 0% 90%;
-        --brand: 217 91% 65%;
-    }
+  .dark {
+    --primary: 0 0% 8%;
+    --secondary: 0 0% 12%;
+    --accent: 0 0% 20%;
+    --content: 0 0% 90%;
+    --brand: 217 91% 65%;
+  }
 }
 
 body {
-    color: hsl(var(--content));
-    background-color: hsl(var(--primary));
-    font-family: "Inter", sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  color: hsl(var(--content));
+  background-color: hsl(var(--primary));
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ::-webkit-scrollbar {
-    width: 12px;
+  width: 12px;
 }
 
 ::-webkit-scrollbar-track {
-    background: hsl(var(--secondary));
+  background: hsl(var(--secondary));
 }
 
 ::-webkit-scrollbar-thumb {
-    background: hsl(var(--accent));
-    border-radius: 6px;
-    border: 3px solid hsl(var(--secondary));
+  background: hsl(var(--accent));
+  border-radius: 6px;
+  border: 3px solid hsl(var(--secondary));
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--brand));
+  background: hsl(var(--brand));
 }

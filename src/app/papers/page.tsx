@@ -1,24 +1,13 @@
-import { Suspense } from 'react';
-import Layout from '@/components/layout/Layout';
-import SearchContentClient from '@/components/papers/SearchContentClient';
-import { generateMetadata } from './generateMetadata';
+import { papersIndexMetadata } from "@/features/catalog/metadata"
+import { getSubjectNames } from "@/features/catalog/server/catalog"
+import SubjectIndex from "@/features/subject-index/components/SubjectIndex"
 
-export { generateMetadata };
+export const revalidate = 86400
 
-function SearchLoadingFallback() {
-  return (
-    <div className="flex h-screen items-center justify-center bg-primary">
-      <div className="text-content/60">Loading subjects...</div>
-    </div>
-  );
-}
+export const metadata = papersIndexMetadata
 
-export default function SearchPage() {
-  return (
-    <Layout>
-      <Suspense fallback={<SearchLoadingFallback />}>
-        <SearchContentClient />
-      </Suspense>
-    </Layout>
-  );
+export default async function PapersPage() {
+  const subjects = await getSubjectNames()
+
+  return <SubjectIndex subjects={subjects} />
 }

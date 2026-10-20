@@ -1,6 +1,6 @@
 /**
  * SubjectManager - A utility class to manage subject classification
- * 
+ *
  * This class handles:
  * - Loading subject data from JSON files
  * - Subject identification from filenames based on variations
@@ -8,54 +8,54 @@
  * - Managing exclusions
  */
 
-import fs from 'fs/promises';
-import path from 'path';
-import Fuse from 'fuse.js';
+import fs from "fs/promises"
+import path from "path"
+import Fuse from "fuse.js"
 
 // Define types for the JSON structures
 interface SubjectData {
-  standard: string; // The standardized subject name
+  standard: string // The standardized subject name
 }
 
 interface SubjectsJson {
-  [key: string]: SubjectData; // Maps subject keys to subject data
+  [key: string]: SubjectData // Maps subject keys to subject data
 }
 
 interface VariationsJson {
-  [variation: string]: string; // Maps filename variations to subject keys
+  [variation: string]: string // Maps filename variations to subject keys
 }
 
-type ExclusionsJson = string[]; // List of file paths to exclude
-type UnclassifiedJson = string[]; // List of unclassified file paths
+type ExclusionsJson = string[] // List of file paths to exclude
+type UnclassifiedJson = string[] // List of unclassified file paths
 
 export class SubjectManager {
-  private dataDir: string;
-  private subjects: SubjectsJson = {};
-  private variations: VariationsJson = {};
-  private exclusions: ExclusionsJson = [];
-  private unclassified: UnclassifiedJson = [];
-  private initialized = false;
+  private dataDir: string
+  private subjects: SubjectsJson = {}
+  private variations: VariationsJson = {}
+  private exclusions: ExclusionsJson = []
+  private unclassified: UnclassifiedJson = []
+  private initialized = false
 
   constructor(dataDir?: string) {
-    this.dataDir = dataDir || path.join(process.cwd(), 'data');
+    this.dataDir = dataDir || path.join(process.cwd(), "data")
   }
 
   /**
    * Initialize the SubjectManager by loading all JSON data files
    */
   public async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) return
 
     try {
-      await this.ensureDataDirExists();
-      await this.loadSubjects();
-      await this.loadVariations();
-      await this.loadExclusions();
-      await this.loadUnclassified();
-      this.initialized = true;
+      await this.ensureDataDirExists()
+      await this.loadSubjects()
+      await this.loadVariations()
+      await this.loadExclusions()
+      await this.loadUnclassified()
+      this.initialized = true
     } catch (error) {
-      console.error('Failed to initialize SubjectManager:', error);
-      throw new Error('Failed to initialize SubjectManager');
+      console.error("Failed to initialize SubjectManager:", error)
+      throw new Error("Failed to initialize SubjectManager")
     }
   }
 
@@ -65,15 +65,18 @@ export class SubjectManager {
   private async ensureDataDirExists(): Promise<void> {
     try {
       // Check if the data directory exists
-      await fs.access(this.dataDir);
+      await fs.access(this.dataDir)
     } catch {
       // Directory doesn't exist, create it
       try {
-        await fs.mkdir(this.dataDir, { recursive: true });
+        await fs.mkdir(this.dataDir, { recursive: true })
       } catch (error: unknown) {
         // Handle error properly
-        console.error(`Failed to create data directory: ${this.dataDir}`, error instanceof Error ? error.message : String(error));
-        throw error; // Re-throw error to propagate it
+        console.error(
+          `Failed to create data directory: ${this.dataDir}`,
+          error instanceof Error ? error.message : String(error),
+        )
+        throw error // Re-throw error to propagate it
       }
     }
   }
@@ -83,74 +86,92 @@ export class SubjectManager {
    */
   public isExcluded(filePath: string): boolean {
     // Normalize both the input path and stored exclusion paths
-    const normalizedPath = filePath.replace(/\\/g, '/');
-    
+    const normalizedPath = filePath.replace(/\\/g, "/")
+
     // Check if the normalized path is in exclusions
     if (this.exclusions.includes(normalizedPath)) {
-      return true;
+      return true
     }
-    
+
     // Also check if the filename without the path is in exclusions (for backward compatibility)
-    const fileName = normalizedPath.split('/').pop() || '';
+    const fileName = normalizedPath.split("/").pop() || ""
     if (this.exclusions.includes(fileName)) {
-      return true;
+      return true
     }
-    
+
     // Also check for partial matches - if any exclusion ends with this path
     for (const exclusion of this.exclusions) {
-      const normalizedExclusion = exclusion.replace(/\\/g, '/');
-      
+      const normalizedExclusion = exclusion.replace(/\\/g, "/")
+
       // Check if paths end with the same segments
-      if (normalizedPath.endsWith(normalizedExclusion) || normalizedExclusion.endsWith(normalizedPath)) {
-        return true;
+      if (
+        normalizedPath.endsWith(normalizedExclusion) ||
+        normalizedExclusion.endsWith(normalizedPath)
+      ) {
+        return true
       }
     }
-    
-    return false;
+
+    return false
   }
 
   /**
    * Get subject information from a filename variation
    */
-  public getSubjectFromVariation(variation: string): { subjectKey: string, standard: string } | null {
-    const subjectKey = this.variations[variation];
+  public getSubjectFromVariation(
+    variation: string,
+  ): { subjectKey: string; standard: string } | null {
+    const subjectKey = this.variations[variation]
     if (!subjectKey || !this.subjects[subjectKey]) {
-      return null;
+      return null
     }
-    
+
     return {
       subjectKey,
-      standard: this.subjects[subjectKey].standard
-    };
+      standard: this.subjects[subjectKey].standard,
+    }
   }
 
   /**
    * Get all matching variations for a filename
    */
-  public getMatchingVariations(subjectPart: string, verbose = false): { variation: string, subjectKey: string, standard: string }[] {
-    const matches: { variation: string, subjectKey: string, standard: string }[] = [];
-    
+  public getMatchingVariations(
+    subjectPart: string,
+    verbose = false,
+  ): { variation: string; subjectKey: string; standard: string }[] {
+    const matches: { variation: string; subjectKey: string; standard: string }[] = []
+
     // Convert to uppercase for case-insensitive matching and normalize spaces
-    const upperSubjectPart = subjectPart.toUpperCase().trim().replace(/[_\-\.]/g, ' ').replace(/\s+/g, ' ');
-    
+    const upperSubjectPart = subjectPart
+      .toUpperCase()
+      .trim()
+      .replace(/[_\-\.]/g, " ")
+      .replace(/\s+/g, " ")
+
     // Only show debugging info when verbose mode is on
     if (verbose) {
-      console.log(`[DEBUG] Looking for variations in: "${upperSubjectPart}"`);
-      console.log(`[DEBUG] Available variations: ${Object.keys(this.variations).slice(0, 5).join(", ")}...`);
+      console.log(`[DEBUG] Looking for variations in: "${upperSubjectPart}"`)
+      console.log(
+        `[DEBUG] Available variations: ${Object.keys(this.variations).slice(0, 5).join(", ")}...`,
+      )
     }
-    
+
     // Check for variations in our list
     for (const [variation, subjectKey] of Object.entries(this.variations)) {
       // Normalize the variation by replacing underscores with spaces and trimming
-      const normalizedVariation = variation.trim().replace(/[_\-\.]/g, ' ').replace(/\s+/g, ' ');
-      
+      const normalizedVariation = variation
+        .trim()
+        .replace(/[_\-\.]/g, " ")
+        .replace(/\s+/g, " ")
+
       // Add exact string equality check too for direct matching
-      const exactMatch = upperSubjectPart === normalizedVariation;
-      
+      const exactMatch = upperSubjectPart === normalizedVariation
+
       // Special check for specific full filenames like FE-BTECH_PHYSICS_SEM I_DEC 2016
       // Need to handle case differences more aggressively
-      const fileNameMatch = upperSubjectPart.replace(/\s/g, '') === normalizedVariation.replace(/\s/g, '');
-      
+      const fileNameMatch =
+        upperSubjectPart.replace(/\s/g, "") === normalizedVariation.replace(/\s/g, "")
+
       // Three types of matches:
       // 1. If subject contains the variation (original case)
       //    Example: "COMPUTER PROGRAMMING" contains "COMPUTER"
@@ -158,49 +179,50 @@ export class SubjectManager {
       //    Example: "RE ANALOG ETX" contains entire token "ETX"
       // 3. If variation has multiple words, check if ALL words appear in the subject
       //    Example: "ANALOG ETX" words all appear in "RE ANALOG ETX CYCLE"
-      
-      const variationWords = normalizedVariation.split(' ').filter(w => w.length > 0);
-      const subjectWords = upperSubjectPart.split(' ').filter(w => w.length > 0);
-      
+
+      const variationWords = normalizedVariation.split(" ").filter((w) => w.length > 0)
+      const subjectWords = upperSubjectPart.split(" ").filter((w) => w.length > 0)
+
       // Case 1: Subject contains the entire variation as a substring
-      const containsVariation = upperSubjectPart.includes(normalizedVariation);
-      
+      const containsVariation = upperSubjectPart.includes(normalizedVariation)
+
       // Case 2: One of the subject words is exactly the variation (for abbreviations)
-      const exactWordMatch = 
+      const exactWordMatch =
         normalizedVariation.length > 1 && // Avoid matching single letters
-        subjectWords.some(word => word === normalizedVariation);
-        
+        subjectWords.some((word) => word === normalizedVariation)
+
       // Case 3: All variation words appear in the subject
-      const allWordsMatch = 
+      const allWordsMatch =
         variationWords.length > 1 && // Only for multi-word variations
-        variationWords.every(word => 
-          word.length > 1 && // Skip single letters
-          upperSubjectPart.includes(word)
-        );
-      
+        variationWords.every(
+          (word) =>
+            word.length > 1 && // Skip single letters
+            upperSubjectPart.includes(word),
+        )
+
       if (exactMatch || fileNameMatch || containsVariation || exactWordMatch || allWordsMatch) {
         if (this.subjects[subjectKey]) {
           matches.push({
             variation: normalizedVariation,
             subjectKey,
-            standard: this.subjects[subjectKey].standard
-          });
-          
+            standard: this.subjects[subjectKey].standard,
+          })
+
           // Only show debug info when verbose mode is on
           if (verbose) {
-            console.log(`[DEBUG] Found match: "${normalizedVariation}" -> ${subjectKey}`);
-            if (exactMatch) console.log("  (exact match)");
-            if (fileNameMatch) console.log("  (filename match)");
-            if (containsVariation) console.log("  (contains variation)");
-            if (exactWordMatch) console.log("  (exact word match)");
-            if (allWordsMatch) console.log("  (all words match)");
+            console.log(`[DEBUG] Found match: "${normalizedVariation}" -> ${subjectKey}`)
+            if (exactMatch) console.log("  (exact match)")
+            if (fileNameMatch) console.log("  (filename match)")
+            if (containsVariation) console.log("  (contains variation)")
+            if (exactWordMatch) console.log("  (exact word match)")
+            if (allWordsMatch) console.log("  (all words match)")
           }
         }
       }
     }
-    
+
     // Sort by variation length (longest/most specific first)
-    return matches.sort((a, b) => b.variation.length - a.variation.length);
+    return matches.sort((a, b) => b.variation.length - a.variation.length)
   }
 
   /**
@@ -208,13 +230,16 @@ export class SubjectManager {
    */
   private async loadSubjects(): Promise<void> {
     try {
-      const filePath = path.join(this.dataDir, 'subjects.json');
-      const data = await fs.readFile(filePath, 'utf8');
-      this.subjects = JSON.parse(data);
+      const filePath = path.join(this.dataDir, "subjects.json")
+      const data = await fs.readFile(filePath, "utf8")
+      this.subjects = JSON.parse(data)
     } catch (error: unknown) {
       // If file doesn't exist or can't be parsed, create an empty object
-      console.warn('Failed to load subjects, using empty data.', error instanceof Error ? error.message : String(error));
-      this.subjects = {};
+      console.warn(
+        "Failed to load subjects, using empty data.",
+        error instanceof Error ? error.message : String(error),
+      )
+      this.subjects = {}
     }
   }
 
@@ -223,13 +248,16 @@ export class SubjectManager {
    */
   private async loadVariations(): Promise<void> {
     try {
-      const filePath = path.join(this.dataDir, 'variations.json');
-      const data = await fs.readFile(filePath, 'utf8');
-      this.variations = JSON.parse(data);
+      const filePath = path.join(this.dataDir, "variations.json")
+      const data = await fs.readFile(filePath, "utf8")
+      this.variations = JSON.parse(data)
     } catch (error: unknown) {
       // If file doesn't exist or can't be parsed, create an empty object
-      console.warn('Failed to load variations, using empty data.', error instanceof Error ? error.message : String(error));
-      this.variations = {};
+      console.warn(
+        "Failed to load variations, using empty data.",
+        error instanceof Error ? error.message : String(error),
+      )
+      this.variations = {}
     }
   }
 
@@ -238,13 +266,16 @@ export class SubjectManager {
    */
   private async loadExclusions(): Promise<void> {
     try {
-      const filePath = path.join(this.dataDir, 'exclusions.json');
-      const data = await fs.readFile(filePath, 'utf8');
-      this.exclusions = JSON.parse(data);
+      const filePath = path.join(this.dataDir, "exclusions.json")
+      const data = await fs.readFile(filePath, "utf8")
+      this.exclusions = JSON.parse(data)
     } catch (error: unknown) {
       // If file doesn't exist or can't be parsed, create an empty array
-      console.warn('Failed to load exclusions, using empty data.', error instanceof Error ? error.message : String(error));
-      this.exclusions = [];
+      console.warn(
+        "Failed to load exclusions, using empty data.",
+        error instanceof Error ? error.message : String(error),
+      )
+      this.exclusions = []
     }
   }
 
@@ -253,13 +284,16 @@ export class SubjectManager {
    */
   private async loadUnclassified(): Promise<void> {
     try {
-      const filePath = path.join(this.dataDir, 'unclassified.json');
-      const data = await fs.readFile(filePath, 'utf8');
-      this.unclassified = JSON.parse(data);
+      const filePath = path.join(this.dataDir, "unclassified.json")
+      const data = await fs.readFile(filePath, "utf8")
+      this.unclassified = JSON.parse(data)
     } catch (error: unknown) {
       // If file doesn't exist or can't be parsed, create an empty array
-      console.warn('Failed to load unclassified, using empty data.', error instanceof Error ? error.message : String(error));
-      this.unclassified = [];
+      console.warn(
+        "Failed to load unclassified, using empty data.",
+        error instanceof Error ? error.message : String(error),
+      )
+      this.unclassified = []
     }
   }
 
@@ -268,10 +302,10 @@ export class SubjectManager {
    */
   private async saveSubjects(): Promise<void> {
     try {
-      const filePath = path.join(this.dataDir, 'subjects.json');
-      await fs.writeFile(filePath, JSON.stringify(this.subjects, null, 2));
+      const filePath = path.join(this.dataDir, "subjects.json")
+      await fs.writeFile(filePath, JSON.stringify(this.subjects, null, 2))
     } catch (error) {
-      console.error('Failed to save subjects:', error);
+      console.error("Failed to save subjects:", error)
     }
   }
 
@@ -280,10 +314,10 @@ export class SubjectManager {
    */
   private async saveVariations(): Promise<void> {
     try {
-      const filePath = path.join(this.dataDir, 'variations.json');
-      await fs.writeFile(filePath, JSON.stringify(this.variations, null, 2));
+      const filePath = path.join(this.dataDir, "variations.json")
+      await fs.writeFile(filePath, JSON.stringify(this.variations, null, 2))
     } catch (error) {
-      console.error('Failed to save variations:', error);
+      console.error("Failed to save variations:", error)
     }
   }
 
@@ -292,10 +326,10 @@ export class SubjectManager {
    */
   private async saveExclusions(): Promise<void> {
     try {
-      const filePath = path.join(this.dataDir, 'exclusions.json');
-      await fs.writeFile(filePath, JSON.stringify(this.exclusions, null, 2));
+      const filePath = path.join(this.dataDir, "exclusions.json")
+      await fs.writeFile(filePath, JSON.stringify(this.exclusions, null, 2))
     } catch (error) {
-      console.error('Failed to save exclusions:', error);
+      console.error("Failed to save exclusions:", error)
     }
   }
 
@@ -304,10 +338,10 @@ export class SubjectManager {
    */
   private async saveUnclassified(): Promise<void> {
     try {
-      const filePath = path.join(this.dataDir, 'unclassified.json');
-      await fs.writeFile(filePath, JSON.stringify(this.unclassified, null, 2));
+      const filePath = path.join(this.dataDir, "unclassified.json")
+      await fs.writeFile(filePath, JSON.stringify(this.unclassified, null, 2))
     } catch (error) {
-      console.error('Failed to save unclassified:', error);
+      console.error("Failed to save unclassified:", error)
     }
   }
 
@@ -316,10 +350,10 @@ export class SubjectManager {
    */
   public async addSubject(subjectKey: string, standardName: string): Promise<void> {
     this.subjects[subjectKey] = {
-      standard: standardName
-    };
-    
-    await this.saveSubjects();
+      standard: standardName,
+    }
+
+    await this.saveSubjects()
   }
 
   /**
@@ -327,9 +361,9 @@ export class SubjectManager {
    */
   public async addVariation(variation: string, subjectKey: string): Promise<void> {
     // Always store variations in uppercase for case-insensitive matching
-    this.variations[variation.toUpperCase()] = subjectKey;
-    
-    await this.saveVariations();
+    this.variations[variation.toUpperCase()] = subjectKey
+
+    await this.saveVariations()
   }
 
   /**
@@ -337,16 +371,16 @@ export class SubjectManager {
    */
   public async addExclusion(filePath: string): Promise<void> {
     if (!this.exclusions.includes(filePath)) {
-      this.exclusions.push(filePath);
-      
+      this.exclusions.push(filePath)
+
       // Remove from unclassified if it was there
-      const index = this.unclassified.indexOf(filePath);
+      const index = this.unclassified.indexOf(filePath)
       if (index !== -1) {
-        this.unclassified.splice(index, 1);
-        await this.saveUnclassified();
+        this.unclassified.splice(index, 1)
+        await this.saveUnclassified()
       }
-      
-      await this.saveExclusions();
+
+      await this.saveExclusions()
     }
   }
 
@@ -354,7 +388,7 @@ export class SubjectManager {
    * Get all exclusions
    */
   public getExclusions(): string[] {
-    return [...this.exclusions];
+    return [...this.exclusions]
   }
 
   /**
@@ -362,8 +396,8 @@ export class SubjectManager {
    */
   public async addUnclassified(filePath: string): Promise<void> {
     if (!this.unclassified.includes(filePath) && !this.isExcluded(filePath)) {
-      this.unclassified.push(filePath);
-      await this.saveUnclassified();
+      this.unclassified.push(filePath)
+      await this.saveUnclassified()
     }
   }
 
@@ -371,21 +405,21 @@ export class SubjectManager {
    * Get all unclassified files
    */
   public getUnclassified(): string[] {
-    return [...this.unclassified];
+    return [...this.unclassified]
   }
 
   /**
    * Get all subjects
    */
   public getSubjects(): SubjectsJson {
-    return { ...this.subjects };
+    return { ...this.subjects }
   }
 
   /**
    * Get all variations
    */
   public getVariations(): VariationsJson {
-    return { ...this.variations };
+    return { ...this.variations }
   }
 
   /**
@@ -393,17 +427,17 @@ export class SubjectManager {
    */
   public async addMapping(filePath: string, subjectKey: string): Promise<void> {
     // Remove from unclassified if it was there
-    const index = this.unclassified.indexOf(filePath);
+    const index = this.unclassified.indexOf(filePath)
     if (index !== -1) {
-      this.unclassified.splice(index, 1);
-      await this.saveUnclassified();
+      this.unclassified.splice(index, 1)
+      await this.saveUnclassified()
     }
 
     // The file is now classified, no need to store in mappings anymore
     // We'll infer the subject from the variation when needed
-    
+
     // Log the action
-    console.log(`✅ Added mapping: "${filePath}" → ${subjectKey}`);
+    console.log(`✅ Added mapping: "${filePath}" → ${subjectKey}`)
   }
 
   /**
@@ -412,37 +446,39 @@ export class SubjectManager {
   public getFuzzySubjectSuggestions(
     textToMatch: string,
     threshold: number = 0.7,
-    maxSuggestions: number = 3
-  ): Array<{ subjectKey: string, standardName: string, score: number }> {
+    maxSuggestions: number = 3,
+  ): Array<{ subjectKey: string; standardName: string; score: number }> {
     // Normalize the query text
-    const normalizedQuery = textToMatch.toUpperCase().trim().replace(/[_\-\.]/g, ' ').replace(/\s+/g, ' ');
-    
+    const normalizedQuery = textToMatch
+      .toUpperCase()
+      .trim()
+      .replace(/[_\-\.]/g, " ")
+      .replace(/\s+/g, " ")
+
     // Prepare data for Fuse.js
     const searchData = Object.entries(this.subjects).map(([key, data]) => ({
       subjectKey: key,
-      standardName: data.standard
-    }));
-    
+      standardName: data.standard,
+    }))
+
     // Configure Fuse.js
     const fuseOptions = {
-      keys: ['standardName'],
+      keys: ["standardName"],
       includeScore: true,
       threshold: threshold,
-      ignoreLocation: true
-    };
-    
-    const fuse = new Fuse(searchData, fuseOptions);
-    
+      ignoreLocation: true,
+    }
+
+    const fuse = new Fuse(searchData, fuseOptions)
+
     // Perform the search
-    const results = fuse.search(normalizedQuery);
-    
+    const results = fuse.search(normalizedQuery)
+
     // Map results to expected format and limit to maxSuggestions
-    return results
-      .slice(0, maxSuggestions)
-      .map(result => ({
-        subjectKey: result.item.subjectKey,
-        standardName: result.item.standardName,
-        score: result.score || 1.0 // Default to 1.0 (worst) if score is undefined
-      }));
+    return results.slice(0, maxSuggestions).map((result) => ({
+      subjectKey: result.item.subjectKey,
+      standardName: result.item.standardName,
+      score: result.score || 1.0, // Default to 1.0 (worst) if score is undefined
+    }))
   }
-} 
+}
