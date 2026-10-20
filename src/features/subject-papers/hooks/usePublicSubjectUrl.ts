@@ -5,9 +5,16 @@ import { subjectHref } from "@/features/catalog/subjects"
 
 export function usePublicSubjectUrl(subject: string) {
   useEffect(() => {
-    const publicUrl = subjectHref(subject)
-    if (window.location.pathname + window.location.search !== publicUrl) {
-      window.history.replaceState(null, "", publicUrl)
-    }
+    const { pathname, search, hash } = window.location
+    if (pathname === "/papers" || subject.includes("/")) return
+
+    const otherParams = new URLSearchParams(search)
+    otherParams.delete("subject")
+    const extra = otherParams.toString()
+    window.history.replaceState(
+      null,
+      "",
+      `${subjectHref(subject)}${extra ? `&${extra}` : ""}${hash}`,
+    )
   }, [subject])
 }

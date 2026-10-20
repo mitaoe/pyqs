@@ -1,6 +1,4 @@
 import type { Metadata } from "next"
-import PageTransition from "@/components/animations/PageTransition"
-import Layout from "@/components/layout/Layout"
 import { subjectPageMetadata } from "@/features/catalog/metadata"
 import { getSubjectNames, getSubjectPapers } from "@/features/catalog/server/catalog"
 import { decodeSubjectParam, resolveSubject } from "@/features/catalog/subjects"
@@ -22,25 +20,21 @@ async function subjectFromParams(params: SubjectPageProps["params"]) {
   return (await params).subject.map(decodeSubjectParam).join("/")
 }
 
+async function isKnownSubject(subject: string) {
+  return resolveSubject(await getSubjectNames(), subject) !== null
+}
+
 export async function generateMetadata({ params }: SubjectPageProps): Promise<Metadata> {
-  return subjectPageMetadata(await subjectFromParams(params))
+  const subject = await subjectFromParams(params)
+  const metadata = subjectPageMetadata(subject)
+  return (await isKnownSubject(subject))
+    ? metadata
+    : { ...metadata, robots: { index: false, follow: false } }
 }
 
 export default async function SubjectPage({ params }: SubjectPageProps) {
   const subject = await subjectFromParams(params)
-  const [subjects, papers] = await Promise.all([getSubjectNames(), getSubjectPapers(subject)])
+  const [known, papers] = await Promise.all([isKnownSubject(subject), getSubjectPapers(subject)])
 
-  return (
-    <Layout>
-      <PageTransition>
-        <div className="min-h-screen bg-primary text-content">
-          <SubjectPapersView
-            subject={subject}
-            papers={papers}
-            isKnownSubject={resolveSubject(subjects, subject) !== null}
-          />
-        </div>
-      </PageTransition>
-    </Layout>
-  )
+  return <SubjectPapersView subject={subject} papers={papers} isKnownSubject={known} />
 }

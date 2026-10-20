@@ -90,3 +90,54 @@ test("the old 2 MB catalog cache is cleared from returning browsers", async ({ p
     )
     .toEqual([null, null])
 })
+
+test("switching between the list and a subject does not replay the page transition", async ({
+  page,
+}) => {
+  await page.goto("/papers")
+  await expect(page.getByRole("button", { name: SUBJECT })).toBeVisible()
+  const transition = page.locator("#scrollable-content > div > div").first()
+  await expect.poll(() => transition.evaluate((el) => getComputedStyle(el).opacity)).toBe("1")
+  const lowest = async (samples: Promise<string[]>) => Math.min(...(await samples).map(Number))
+
+  const sampleOpacity = () =>
+    transition.evaluate(
+      (el) =>
+        new Promise<string[]>((resolve) => {
+          const samples: string[] = []
+          const timer = setInterval(() => {
+            samples.push(getComputedStyle(el).opacity)
+            if (samples.length === 20) {
+              clearInterval(timer)
+              resolve(samples)
+            }
+          }, 25)
+        }),
+    )
+
+  const opening = sampleOpacity()
+  await page.getByRole("button", { name: SUBJECT }).click()
+  expect(await lowest(opening)).toBeGreaterThan(0.9)
+  await expect(paperCards(page).first()).toBeVisible()
+
+  const goingBack = sampleOpacity()
+  await page.getByRole("button", { name: "Back to Subjects" }).click()
+  expect(await lowest(goingBack)).toBeGreaterThan(0.9)
+})
+
+test("the not-found toast survives the redirect to the subject list", async ({ page }) => {
+  await page.goto("/papers?subject=Not%20A%20Subject")
+  const toast = page.getByText('Subject "Not A Subject" not found')
+  await expect(toast).toBeVisible()
+  const handle = await toast.elementHandle()
+
+  await expect(page).toHaveURL("/papers", { timeout: 10_000 })
+  expect(await handle!.evaluate((el) => el.isConnected)).toBe(true)
+  await expect(toast).toBeVisible()
+})
+
+test("/browse asks for the directory once even when it fails", async ({ page, appRequests }) => {
+  await page.goto("/browse")
+  await page.waitForTimeout(3000)
+  expect(appRequests.filter((url) => url.startsWith("/api/directory"))).toHaveLength(1)
+})

@@ -37,7 +37,16 @@ test("/api/papers keeps its original response shape", async ({ request }) => {
 })
 
 test("values that cannot be a path fall back to the subject list", async ({ request }) => {
-  for (const value of ["100%25", "a%3Fb", "a%23b"]) {
+  for (const value of [
+    "100%25",
+    "a%3Fb",
+    "a%23b",
+    "..",
+    ".",
+    "a%2F..%2Fb",
+    "%2FComputer%20Networks",
+    "Computer%20Networks%2F",
+  ]) {
     const html = await (await request.get(`/papers?subject=${value}`)).text()
     expect(html).toContain("Find Your Papers")
   }

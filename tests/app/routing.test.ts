@@ -32,8 +32,17 @@ describe("catalog routes", () => {
     expect(rule).toMatchObject({ source: "/papers", destination: "/papers/:subject" })
 
     const matcher = new RegExp(`^${rule.has![0].value}$`)
-    expect(matcher.exec("Computer Networks")?.groups?.subject).toBe("Computer Networks")
-    expect(matcher.test("Signals/Systems")).toBe(true)
-    for (const unsafe of ["100%", "a?b", "a#b", ""]) expect(matcher.test(unsafe)).toBe(false)
+    for (const subject of [
+      "Computer Networks",
+      "Introduction to Industrial IOT 4.0",
+      ".NET",
+      "..x",
+      "...",
+    ]) {
+      expect(matcher.exec(subject)?.groups?.subject).toBe(subject)
+    }
+    for (const unsafe of ["100%", "a?b", "a#b", "", ".", "..", "a/b", "/x", "x/", "../../x"]) {
+      expect(matcher.test(unsafe)).toBe(false)
+    }
   })
 })
