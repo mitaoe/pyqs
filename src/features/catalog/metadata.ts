@@ -34,11 +34,15 @@ export const papersIndexMetadata: Metadata = {
   },
 }
 
+export function subjectPageTitle(subject: string): string {
+  return `${subject} Papers | MITAoE Previous Year Question Papers`
+}
+
 export function subjectPageMetadata(subject: string): Metadata {
   const pageUrl = `${SITE_URL}/papers?subject=${encodeURIComponent(subject)}`
 
   return {
-    title: `${subject} Papers | MITAoE Previous Year Question Papers`,
+    title: subjectPageTitle(subject),
     description: `Access previous year question papers for ${subject} at MIT Academy of Engineering (MITAoE). Download ${subject} exam papers for better exam preparation.`,
     keywords: `${subject}, MITAoE, previous year papers, question papers, ${subject} exams, engineering papers, engineering education, exam preparation, study materials`,
     openGraph: {

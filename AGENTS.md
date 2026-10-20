@@ -4,10 +4,11 @@ Previous-year question papers for MIT Academy of Engineering. Next.js App Router
 
 ## How a request is served
 
-- `/` and `/papers` are static. `/papers` gets the subject list from the catalog at build time.
-- `/papers?subject=X` is rewritten in `next.config.ts` to `/papers/[...subject]`, which is prerendered for every subject in `generateStaticParams`. The rewrite only accepts a value that is a single safe path segment (no `/`, `%`, `?`, `#`, `.` or `..`); anything else falls through to the subject list. Unknown subjects and other spellings render once on first visit, are cached, and are marked `noindex`.
+- `/` is static. `/papers` is prerendered with the subject list from the catalog.
+- `/papers?subject=X` is rewritten in `next.config.ts` to `/papers/[...subject]`, which is prerendered for every subject in `generateStaticParams`. The rewrite only accepts a value that is a single safe path segment (no `/`, `%`, `?`, `#`, `.` or `..`); anything else falls through to the subject list. Another capitalisation of a known subject renders that subject. An unknown subject is a 404 from `src/app/papers/not-found.tsx`, which shows the "not found" toast and returns to the list. Both render once on first visit and are then cached. If `subject` is repeated, the last value wins, because that is the value Next matches against the rewrite.
 - In the browser, opening a subject navigates to `/papers/<subject>` (so the router fetches the prerendered page) and `usePublicSubjectUrl` puts `/papers?subject=X` back in the address bar. Links people share keep the original format.
-- Catalog pages and `/api/papers` revalidate daily (`export const revalidate = 86400`, mirrored in `CATALOG_REVALIDATE_SECONDS`). Each revalidation is one function invocation and one MongoDB query per visited page per day; Vercel does not charge ISR writes when the output is unchanged, so writes only happen when the data changes. Visitors themselves never cause a database read on prerendered pages; the first visit to a `?subject=` value that was not prerendered costs one function invocation, one MongoDB query and one cache entry.
+- Catalog pages revalidate daily (`export const revalidate = 86400`), so new subjects and papers show up within a day without a deploy. Each revalidation is one function invocation and one MongoDB query per visited page per day; Vercel does not charge ISR writes when the output is unchanged, so writes only happen when the data changes. Visitors themselves never cause a database read on prerendered pages; the first visit to a `?subject=` value that was not prerendered costs one function invocation, one MongoDB query and one cache entry.
+- `/api/papers` is prerendered and keeps the headers it always had: browsers cache it for a week, the CDN for a month, with an ETag from `stats.lastUpdated`.
 - `/papers` and `/papers/[...subject]` share `src/app/papers/layout.tsx`, so the page transition and the toaster stay mounted while moving between the list and a subject, as they did before.
 - The build reads MongoDB (`generateStaticParams`), so `MONGODB_URI` must be reachable from Vercel's build machines. If it is not, the build fails and the previous deployment keeps serving.
 - PDFs go straight from the browser to the storage worker. They never pass through Vercel.
@@ -44,7 +45,7 @@ A feature owns its components, hooks and logic. Code used by two features moves 
 The app is built to stay inside Vercel Hobby and Cloudflare free limits for thousands of students:
 
 - Keep catalog pages static. Do not read `searchParams`, cookies or headers in a catalog page; that makes it dynamic and every visit becomes a function invocation.
-- Do not let `<Link>` prefetch long lists on render. Subject buttons prefetch on hover, touch and focus through `useSubjectNavigation`.
+- Do not let `<Link>` prefetch long lists on render. Subject buttons prefetch through `useSubjectNavigation` only after the pointer rests on one for 80 ms or it gets keyboard focus, so sweeping the mouse or scrolling on a phone fetches nothing.
 - Do not proxy PDFs through Next.js. Requests to the storage worker count against the worker's 100,000 requests per day, so avoid extra ones (no range requests, no polling).
 
 ## Commands

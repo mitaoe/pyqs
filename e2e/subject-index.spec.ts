@@ -49,3 +49,37 @@ test("hovering a subject prefetches its page", async ({ page, appRequests, isMob
   await page.getByRole("button", { name: SUBJECT }).click()
   await expect(page).toHaveURL(SUBJECT_URL)
 })
+
+test("sweeping the pointer across the list prefetches only where it stops", async ({
+  page,
+  appRequests,
+  isMobile,
+}) => {
+  test.skip(isMobile, "hover only exists with a pointer")
+  await page.setViewportSize({ width: 1280, height: 1600 })
+
+  const subjects = [
+    "Advanced Analysis",
+    "Computer Networks",
+    "Data Structures",
+    "Engineering Chemistry",
+    "Introduction to Industrial IOT 4.0",
+  ]
+  const centres = []
+  for (const subject of subjects) {
+    const button = page.getByRole("button", { name: subject })
+    await expect(button).toBeInViewport()
+    const box = (await button.boundingBox())!
+    centres.push({ x: box.x + 10, y: box.y + box.height / 2 })
+  }
+
+  for (const { x, y } of centres) await page.mouse.move(x, y)
+  await page.waitForTimeout(1000)
+
+  const prefetched = new Set(
+    appRequests
+      .filter((url) => url.startsWith("/papers/"))
+      .map((url) => decodeURIComponent(url.split("?")[0].slice("/papers/".length))),
+  )
+  expect([...prefetched]).toEqual(["Introduction to Industrial IOT 4.0"])
+})

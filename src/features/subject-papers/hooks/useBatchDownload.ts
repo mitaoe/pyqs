@@ -73,7 +73,7 @@ export function useBatchDownload(
       const paper = selectedPapers[0]
       try {
         const toastId = toast.loading(`Downloading ${paper.fileName}...`)
-        const success = await downloadFile(paper.url, paper.fileName, paper)
+        const success = await downloadFile(paper.url, paper.fileName)
         toast.dismiss(toastId)
         if (success) onComplete()
       } catch (error) {

@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import { SITE_NAME, SITE_URL, OG_IMAGE, PAPERS_OG_IMAGE } from "@/config/site"
 import Providers from "./providers"
@@ -79,17 +79,13 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport: Viewport = {
+  themeColor: "#18181b",
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta name="theme-color" content="#18181b" />
-        <meta
-          name="google-site-verification"
-          content="pU3C4VTSXE2v7DFFiwp2acvtZO-RXj0cBBlfYsWBVn8"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      </head>
       <body className={inter.className} suppressHydrationWarning={true}>
         <Providers>{children}</Providers>
       </body>

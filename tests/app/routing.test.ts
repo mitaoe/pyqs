@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
-import { CATALOG_REVALIDATE_SECONDS } from "@/config/site"
 import nextConfig from "../../next.config"
 
 const ROOT = path.resolve(__dirname, "../..")
+const ONE_DAY = 86400
 const CATALOG_ROUTES = [
   "src/app/papers/page.tsx",
   "src/app/papers/[...subject]/page.tsx",
@@ -14,7 +14,7 @@ const CATALOG_ROUTES = [
 describe("catalog routes", () => {
   it.each(CATALOG_ROUTES)("%s revalidates on the shared schedule", (file) => {
     const source = readFileSync(path.join(ROOT, file), "utf8")
-    expect(source).toContain(`export const revalidate = ${CATALOG_REVALIDATE_SECONDS}`)
+    expect(source).toContain(`export const revalidate = ${ONE_DAY}`)
   })
 
   it("serves /papers?subject=… from the prerendered subject page", async () => {
