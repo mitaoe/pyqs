@@ -35,8 +35,8 @@ export function createMongoSource(uri: string): CatalogSource {
                 as: "paper",
                 cond: {
                   $or: [
-                    { $eq: [{ $toLower: "$$paper.standardSubject" }, wanted] },
-                    { $eq: [{ $toLower: "$$paper.subject" }, wanted] },
+                    { $eq: [{ $toLower: "$$paper.standardSubject" }, { $literal: wanted }] },
+                    { $eq: [{ $toLower: "$$paper.subject" }, { $literal: wanted }] },
                   ],
                 },
               },

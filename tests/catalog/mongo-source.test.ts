@@ -49,6 +49,12 @@ describe.skipIf(!MONGODB_TEST_URI)("MongoDB catalog source", () => {
     expect(await mongo.readSubjectPapers("Not A Subject")).toEqual([])
   })
 
+  it("treats operator-like input as plain text", async () => {
+    for (const hostile of ["$$ROOT", "$$paper.subject", "$subject", "$$CURRENT", "{ $ne: 1 }"]) {
+      expect(await mongo.readSubjectPapers(hostile)).toEqual(await files.readSubjectPapers(hostile))
+    }
+  })
+
   it("returns the full snapshot without Mongo internals", async () => {
     const snapshot = await mongo.readSnapshot()
     expect(snapshot.papers).toEqual(fixture.meta.papers)
