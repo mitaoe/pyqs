@@ -1,13 +1,23 @@
 # MITAoE PYQs - Previous Year Question Papers
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-blue?style=flat-square)](https://www.typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38B2AC?style=flat-square)](https://tailwindcss.com/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](#license)
 
 Enhanced interface for accessing MIT Academy of Engineering (MITAoE) previous year question papers with a subject-focused approach for easier navigation.
 
 ![MITAoE PYQs Screenshot](https://mitaoe-pyqs.vercel.app/og-image.png)
+
+## Contents
+
+- [Key Features](#-key-features)
+- [Quick Start](#-quick-start)
+- [Supported Departments](#-supported-departments)
+- [For Developers](#-for-developers)
+- [Acknowledgements](#acknowledgements)
+- [Legal Notice](#legal-notice)
+- [License](#license)
 
 ## 🎯 Key Features
 
@@ -22,6 +32,7 @@ Enhanced interface for accessing MIT Academy of Engineering (MITAoE) previous ye
 ## 📚 Quick Start
 
 Visit [mitaoe-pyqs.vercel.app](https://mitaoe-pyqs.vercel.app) and:
+
 1. Search by subject name (e.g., "Computer Networks")
 2. Apply filters for specific years/exam types (optional)
 3. Download individual papers or select multiple for batch download
@@ -38,43 +49,10 @@ Visit [mitaoe-pyqs.vercel.app](https://mitaoe-pyqs.vercel.app) and:
 
 ## 💻 For Developers
 
-### Tech Stack
+Built with Next.js 16, React 19, TypeScript and Tailwind CSS, deployed on Vercel. Catalog data lives in MongoDB and the papers in Cloudflare R2 behind the worker in [`worker/`](worker/README.md).
 
-- **Frontend**: Next.js 15
-- **Backend**: Next.js API routes
-- **Language**: TypeScript
-- **Styling**: TailwindCSS
-- **Deployment**: Vercel
-
-### Local Development
-
-```bash
-# Clone the repository
-git clone https://github.com/mitaoe/pyqs.git
-cd pyqs
-
-# Install dependencies
-pnpm install
-
-# Copy env file and configure your MongoDB connection
-cp .env.example .env
-# Edit the .env file and add your MongoDB URI:
-# MONGODB_URI=your_mongodb_connection_string_here
-
-# Generate question papers data for local development
-pnpm pyq-gen
-
-# Note: During data generation, you may see 400 errors for E&TC directories in the terminal.
-# These specific errors are normal and can be safely ignored. If you encounter other errors,
-# please create an issue on GitHub. After completion, check your MongoDB database to
-# confirm that the data has been generated.
-
-# Run development server
-pnpm dev
-
-# Optional: Run crawler for /browse route data
-# pnpm crawl
-```
+- [CONTRIBUTING.md](CONTRIBUTING.md): local setup, checks, generating paper data, pull requests
+- [AGENTS.md](AGENTS.md): how the app is put together, where code lives, free-tier rules
 
 ## Acknowledgements
 
