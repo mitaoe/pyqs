@@ -1,0 +1,39 @@
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import { describe, expect, it } from "vitest"
+import { CATALOG_REVALIDATE_SECONDS } from "@/config/site"
+import nextConfig from "../../next.config"
+
+const ROOT = path.resolve(__dirname, "../..")
+const CATALOG_ROUTES = [
+  "src/app/papers/page.tsx",
+  "src/app/papers/[...subject]/page.tsx",
+  "src/app/api/papers/route.ts",
+]
+
+describe("catalog routes", () => {
+  it.each(CATALOG_ROUTES)("%s revalidates on the shared schedule", (file) => {
+    const source = readFileSync(path.join(ROOT, file), "utf8")
+    expect(source).toContain(`export const revalidate = ${CATALOG_REVALIDATE_SECONDS}`)
+  })
+
+  it("serves /papers?subject=… from the prerendered subject page", async () => {
+    const rewrites = await nextConfig.rewrites!()
+    expect(Array.isArray(rewrites)).toBe(false)
+    const [rule] = (
+      rewrites as {
+        beforeFiles: {
+          source: string
+          destination: string
+          has?: { type: string; key: string; value?: string }[]
+        }[]
+      }
+    ).beforeFiles
+    expect(rule).toMatchObject({ source: "/papers", destination: "/papers/:subject" })
+
+    const matcher = new RegExp(`^${rule.has![0].value}$`)
+    expect(matcher.exec("Computer Networks")?.groups?.subject).toBe("Computer Networks")
+    expect(matcher.test("Signals/Systems")).toBe(true)
+    for (const unsafe of ["100%", "a?b", "a#b", ""]) expect(matcher.test(unsafe)).toBe(false)
+  })
+})
