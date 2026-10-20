@@ -10,7 +10,10 @@ export function useViewMode() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
 
   useEffect(() => {
+    let lastWidth = 0
     const checkScreenSize = () => {
+      if (window.innerWidth === lastWidth) return
+      lastWidth = window.innerWidth
       setViewMode(window.innerWidth < MOBILE_BREAKPOINT_PX ? "list" : "grid")
     }
 

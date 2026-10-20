@@ -36,10 +36,10 @@ export default function BrowseContent() {
   const currentNode = structure ? getCurrentNode(structure, currentPath) : null
 
   useEffect(() => {
-    if (!structure && !isLoading) {
+    if (!structure && !isLoading && !error) {
       fetchDirectoryData()
     }
-  }, [structure, isLoading, fetchDirectoryData])
+  }, [structure, isLoading, error, fetchDirectoryData])
 
   useEffect(() => {
     if (structure && !currentNode && currentPath) {
@@ -69,7 +69,6 @@ export default function BrowseContent() {
   }
 
   if (error) {
-    toast.error(error.message)
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-red-500">
         {error.message}

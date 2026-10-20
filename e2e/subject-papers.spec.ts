@@ -8,8 +8,11 @@ test.beforeEach(async ({ page }) => {
 })
 
 test("papers are listed newest first", async ({ page }) => {
-  const years = await paperCards(page).locator("span").first().allTextContents()
-  expect(years[0]).toBe("2024")
+  const years = await paperCards(page).evaluateAll((cards) =>
+    cards.map((card) => parseInt(card.querySelector("span")!.textContent!) || 0),
+  )
+  expect(years.length).toBeGreaterThan(1)
+  expect(years).toEqual([...years].sort((a, b) => b - a))
 })
 
 test("year and exam type filters narrow the list and can be cleared", async ({ page }) => {
@@ -73,4 +76,18 @@ test("the select-mode tip shows once", async ({ page }) => {
   await expect(paperCards(page).first()).toBeVisible()
   await page.waitForTimeout(2000)
   await expect(gotIt).toHaveCount(0)
+})
+
+test("the chosen view survives the mobile address bar resizing the page", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "phone layout only")
+  await page.getByRole("button", { name: "Toggle view mode" }).click()
+  await expect(page.locator("[data-papers-list].grid")).toBeVisible()
+
+  const { width, height } = page.viewportSize()!
+  await page.setViewportSize({ width, height: height - 60 })
+  await page.setViewportSize({ width, height })
+  await expect(page.locator("[data-papers-list].grid")).toBeVisible()
 })
