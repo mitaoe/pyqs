@@ -59,7 +59,7 @@ export default function FadeIn({
       transition={{
         duration,
         delay,
-        ease: [0.21, 0.5, 0.51, 1], // Custom easing for a more natural motion
+        ease: [0.21, 0.5, 0.51, 1],
       }}
       className={className}
     >

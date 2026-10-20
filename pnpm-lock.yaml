@@ -82,7 +82,7 @@ importers:
         specifier: ^3.9.10
         version: 3.9.10
       tailwindcss:
-        specifier: '3'
+        specifier: ^3.4.19
         version: 3.4.19(tsx@4.23.15)
       tsx:
         specifier: ^4.23.15

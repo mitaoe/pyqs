@@ -5,9 +5,11 @@ Previous-year question papers for MIT Academy of Engineering. Next.js App Router
 ## How a request is served
 
 - `/` and `/papers` are static. `/papers` gets the subject list from the catalog at build time.
-- `/papers?subject=X` is rewritten in `next.config.ts` to `/papers/[...subject]`, which is prerendered for every subject in `generateStaticParams`. Unknown subjects and other spellings render once on first visit and are then cached.
+- `/papers?subject=X` is rewritten in `next.config.ts` to `/papers/[...subject]`, which is prerendered for every subject in `generateStaticParams`. The rewrite only accepts a value that is a single safe path segment (no `/`, `%`, `?`, `#`, `.` or `..`); anything else falls through to the subject list. Unknown subjects and other spellings render once on first visit, are cached, and are marked `noindex`.
 - In the browser, opening a subject navigates to `/papers/<subject>` (so the router fetches the prerendered page) and `usePublicSubjectUrl` puts `/papers?subject=X` back in the address bar. Links people share keep the original format.
-- Catalog pages and `/api/papers` revalidate daily (`export const revalidate = 86400`, mirrored in `CATALOG_REVALIDATE_SECONDS`). A visitor never causes a database read.
+- Catalog pages and `/api/papers` revalidate daily (`export const revalidate = 86400`, mirrored in `CATALOG_REVALIDATE_SECONDS`). Each revalidation is one function invocation and one MongoDB query per visited page per day; Vercel does not charge ISR writes when the output is unchanged, so writes only happen when the data changes. Visitors themselves never cause a database read on prerendered pages; the first visit to a `?subject=` value that was not prerendered costs one function invocation, one MongoDB query and one cache entry.
+- `/papers` and `/papers/[...subject]` share `src/app/papers/layout.tsx`, so the page transition and the toaster stay mounted while moving between the list and a subject, as they did before.
+- The build reads MongoDB (`generateStaticParams`), so `MONGODB_URI` must be reachable from Vercel's build machines. If it is not, the build fails and the previous deployment keeps serving.
 - PDFs go straight from the browser to the storage worker. They never pass through Vercel.
 
 ## Where things live

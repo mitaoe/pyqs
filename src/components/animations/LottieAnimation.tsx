@@ -10,13 +10,12 @@ const LottieSvg = dynamic(() => import("lottie-react").then((mod) => mod.LottieS
 
 interface LottieAnimationProps {
   animationData?: object
-  animationName?: "loading" | "cursor"
+  animationName?: "cursor"
   loop?: boolean
   autoplay?: boolean
   className?: string
   width?: number | string
   height?: number | string
-  speed?: number
 }
 
 export default function LottieAnimation({
@@ -27,7 +26,6 @@ export default function LottieAnimation({
   className = "",
   width = "100%",
   height = "100%",
-  speed = 1,
 }: LottieAnimationProps) {
   const isHydrated = useIsHydrated()
   const src = animationData ?? (animationName ? `/animations/${animationName}.json` : null)
@@ -47,7 +45,6 @@ export default function LottieAnimation({
         src={src}
         loop={loop}
         autoplay={autoplay}
-        speed={speed}
         style={{ width: "100%", height: "100%" }}
       />
     </div>

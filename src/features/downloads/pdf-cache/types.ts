@@ -1,22 +1,19 @@
-// Simple cache configuration
 export interface CacheConfig {
-  maxStorageSize: number // in MB (default: 200MB)
-  cacheDuration: number // in hours (default: 1 year)
+  maxStorageMb: number
+  cacheDurationHours: number
 }
 
-// Simple cache statistics
 export interface CacheStats {
-  totalSize: number // in bytes
+  totalSizeBytes: number
   totalPapers: number
-  availableSpace: number // in bytes
+  availableSpaceBytes: number
 }
 
-// Simple PDF cache entry
 export interface PdfCacheEntry {
-  id: string // hash of PDF URL
+  id: string
   url: string
   fileName: string
-  data: ArrayBuffer // The actual PDF file
+  data: ArrayBuffer
   subject: string
   year: string
   cachedAt: Date
@@ -24,7 +21,6 @@ export interface PdfCacheEntry {
   size: number
 }
 
-// Simple cache manager interface
 export interface CacheManager {
   storePdf(
     url: string,
@@ -34,7 +30,6 @@ export interface CacheManager {
     year: string,
   ): Promise<void>
   getPdf(url: string): Promise<ArrayBuffer | null>
-  getPdfMetadata(url: string): Promise<Omit<PdfCacheEntry, "data"> | null>
   clearAllCache(): Promise<void>
   getCacheStats(): Promise<CacheStats>
 }

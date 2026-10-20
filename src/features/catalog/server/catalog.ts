@@ -54,8 +54,3 @@ export async function getCatalogResponse(): Promise<CatalogResponse> {
     stats: snapshot.stats,
   }
 }
-
-export function resetCatalogSourceForTests() {
-  source = null
-  subjectNames = null
-}

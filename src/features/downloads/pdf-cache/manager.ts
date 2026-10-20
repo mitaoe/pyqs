@@ -1,30 +1,26 @@
 import { CacheManager, CacheConfig, CacheStats, PdfCacheEntry } from "./types"
 import { getCacheDatabase } from "./database"
 
-// Default settings
 const DEFAULT_CONFIG: CacheConfig = {
-  maxStorageSize: 200, // 200MB
-  cacheDuration: 8760, // 1 year
+  maxStorageMb: 200,
+  cacheDurationHours: 24 * 365,
 }
 
-// PDF cache manager
+const BYTES_PER_MB = 1024 * 1024
+const MS_PER_HOUR = 60 * 60 * 1000
+
 export class SimpleCacheManager implements CacheManager {
   private db = getCacheDatabase()
   private config = DEFAULT_CONFIG
 
-  // Generate ID from URL - use URL directly as it's already unique
-  private generateId(url: string): string {
-    return url
+  private get maxBytes(): number {
+    return this.config.maxStorageMb * BYTES_PER_MB
   }
 
-  // Check if PDF is expired
   private isExpired(entry: PdfCacheEntry): boolean {
-    const now = Date.now()
-    const expiresAt = entry.cachedAt.getTime() + this.config.cacheDuration * 60 * 60 * 1000
-    return now > expiresAt
+    return Date.now() > entry.cachedAt.getTime() + this.config.cacheDurationHours * MS_PER_HOUR
   }
 
-  // Store PDF in cache
   async storePdf(
     url: string,
     data: ArrayBuffer,
@@ -33,16 +29,13 @@ export class SimpleCacheManager implements CacheManager {
     year: string,
   ): Promise<void> {
     try {
-      // Check if we need to free up space first
       const stats = await this.getCacheStats()
-      const maxBytes = this.config.maxStorageSize * 1024 * 1024
-
-      if (stats.totalSize + data.byteLength > maxBytes) {
-        await this.cleanupOldPdfs(data.byteLength)
+      if (stats.totalSizeBytes + data.byteLength > this.maxBytes) {
+        await this.evictLeastRecentlyUsed(data.byteLength)
       }
 
-      const entry: PdfCacheEntry = {
-        id: this.generateId(url),
+      await this.db.storePdf({
+        id: url,
         url,
         fileName,
         data,
@@ -51,31 +44,24 @@ export class SimpleCacheManager implements CacheManager {
         cachedAt: new Date(),
         lastAccessed: new Date(),
         size: data.byteLength,
-      }
-
-      await this.db.storePdf(entry)
+      })
     } catch (error) {
       console.error("Cache store failed:", error)
     }
   }
 
-  // Get PDF from cache
   async getPdf(url: string): Promise<ArrayBuffer | null> {
     try {
       const entry = await this.db.getPdf(url)
-
       if (!entry) return null
 
-      // Check if expired
       if (this.isExpired(entry)) {
         await this.db.deletePdf(entry.id)
         return null
       }
 
-      // Update last accessed time
       entry.lastAccessed = new Date()
       await this.db.storePdf(entry)
-
       return entry.data
     } catch (error) {
       console.error("Cache get failed:", error)
@@ -83,36 +69,6 @@ export class SimpleCacheManager implements CacheManager {
     }
   }
 
-  // Get PDF metadata from cache (without the data payload)
-  async getPdfMetadata(url: string): Promise<Omit<PdfCacheEntry, "data"> | null> {
-    try {
-      const entry = await this.db.getPdf(url)
-
-      if (!entry) return null
-
-      // Check if expired
-      if (this.isExpired(entry)) {
-        await this.db.deletePdf(entry.id)
-        return null
-      }
-
-      return {
-        id: entry.id,
-        url: entry.url,
-        fileName: entry.fileName,
-        subject: entry.subject,
-        year: entry.year,
-        cachedAt: entry.cachedAt,
-        lastAccessed: entry.lastAccessed,
-        size: entry.size,
-      }
-    } catch (error) {
-      console.error("Cache metadata get failed:", error)
-      return null
-    }
-  }
-
-  // Clear all cached PDFs
   async clearAllCache(): Promise<void> {
     try {
       await this.db.clearAll()
@@ -121,54 +77,38 @@ export class SimpleCacheManager implements CacheManager {
     }
   }
 
-  // Get cache statistics
   async getCacheStats(): Promise<CacheStats> {
     try {
       const allPdfs = await this.db.getAllPdfs()
-
-      let totalSize = 0
-      for (const pdf of allPdfs) {
-        totalSize += pdf.size
-      }
-
-      const maxBytes = this.config.maxStorageSize * 1024 * 1024
+      const totalSizeBytes = allPdfs.reduce((sum, pdf) => sum + pdf.size, 0)
 
       return {
-        totalSize,
+        totalSizeBytes,
         totalPapers: allPdfs.length,
-        availableSpace: Math.max(0, maxBytes - totalSize),
+        availableSpaceBytes: Math.max(0, this.maxBytes - totalSizeBytes),
       }
     } catch (error) {
       console.error("Cache stats failed:", error)
-      return {
-        totalSize: 0,
-        totalPapers: 0,
-        availableSpace: this.config.maxStorageSize * 1024 * 1024,
-      }
+      return { totalSizeBytes: 0, totalPapers: 0, availableSpaceBytes: this.maxBytes }
     }
   }
 
-  // Clean up old PDFs to make space
-  private async cleanupOldPdfs(requiredSpace: number): Promise<void> {
+  private async evictLeastRecentlyUsed(requiredBytes: number): Promise<void> {
     try {
       const allPdfs = await this.db.getAllPdfs()
-
-      // Sort by last accessed (oldest first)
       allPdfs.sort((a, b) => a.lastAccessed.getTime() - b.lastAccessed.getTime())
 
-      let freedSpace = 0
+      let freedBytes = 0
       for (const pdf of allPdfs) {
-        if (freedSpace >= requiredSpace) break
-
+        if (freedBytes >= requiredBytes) break
         await this.db.deletePdf(pdf.id)
-        freedSpace += pdf.size
+        freedBytes += pdf.size
       }
     } catch (error) {
       console.error("Cache cleanup failed:", error)
     }
   }
 
-  // Format bytes for display
   formatBytes(bytes: number): string {
     if (bytes === 0) return "0 B"
     const k = 1024
@@ -178,12 +118,9 @@ export class SimpleCacheManager implements CacheManager {
   }
 }
 
-// Singleton instance
 let cacheManager: SimpleCacheManager | null = null
 
 export function getCacheManager(): SimpleCacheManager {
-  if (!cacheManager) {
-    cacheManager = new SimpleCacheManager()
-  }
+  cacheManager ??= new SimpleCacheManager()
   return cacheManager
 }

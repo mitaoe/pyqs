@@ -1,15 +1,12 @@
 import { PdfCacheEntry } from "./types"
 
-// Database configuration
 export const DB_NAME = "mitaoe-pyqs-cache"
 export const DB_VERSION = 1
 export const STORE_NAME = "pdfs"
 
-// Database connection class
 export class CacheDatabase {
   private db: IDBDatabase | null = null
 
-  // Get database connection
   async getDB(): Promise<IDBDatabase> {
     if (this.db) return this.db
 
@@ -25,7 +22,6 @@ export class CacheDatabase {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result
 
-        // Create simple PDF store
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: "id" })
           store.createIndex("url", "url")
@@ -35,7 +31,6 @@ export class CacheDatabase {
     })
   }
 
-  // Store PDF
   async storePdf(entry: PdfCacheEntry): Promise<void> {
     const db = await this.getDB()
     const transaction = db.transaction([STORE_NAME], "readwrite")
@@ -48,7 +43,6 @@ export class CacheDatabase {
     })
   }
 
-  // Get PDF by URL
   async getPdf(url: string): Promise<PdfCacheEntry | null> {
     const db = await this.getDB()
     const transaction = db.transaction([STORE_NAME], "readonly")
@@ -62,7 +56,6 @@ export class CacheDatabase {
     })
   }
 
-  // Get all PDFs
   async getAllPdfs(): Promise<PdfCacheEntry[]> {
     const db = await this.getDB()
     const transaction = db.transaction([STORE_NAME], "readonly")
@@ -75,7 +68,6 @@ export class CacheDatabase {
     })
   }
 
-  // Delete PDF
   async deletePdf(id: string): Promise<void> {
     const db = await this.getDB()
     const transaction = db.transaction([STORE_NAME], "readwrite")
@@ -88,7 +80,6 @@ export class CacheDatabase {
     })
   }
 
-  // Clear all PDFs
   async clearAll(): Promise<void> {
     const db = await this.getDB()
     const transaction = db.transaction([STORE_NAME], "readwrite")
@@ -102,7 +93,6 @@ export class CacheDatabase {
   }
 }
 
-// Singleton instance
 let dbInstance: CacheDatabase | null = null
 
 export function getCacheDatabase(): CacheDatabase {

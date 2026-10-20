@@ -14,13 +14,12 @@ export default function SettingsPopup() {
   const [cacheSize, setCacheSize] = useState<string>("0 B")
   const [cacheCount, setCacheCount] = useState<number>(0)
 
-  // Load cache stats when component mounts
   useEffect(() => {
     const loadCacheStats = async () => {
       try {
         const cacheManager = getCacheManager()
         const stats = await cacheManager.getCacheStats()
-        setCacheSize(cacheManager.formatBytes(stats.totalSize))
+        setCacheSize(cacheManager.formatBytes(stats.totalSizeBytes))
         setCacheCount(stats.totalPapers)
       } catch (error) {
         console.error("Failed to load cache stats:", error)
@@ -34,7 +33,6 @@ export default function SettingsPopup() {
     try {
       await clearAllCache()
 
-      // Update cache stats after clearing
       setCacheSize("0 B")
       setCacheCount(0)
     } catch (error) {
@@ -63,7 +61,6 @@ export default function SettingsPopup() {
           {cursorStyle === "ghost" ? <Mouse size={16} /> : <ComputerTower size={16} />}
         </button>
 
-        {/* Clear Cache Button */}
         <div className="border-t border-accent/20 pt-1">
           <button
             onClick={handleClearCache}

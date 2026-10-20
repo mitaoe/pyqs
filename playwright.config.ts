@@ -24,7 +24,7 @@ export default defineConfig({
   webServer: {
     command: "pnpm build && pnpm start",
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 300_000,
     env: {
       CATALOG_FILE: "tests/fixtures/catalog.json",
