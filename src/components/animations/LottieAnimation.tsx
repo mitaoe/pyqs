@@ -1,40 +1,22 @@
-'use client';
+"use client"
 
-import { useRef, useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { useIsHydrated } from '@/hooks/useIsHydrated';
+import dynamic from "next/dynamic"
+import { useIsHydrated } from "@/hooks/useIsHydrated"
 
-interface LottieJSON {
-  v: string;
-  fr: number;
-  ip: number;
-  op: number;
-  w: number;
-  h: number;
-  nm: string;
-  ddd: number;
-  assets: unknown[];
-  layers: unknown[];
-  [key: string]: unknown;
-}
-
-const Lottie = dynamic(() => import('lottie-react'), { 
+const LottieSvg = dynamic(() => import("lottie-react").then((mod) => mod.LottieSvg), {
   ssr: false,
-  loading: () => <div className="animate-pulse bg-accent/20 rounded-lg h-full w-full" />
-});
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type LottiePlayerRef = any; // Using any here is necessary due to complex lottie-react types
+  loading: () => <div className="animate-pulse bg-accent/20 rounded-lg h-full w-full" />,
+})
 
 interface LottieAnimationProps {
-  animationData?: LottieJSON;
-  animationName?: 'loading' | 'cursor';
-  loop?: boolean;
-  autoplay?: boolean;
-  className?: string;
-  width?: number | string;
-  height?: number | string;
-  speed?: number;
+  animationData?: object
+  animationName?: "loading" | "cursor"
+  loop?: boolean
+  autoplay?: boolean
+  className?: string
+  width?: number | string
+  height?: number | string
+  speed?: number
 }
 
 export default function LottieAnimation({
@@ -42,58 +24,32 @@ export default function LottieAnimation({
   animationName,
   loop = true,
   autoplay = true,
-  className = '',
-  width = '100%',
-  height = '100%',
+  className = "",
+  width = "100%",
+  height = "100%",
   speed = 1,
 }: LottieAnimationProps) {
-  const lottieRef = useRef<LottiePlayerRef>(null);
-  const isHydrated = useIsHydrated();
-  const [loadedAnimation, setLoadedAnimation] = useState<LottieJSON | null>(null);
-  const [hasError, setHasError] = useState(false);
+  const isHydrated = useIsHydrated()
+  const src = animationData ?? (animationName ? `/animations/${animationName}.json` : null)
 
-  useEffect(() => {
-    async function loadAnimation() {
-      if (animationName && !loadedAnimation) {
-        try {
-          const response = await fetch(`/animations/${animationName}.json`);
-          const animData = await response.json();
-          setLoadedAnimation(animData);
-        } catch (error) {
-          console.error(`Failed to load animation: ${animationName}`, error);
-          setHasError(true);
-        }
-      }
-    }
-
-    loadAnimation();
-  }, [animationName, loadedAnimation]);
-
-  useEffect(() => {
-    if (lottieRef.current) {
-      lottieRef.current.setSpeed(speed);
-    }
-  }, [speed]);
-
-  if (!isHydrated || hasError) {
-    return <div className="animate-pulse bg-accent/20 rounded-lg h-full w-full" style={{ width, height }} />;
-  }
-
-  const animData = animationData || loadedAnimation;
-  if (!animData) {
-    return <div className="animate-pulse bg-accent/20 rounded-lg h-full w-full" style={{ width, height }} />;
+  if (!isHydrated || !src) {
+    return (
+      <div
+        className="animate-pulse bg-accent/20 rounded-lg h-full w-full"
+        style={{ width, height }}
+      />
+    )
   }
 
   return (
     <div className={className} style={{ width, height }}>
-      <Lottie
-        animationData={animData}
+      <LottieSvg
+        src={src}
         loop={loop}
         autoplay={autoplay}
-        lottieRef={lottieRef}
-        style={{ width: '100%', height: '100%' }}
-        renderer="svg"
+        speed={speed}
+        style={{ width: "100%", height: "100%" }}
       />
     </div>
-  );
-} 
+  )
+}

@@ -1,15 +1,25 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-    typescript: {
-        ignoreBuildErrors: true,
+  reactStrictMode: true,
+  logging: {
+    fetches: {
+      fullUrl: true,
     },
-    reactStrictMode: true,
-    logging: {
-        fetches: {
-            fullUrl: true,
+  },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/papers",
+          has: [{ type: "query", key: "subject", value: "(?<subject>[^%?#]+)" }],
+          destination: "/papers/:subject",
         },
-    },
+      ],
+      afterFiles: [],
+      fallback: [],
+    }
+  },
 }
 
 export default nextConfig
