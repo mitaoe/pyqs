@@ -73,13 +73,31 @@ test("sweeping the pointer across the list prefetches only where it stops", asyn
     centres.push({ x: box.x + 10, y: box.y + box.height / 2 })
   }
 
+  await page.evaluate(() => {
+    const entered: { subject: string; at: number }[] = []
+    Object.assign(window, { entered })
+    document.addEventListener("pointerover", (event) => {
+      const subject = (event.target as HTMLElement).closest("button")?.textContent
+      if (subject && subject !== entered.at(-1)?.subject) {
+        entered.push({ subject, at: performance.now() })
+      }
+    })
+  })
   for (const { x, y } of centres) await page.mouse.move(x, y)
   await page.waitForTimeout(1000)
+
+  const entered = await page.evaluate(
+    () => (window as unknown as { entered: { subject: string; at: number }[] }).entered,
+  )
+  const restedOn = entered
+    .filter(({ at }, i) => i === entered.length - 1 || entered[i + 1].at - at >= 80)
+    .map(({ subject }) => subject)
+  expect(restedOn).toContain("Introduction to Industrial IOT 4.0")
 
   const prefetched = new Set(
     appRequests
       .filter((url) => url.startsWith("/papers/"))
       .map((url) => decodeURIComponent(url.split("?")[0].slice("/papers/".length))),
   )
-  expect([...prefetched]).toEqual(["Introduction to Industrial IOT 4.0"])
+  expect([...prefetched].sort()).toEqual(restedOn.sort())
 })
