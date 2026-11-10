@@ -13,13 +13,13 @@ Thanks for helping students find their papers. This covers how a change gets fro
 ## How a contribution flows
 
 1. **Open an issue.** Open an issue before you start work, one for each concern, describing the problem or the feature. Changes to the UI are agreed in the issue first; the current UI is the reference.
-2. **Fork and branch.** Fork the repository and branch from `main`, naming the branch `<username>/<short-slug>`, for example `<username>/keep-filters`. Keep a pull request focused; it may resolve several related issues. When one change is split over several pull requests, only the last one uses `Closes`; the earlier ones say `Part of #N`.
+2. **Fork and branch.** Fork the repository and branch from `main`, naming the branch `<username>/<short-slug>`, for example `<username>/keep-filters`. Keep a pull request to one concern; it resolves several issues only when they are the same change. When one change is split over several pull requests, only the last one uses `Closes`; the earlier ones say `Part of #N`.
 3. **Open a pull request** from your branch to `main` on mitaoe/pyqs, written as described in [Pull requests](#pull-requests).
-4. **Let CI run.** If you aren't a member of the repository or the mitaoe organisation, CI on your pull request waits until a maintainer approves the run. The four [checks](#checks) must pass before the pull request can be merged.
-5. **Work through the review.** A maintainer reviews the pull request and may ask for changes. Push them to the same branch. To pick up newer changes on `main`, rebase onto it rather than merging it in.
-6. **Merge.** Squash is the only merge method the `main` ruleset allows. The pull request title becomes the commit subject on `main` and the commit body is left blank, so the title has to describe everything the pull request does.
+4. **Let CI run.** CI on a pull request from anyone outside the mitaoe organisation who is not a collaborator on the repository waits until a maintainer approves it. The four [checks](#checks) must pass before the pull request can be merged.
+5. **Work through the review.** A maintainer reviews the pull request and may ask for changes. Push them to the same branch with `git push`. To pick up newer changes on `main`, run `git fetch upstream` and `git rebase upstream/main`, then `git push --force-with-lease`, rather than merging `main` in.
+6. **Merge.** Squash is the only merge method the repository and its `main` ruleset allow. The pull request title becomes the commit subject on `main` and the commit body is left blank, so the title has to describe everything the pull request does.
 
-Issues and pull requests with no activity for 7 days are labelled `stale` and closed 30 days later; a comment removes the label at the next run. Items labelled `pinned`, `security`, `help wanted` or `good first issue` are never marked, and neither are pull requests labelled `dependencies`, which Dependabot adds to its own.
+Issues and pull requests with no activity for 7 days are labelled `stale` and closed 30 days later; a comment removes the label at the next run. Items labelled `pinned`, `security`, `help wanted` or `good first issue` are never marked or closed, and neither are pull requests labelled `dependencies`, which Dependabot adds to its own; a `stale` label already on an item stays until it is removed by hand.
 
 ## Setup
 
