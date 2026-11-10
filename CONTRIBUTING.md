@@ -96,10 +96,9 @@ You may see 400 errors for E&TC directories while generating; those are expected
 
 - Branch names follow `<username>/<short-slug>`.
 - Titles follow [Conventional Commits](https://www.conventionalcommits.org/) with a scope, for example `fix(papers): keep filters when switching view`. The title is the commit subject on `main`.
-- The description uses these sections, in this order:
-  - **Overview**: the problem and why it matters.
+- The description has four sections, in order: Overview, which ends with one `Closes #N` line for each issue it resolves, What this changes, Not addressed here and Verification.
+  - **Overview**: the problem and why it matters, then the `Closes #N` lines. GitHub closes those issues when the pull request merges, so a pull request that is only part of a split change says `Part of #N` instead.
   - **What this changes**: what is different once the pull request lands.
   - **Not addressed here**: related problems you noticed and left out, and why.
   - **Verification**: the checks you ran and what you tested by hand, with the results.
-- After the sections, add one `Closes #N` line for each issue the pull request resolves. GitHub closes those issues when the pull request merges, so a pull request that is only part of a split change says `Part of #N` instead.
 - UI changes need before/after screenshots. The current UI is the reference; changes to it are agreed in an issue first.
