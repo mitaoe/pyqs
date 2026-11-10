@@ -23,7 +23,7 @@ Issues and pull requests with no activity for 7 days are labelled `stale` and cl
 
 ## Setup
 
-Requires Node.js 22 and pnpm 10.
+Requires Node.js 26 and pnpm 10, as pinned in `package.json`.
 
 Fork the repository on GitHub, then:
 
