@@ -45,7 +45,7 @@ export function AlphabetBar({ subjects }: SubjectsProps) {
                   ? activeSection === letter
                     ? "bg-brand text-white shadow-md ring-2 ring-brand/50"
                     : hoverLetter === letter
-                      ? "bg-brand/10 text-brand border border-brand/20 shadow-sm"
+                      ? "bg-brand/10 text-brand border border-brand/20 shadow-xs"
                       : "bg-secondary text-content/80 hover:bg-brand/10 hover:text-brand"
                   : "cursor-default opacity-40 bg-secondary/80"
               }
@@ -82,7 +82,7 @@ export default function SubjectAlphabetList({ subjects }: SubjectsProps) {
               transition={{ duration: 0.3 }}
             >
               <div className="flex items-center mb-6">
-                <h2 className="flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-lg bg-brand text-xl sm:text-2xl font-bold text-white shadow-md">
+                <h2 className="flex h-12 w-12 items-center justify-center rounded-lg bg-brand text-xl sm:text-2xl font-bold text-white shadow-md">
                   {letter}
                 </h2>
                 <div className="h-px flex-1 bg-accent/50 ml-4"></div>

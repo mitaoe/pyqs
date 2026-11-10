@@ -52,7 +52,7 @@ export default function SubjectIndex({ subjects }: SubjectIndexProps) {
           <button
             onClick={handleGoUp}
             aria-label="Go to top"
-            className="p-2.5 rounded-full bg-secondary shadow-md transition-transform duration-200 hover:scale-105 focus:outline-none"
+            className="p-2.5 rounded-full bg-secondary shadow-md transition-transform duration-200 hover:scale-105 focus:outline-hidden"
           >
             <ArrowUp size={20} weight="bold" className="text-content" />
           </button>

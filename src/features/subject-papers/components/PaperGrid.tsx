@@ -30,7 +30,7 @@ export default function PaperGrid({
             data-paper-file={paper.fileName}
             className={`bg-secondary border-2 rounded-xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 hover:shadow-lg h-full ${
               isSelected(paper.fileName)
-                ? "border-brand shadow-md shadow-brand/20"
+                ? "border-brand shadow-md/100 shadow-brand/20 hover:shadow-initial"
                 : "border-accent/30 hover:border-accent/50"
             } ${isSelectMode ? "cursor-pointer" : ""}`}
             onClick={isSelectMode ? () => onToggleSelected(paper.fileName) : undefined}
@@ -48,7 +48,7 @@ export default function PaperGrid({
                 </div>
                 {isSelectMode && (
                   <div
-                    className={`w-5 h-5 rounded flex items-center justify-center transition-colors duration-200 ${
+                    className={`w-5 h-5 rounded-sm flex items-center justify-center transition-colors duration-200 ${
                       isSelected(paper.fileName)
                         ? "bg-blue-600 text-white"
                         : "bg-primary/40 text-content/80"
@@ -62,7 +62,7 @@ export default function PaperGrid({
                   </div>
                 )}
               </div>
-              <h3 className="text-sm sm:text-base font-medium text-content mb-2 line-clamp-2 leading-tight">
+              <h3 className="text-sm sm:text-base font-medium text-content mb-2 line-clamp-2 leading-tight sm:leading-6">
                 {paper.fileName}
               </h3>
             </div>
@@ -74,7 +74,7 @@ export default function PaperGrid({
                     onPreview(paper)
                   }}
                   disabled={isServerDown}
-                  className="flex-1 flex items-center justify-center gap-2 bg-accent/20 text-content rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-accent/30 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 flex items-center justify-center gap-2 bg-accent/20 text-content rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-accent/30 focus:outline-hidden focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Eye size={16} weight="duotone" />
                   <span>Preview</span>
@@ -85,7 +85,7 @@ export default function PaperGrid({
                     onDownload(paper)
                   }}
                   disabled={isDownloading(paper) || isServerDown}
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 flex items-center justify-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-hidden focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download
                     size={16}

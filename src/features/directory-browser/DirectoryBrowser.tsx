@@ -99,7 +99,7 @@ export default function DirectoryBrowser({
           {currentPath && (
             <button
               onClick={() => onNavigate("../")}
-              className="flex items-center gap-1 rounded-lg bg-blue-400/40 text-blue-900 dark:text-blue-100 p-2 hover:bg-blue-500/60 hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+              className="flex items-center gap-1 rounded-lg bg-blue-400/40 text-blue-900 dark:text-blue-100 p-2 hover:bg-blue-500/60 hover:text-white transition-colors duration-200 focus:outline-hidden focus:ring-2 focus:ring-blue-400/40"
             >
               <ArrowLeft size={16} weight="bold" className="h-4 w-4" />
               Back
@@ -188,7 +188,7 @@ export default function DirectoryBrowser({
                     <button
                       onClick={() => handleDownload(item.metadata!.url, item.metadata!.fileName)}
                       disabled={activeDownloads.has(item.metadata.url)}
-                      className="flex items-center gap-2 rounded-md bg-blue-600/70 text-white px-3 py-1.5 text-sm font-medium shadow-sm transition-all hover:bg-blue-500/80 hover:shadow-blue-400/25 focus:outline-none focus:ring-2 focus:ring-blue-400/40 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex items-center gap-2 rounded-md bg-blue-600/70 text-white px-3 py-1.5 text-sm font-medium shadow-xs transition-all hover:bg-blue-500/80 hover:shadow-xs/100 hover:shadow-blue-400/25 focus:outline-hidden focus:ring-2 focus:ring-blue-400/40 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Download
                         size={16}

@@ -32,7 +32,7 @@ export default function HomeHero() {
           >
             <Link
               href="/papers"
-              className="flex h-14 w-[250px] items-center justify-center overflow-hidden rounded-full px-4 text-sm font-medium text-primary shadow-lg shadow-white/5 relative group bg-blue-600/70 text-white transition-all duration-300 hover:bg-blue-500/80"
+              className="flex h-14 w-[250px] items-center justify-center overflow-hidden rounded-full px-4 text-sm font-medium text-primary shadow-glow relative group bg-blue-600/70 text-white transition-all duration-300 hover:bg-blue-500/80"
             >
               <MagnifyingGlass weight="bold" className="mr-3" size={24} />
               <span className="whitespace-nowrap">Search Papers</span>

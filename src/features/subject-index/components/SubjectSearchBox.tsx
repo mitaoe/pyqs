@@ -98,7 +98,7 @@ export default function SubjectSearchBox({ subjects }: SubjectSearchBoxProps) {
           onFocus={() => setShowSuggestions(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search for subjects..."
-          className="w-full h-13 rounded-full border border-accent bg-secondary py-3 pl-12 pr-11 text-content placeholder:text-content/60 focus:border-content/40 focus:ring-1 focus:ring-content/40 focus:outline-none transition-all shadow-sm text-lg"
+          className="w-full rounded-full border border-accent bg-secondary py-3 pl-12 pr-11 text-content placeholder:text-content/60 focus:border-content/40 focus:ring-1 focus:ring-content/40 focus:outline-hidden transition-all shadow-xs text-lg"
           aria-label="Search for subjects"
         />
         <MagnifyingGlass
@@ -109,7 +109,7 @@ export default function SubjectSearchBox({ subjects }: SubjectSearchBoxProps) {
         {searchQuery && (
           <button
             onClick={handleClear}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-400 focus:outline-none"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-400 focus:outline-hidden"
             aria-label="Clear search"
           >
             <XCircle size={22} weight="fill" />

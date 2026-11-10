@@ -18,7 +18,7 @@ export default function BatchDownloadButton({
       <button
         onClick={onClick}
         disabled={disabled}
-        className="bg-brand text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-xl backdrop-blur-sm transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 flex items-center gap-2 border border-brand/30 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bg-brand text-white px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl shadow-xl backdrop-blur-xs transition-colors duration-200 hover:bg-brand/90 focus:outline-hidden focus:ring-2 focus:ring-brand/50 flex items-center gap-2 border border-brand/30 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {selectedCount === 1 ? (
           <Download size={20} weight="duotone" />
