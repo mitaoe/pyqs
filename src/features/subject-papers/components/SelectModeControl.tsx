@@ -45,7 +45,7 @@ export default function SelectModeControl({
             ></div>
 
             <div className="flex items-start gap-2">
-              <div className="flex-shrink-0 w-6 h-6 bg-brand/10 rounded-full flex items-center justify-center">
+              <div className="shrink-0 w-6 h-6 bg-brand/10 rounded-full flex items-center justify-center">
                 <CheckSquare size={14} weight="bold" className="text-brand" />
               </div>
               <div className="flex-1">
@@ -55,7 +55,7 @@ export default function SelectModeControl({
                 </p>
                 <button
                   onClick={onDismissTutorial}
-                  className="w-full bg-brand text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-brand/90 transition-colors duration-200 shadow-sm"
+                  className="w-full bg-brand text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-brand/90 transition-colors duration-200 shadow-xs"
                 >
                   Got it!
                 </button>

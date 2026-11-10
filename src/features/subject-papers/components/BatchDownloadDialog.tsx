@@ -18,7 +18,7 @@ export default function BatchDownloadDialog({
   const isFinished = progress.status === "complete" || progress.status === "error"
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
       <div className="bg-secondary rounded-2xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-primary/20">
         <div className="flex justify-between items-start mb-4 sm:mb-6">
           <div className="flex-1 min-w-0">
@@ -37,7 +37,7 @@ export default function BatchDownloadDialog({
           {isFinished && (
             <button
               onClick={onClose}
-              className="text-content/60 hover:text-content transition-colors p-1 ml-2 flex-shrink-0"
+              className="text-content/60 hover:text-content transition-colors p-1 ml-2 shrink-0"
               aria-label="Close"
             >
               <X size={20} weight="bold" className="sm:w-6 sm:h-6" />
@@ -52,7 +52,7 @@ export default function BatchDownloadDialog({
             <p className="text-red-500 mb-4 text-sm">{progress.error}</p>
             <button
               onClick={onRetry}
-              className="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none"
+              className="bg-brand text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-hidden"
             >
               Try Again
             </button>

@@ -126,7 +126,7 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-xs" />
 
       <motion.div
         ref={dialogRef}
@@ -136,16 +136,16 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
         aria-label={`Preview of ${paper.fileName}`}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="relative z-10 w-screen h-dvh bg-secondary flex flex-col overflow-hidden focus:outline-none"
+        className="relative z-10 w-screen h-dvh bg-secondary flex flex-col overflow-hidden focus:outline-hidden"
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between px-3 sm:px-5 py-2 border-b border-accent/30 bg-primary/60 backdrop-blur-md flex-shrink-0">
+        <header className="flex items-center justify-between px-3 sm:px-5 py-2 border-b border-accent/30 bg-primary/60 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="px-2 py-0.5 bg-accent/20 rounded-md text-xs font-medium">
                 {paper.year}
               </span>
@@ -157,11 +157,11 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
               {paper.fileName}
             </h3>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {onPrev && (
               <button
                 onClick={onPrev}
-                className="p-2 text-content/70 hover:text-content hover:bg-accent/20 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="p-2 text-content/70 hover:text-content hover:bg-accent/20 rounded-lg transition-colors duration-200 focus:outline-hidden focus:ring-2 focus:ring-accent/50"
                 aria-label="Previous PDF"
               >
                 <ArrowLeft size={18} weight="bold" />
@@ -170,7 +170,7 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
             {onNext && (
               <button
                 onClick={onNext}
-                className="p-2 text-content/70 hover:text-content hover:bg-accent/20 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                className="p-2 text-content/70 hover:text-content hover:bg-accent/20 rounded-lg transition-colors duration-200 focus:outline-hidden focus:ring-2 focus:ring-accent/50"
                 aria-label="Next PDF"
               >
                 <ArrowRight size={18} weight="bold" />
@@ -180,7 +180,7 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
               onClick={handleDownload}
               disabled={downloading}
               aria-label={downloading ? "Downloading paper" : "Download paper"}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-medium transition-all duration-200 hover:bg-brand/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-medium transition-all duration-200 hover:bg-brand/90 hover:shadow-md focus:outline-hidden focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {downloading ? (
                 <SpinnerGap size={16} className="animate-spin" />
@@ -197,7 +197,7 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Open paper in a new tab"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/20 text-content rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent/30 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/20 text-content rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent/30 hover:shadow-md focus:outline-hidden focus:ring-2 focus:ring-accent/50"
             >
               <ArrowSquareOut size={16} weight="bold" />
               <span className="hidden sm:inline">New Tab</span>
@@ -205,7 +205,7 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
 
             <button
               onClick={onClose}
-              className="p-2 text-content/70 hover:text-content hover:bg-accent/20 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50"
+              className="p-2 text-content/70 hover:text-content hover:bg-accent/20 rounded-lg transition-colors duration-200 focus:outline-hidden focus:ring-2 focus:ring-accent/50"
               aria-label="Close preview"
             >
               <X size={18} weight="bold" />
@@ -217,7 +217,7 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
           {isLoading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10 bg-neutral-900">
               <div className="relative">
-                <div className="w-12 h-12 border-3 border-accent/20 border-t-brand rounded-full animate-spin" />
+                <div className="w-12 h-12 border-accent/20 border-t-brand rounded-full animate-spin" />
               </div>
               <div className="text-center">
                 <p className="text-content/80 text-sm font-medium">Loading PDF...</p>
@@ -235,7 +235,7 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleRetry}
-                  className="px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-medium transition-all duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50"
+                  className="px-3 py-1.5 bg-brand text-white rounded-lg text-sm font-medium transition-all duration-200 hover:bg-brand/90 focus:outline-hidden focus:ring-2 focus:ring-brand/50"
                 >
                   Try again
                 </button>
@@ -243,7 +243,7 @@ export default function PDFViewer({ paper, onClose, onPrev, onNext, onFailure }:
                   href={paper.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 bg-accent/20 text-content rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent/30 focus:outline-none focus:ring-2 focus:ring-accent/50"
+                  className="px-3 py-1.5 bg-accent/20 text-content rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent/30 focus:outline-hidden focus:ring-2 focus:ring-accent/50"
                 >
                   Open in new tab
                 </a>

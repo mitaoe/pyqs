@@ -13,7 +13,7 @@ interface EmptyPapersProps {
 export default function EmptyPapers({ subject, filtersState }: EmptyPapersProps) {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative">
-      <div className="sticky top-0 z-20 bg-primary/80 backdrop-blur-md px-4 sm:px-5 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-sm border border-accent/50">
+      <div className="sticky top-0 z-20 bg-primary/80 backdrop-blur-md px-4 sm:px-5 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-xs border border-accent/50">
         <div className="flex items-center justify-between mb-2 sm:mb-3">
           <div className="flex items-center gap-3 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
             <BackToSubjectsButton />

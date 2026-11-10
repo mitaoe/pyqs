@@ -1,28 +1,82 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss" source("..");
+
+@custom-variant dark (&:is(.dark *));
+@custom-variant hover (&:hover);
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-content: var(--content);
+  --color-brand: var(--brand);
+}
+
+@theme {
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-yellow-50: #fefce8;
+  --color-yellow-500: #eab308;
+  --color-yellow-600: #ca8a04;
+  --color-yellow-700: #a16207;
+  --color-yellow-950: #422006;
+  --color-emerald-500: #10b981;
+  --color-blue-100: #dbeafe;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-900: #1e3a8a;
+  --color-gray-200: #e5e7eb;
+  --color-gray-400: #9ca3af;
+  --color-gray-800: #1f2937;
+  --color-neutral-900: #171717;
+
+  --shadow-glow: 0 10px 15px -3px rgb(255 255 255 / 0.05), 0 4px 6px -4px rgb(255 255 255 / 0.05);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200);
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  :disabled {
+    cursor: default;
+  }
+
+  ::placeholder {
+    color: var(--color-gray-400);
+  }
+}
 
 @layer base {
   :root {
-    --primary: 0 0% 100%;
-    --secondary: 0 0% 98%;
-    --accent: 0 0% 90%;
-    --content: 0 0% 15%;
-    --brand: 217 91% 60%;
+    --primary: #ffffff;
+    --secondary: #fafafa;
+    --accent: #e6e6e6;
+    --content: #262626;
+    --brand: #3c83f6;
   }
 
   .dark {
-    --primary: 0 0% 8%;
-    --secondary: 0 0% 12%;
-    --accent: 0 0% 20%;
-    --content: 0 0% 90%;
-    --brand: 217 91% 65%;
+    --primary: #141414;
+    --secondary: #1f1f1f;
+    --accent: #333333;
+    --content: #e6e6e6;
+    --brand: #5593f7;
   }
 }
 
 body {
-  color: hsl(var(--content));
-  background-color: hsl(var(--primary));
+  color: var(--content);
+  background-color: var(--primary);
   font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -33,15 +87,15 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--secondary));
+  background: var(--secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--accent));
+  background: var(--accent);
   border-radius: 6px;
-  border: 3px solid hsl(var(--secondary));
+  border: 3px solid var(--secondary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--brand));
+  background: var(--brand);
 }

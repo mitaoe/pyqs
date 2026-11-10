@@ -26,7 +26,7 @@ export default function PaperList({
             data-paper-file={paper.fileName}
             className={`flex items-center justify-between bg-secondary border-2 rounded-xl p-3 sm:p-4 transition-all duration-300 hover:shadow-md ${
               isSelected(paper.fileName)
-                ? "border-brand shadow-sm shadow-brand/20"
+                ? "border-brand shadow-xs/100 shadow-brand/20 hover:shadow-initial"
                 : "border-accent/30 hover:border-accent/50"
             } ${isSelectMode ? "cursor-pointer" : ""}`}
             onClick={isSelectMode ? () => onToggleSelected(paper.fileName) : undefined}
@@ -35,7 +35,7 @@ export default function PaperList({
             <div className="flex items-center gap-3 sm:gap-4 max-w-[70%]">
               {isSelectMode ? (
                 <div
-                  className={`w-5 h-5 flex-shrink-0 rounded flex items-center justify-center transition-colors duration-200 ${
+                  className={`w-5 h-5 shrink-0 rounded-sm flex items-center justify-center transition-colors duration-200 ${
                     isSelected(paper.fileName)
                       ? "bg-brand text-white"
                       : "bg-primary/40 text-content/80"
@@ -52,7 +52,7 @@ export default function PaperList({
                   )}
                 </div>
               ) : (
-                <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-lg bg-primary/60 flex-shrink-0">
+                <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-lg bg-primary/60 shrink-0">
                   <FileText size={20} weight="duotone" className="text-content/80" />
                 </div>
               )}
@@ -71,14 +71,14 @@ export default function PaperList({
               </div>
             </div>
             {!isSelectMode ? (
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex gap-2 shrink-0">
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
                     onPreview(paper)
                   }}
                   disabled={isServerDown}
-                  className="flex items-center gap-2 bg-accent/20 text-content rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-accent/30 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 bg-accent/20 text-content rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-accent/30 focus:outline-hidden focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Eye size={16} weight="duotone" />
                   <span className="hidden sm:inline">Preview</span>
@@ -89,7 +89,7 @@ export default function PaperList({
                     onDownload(paper)
                   }}
                   disabled={isDownloading(paper) || isServerDown}
-                  className="flex items-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-none focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 bg-brand text-white rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-brand/90 focus:outline-hidden focus:ring-2 focus:ring-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download
                     size={16}

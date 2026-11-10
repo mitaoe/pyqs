@@ -51,7 +51,7 @@ export default function BatchProgressBar({ progress }: BatchProgressBarProps) {
         <span className="min-w-0 flex-1 truncate text-xs sm:text-sm text-content/80">
           {statusText}
         </span>
-        <div className="flex flex-shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {progress.status === "complete" && (
             <CheckCircle size={18} weight="fill" className="text-emerald-500" />
           )}

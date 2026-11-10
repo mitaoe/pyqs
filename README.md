@@ -2,7 +2,7 @@
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-blue?style=flat-square)](https://www.typescriptlang.org/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38B2AC?style=flat-square)](https://tailwindcss.com/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-38B2AC?style=flat-square)](https://tailwindcss.com/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](#license)
 
 Enhanced interface for accessing MIT Academy of Engineering (MITAoE) previous year question papers with a subject-focused approach for easier navigation.

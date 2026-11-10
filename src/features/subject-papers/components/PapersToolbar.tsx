@@ -37,14 +37,14 @@ export default function PapersToolbar({
   const { isSelectMode, selectedCount, allSelected, toggleSelectMode, toggleAll } = selection
 
   return (
-    <div className="sticky top-0 z-20 bg-primary/80 backdrop-blur-md px-4 sm:px-5 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-sm border border-accent/50">
+    <div className="sticky top-0 z-20 bg-primary/80 backdrop-blur-md px-4 sm:px-5 py-3 sm:py-4 rounded-xl flex flex-col mb-6 sm:mb-8 shadow-xs border border-accent/50">
       <div className="flex items-center justify-between mb-2 sm:mb-3">
         <div className="flex items-center gap-3 sm:gap-4 max-w-[80%] sm:max-w-[60%]">
           <BackToSubjectsButton />
           <h2 className="text-lg sm:text-2xl font-bold text-content truncate">{subject}</h2>
 
           {isSelectMode && selectedCount > 0 && (
-            <span className="ml-2 text-xs bg-brand text-white font-medium rounded-full px-2.5 py-1 shadow-sm">
+            <span className="ml-2 text-xs bg-brand text-white font-medium rounded-full px-2.5 py-1 shadow-xs">
               {selectedCount}
             </span>
           )}
