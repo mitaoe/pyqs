@@ -31,5 +31,5 @@ jobs:
           stale-issue-label: "stale"
           stale-pr-label: "stale"
           exempt-issue-labels: "pinned,security,help wanted,good first issue"
-          exempt-pr-labels: "pinned,security,help wanted,good first issue"
+          exempt-pr-labels: "pinned,security,help wanted,good first issue,dependencies"
           operations-per-run: 100
