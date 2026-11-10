@@ -64,7 +64,7 @@ Without database access, use a saved catalog: `curl -o catalog.json https://mita
 
 ## Conventions
 
-- Prettier owns formatting (100 columns, no semicolons). CI fails on unformatted code, lint warnings, type errors and failing tests.
+- Prettier owns formatting (100 columns, no semicolons). CI fails on unformatted code, lint errors, type errors and failing tests. Lint warnings don't fail CI; keep them at zero.
 - No comments that restate what the code does. Name things so they don't need it.
 - E2E tests intercept every request that leaves localhost; they must never reach real paper storage.
 - Keep the UI pixel-identical unless a change is agreed first.
