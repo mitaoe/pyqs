@@ -19,7 +19,7 @@ Thanks for helping students find their papers. This covers how a change gets fro
 5. **Work through the review.** A maintainer reviews the pull request and may ask for changes. Push them to the same branch with `git push`. To pick up newer changes on `main`, run `git fetch upstream` and `git rebase upstream/main`, then `git push --force-with-lease`, rather than merging `main` in.
 6. **Merge.** Squash is the only merge method the repository and its `main` ruleset allow. The pull request title becomes the commit subject on `main` and the commit body is left blank, so the title has to describe everything the pull request does.
 
-Issues and pull requests with no activity for 7 days are labelled `stale` and closed 30 days later; a comment removes the label at the next run. Items labelled `pinned`, `security`, `help wanted` or `good first issue` are never marked or closed, and neither are pull requests labelled `dependencies`, which Dependabot adds to its own; a `stale` label already on an item stays until it is removed by hand.
+Issues and pull requests with no activity for 7 days are labelled `stale` and closed 30 days later; a comment removes the label at the next run. Items labelled `pinned`, `security`, `help wanted` or `good first issue` are never marked or closed, and neither are pull requests labelled `dependencies`, which Dependabot adds to its own. If one of these labels is added to an item that is already `stale`, the `stale` label stays until it is removed by hand.
 
 ## Setup
 
