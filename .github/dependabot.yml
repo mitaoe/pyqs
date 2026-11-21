@@ -4,6 +4,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "saturday"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -22,6 +25,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "saturday"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
     commit-message:
       prefix: "chore"
       include: "scope"
